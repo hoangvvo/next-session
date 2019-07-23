@@ -1,0 +1,7 @@
+{
+    "extends": "airbnb-base",
+    "rules": {
+        "no-shadow": [2, {"allow": ["req", "res"]}],
+        "no-return-assign": "off"
+    }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "next-session",
+  "version": "0.0.1",
+  "description": "Simple session middleware for Next.js API Routes",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint ./ -c .eslintrc --ext js --ignore-path .gitignore --fix",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hoangvvo/next-session.git"
+  },
+  "author": "Hoang Vo (https://www.hoangvvo.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hoangvvo/next-session/issues"
+  },
+  "homepage": "https://github.com/hoangvvo/next-session#readme",
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.2.0",
+    "eslint-plugin-import": "^2.18.2"
+  },
+  "dependencies": {
+    "cookie": "^0.4.0",
+    "lodash.isequal": "^4.5.0",
+    "lodash.merge": "^4.6.2",
+    "lodash.omit": "^4.5.0"
+  }
+}
