@@ -11,10 +11,27 @@ npm install --save next-session
 ## Usage
 
 ```javascript
-// Using Node.js require
-const session = require('next-session');
-//  Using ES6 import
 import session from 'next-session';
+
+const handler = (req, res) => {
+  if (req.session.views) {
+    //  On later visits, increase # of views by one on every request
+    req.session.views += 1;
+  } else {
+    //  On first visit, set # of views to 1
+    req.session.views = 1;
+  }
+  res.send(`In this session, you have visited this page ${req.session.views} time(s).`)
+};
+
+//  wrap handler with session middleware and include options
+export default session(handler, {
+  name: 'sid',
+  cookies: {
+    secure: true,
+    maxAge: 1209600000,
+  },
+});
 ```
 
 ### session(handler, options)
@@ -70,7 +87,7 @@ The session store to use for session middleware (see `options` above).
 
 #### Implementation
 
-A compatible session store must includes three functions: `set(sid)`, `get(sid)`, and `destroy()`.
+A compatible session store must include three functions: `set(sid)`, `get(sid)`, and `destroy()`.
 
 All functions should return **Promises** (*callbacks* are not supported). For an example of a session store implementation, see [`MemoryStore`](https://github.com/hoangvvo/next-session/blob/master/session/memory.js).
 
