@@ -28,6 +28,7 @@ See Next.js 9 [API Routes](https://nextjs.org/docs#api-routes).
 #### options
 
 `next-session` accepts the properties below.
+
 | options | description | default |
 |---------|-------------|---------|
 | name | The name of the cookie to be read from the request and set to the response. | `sessionId` |
