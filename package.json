@@ -1,10 +1,14 @@
 {
   "name": "next-session",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Simple session middleware for Next.js API Routes",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "files": [
+    "lib/"
+  ],
   "scripts": {
-    "lint": "eslint ./ -c .eslintrc --ext js --ignore-path .gitignore --fix",
+    "build": "babel src -d lib",
+    "lint": "eslint src -c .eslintrc --ext js --ignore-path .gitignore --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,6 +22,9 @@
   },
   "homepage": "https://github.com/hoangvvo/next-session#readme",
   "devDependencies": {
+    "@babel/cli": "^7.5.5",
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.2.0",
     "eslint-plugin-import": "^2.18.2"
