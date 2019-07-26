@@ -1,6 +1,6 @@
 # next-session
 
-Simple session middleware for [Next.js](https://nextjs.org/) 9 API Routes.
+Simple *promise-based* session middleware for [Next.js](https://nextjs.org/) 9 API Routes.
 
 ## Installation
 
@@ -21,7 +21,7 @@ const handler = (req, res) => {
     //  On first visit, set # of views to 1
     req.session.views = 1;
   }
-  res.send(`In this session, you have visited this page ${req.session.views} time(s).`)
+  res.send(`In this session, you have visited this website ${req.session.views} time(s).`)
 };
 
 //  wrap handler with session middleware and include options
@@ -32,6 +32,33 @@ export default session(handler, {
     maxAge: 1209600000,
   },
 });
+```
+
+### Using global middleware
+
+In reality, you would not want to wrap `session()` around handler in every function. You may run into situation where configuration of one `session()` is different from other. One solution is to create a *global* middleware.
+
+Create `middleware.js`.
+
+```javascript
+import session from 'next-session';
+
+const middleware = handler => session(your(other(middlewares(handler))), { ...options});
+
+export default middleware;
+```
+
+In each API Route, import and wrap `middleware` instead.
+
+```javascript
+import middleware from 'path/to/your/middleware';
+
+const handler = (req, res) => {
+  //  your handle
+};
+
+//  wrap handler with session middleware and include options
+export default middleware(handler);
 ```
 
 ### session(handler, options)
@@ -89,7 +116,7 @@ The session store to use for session middleware (see `options` above).
 
 A compatible session store must include three functions: `set(sid)`, `get(sid)`, and `destroy()`.
 
-All functions should return **Promises** (*callbacks* are not supported). For an example of a session store implementation, see [`MemoryStore`](https://github.com/hoangvvo/next-session/blob/master/session/memory.js).
+All functions should return **Promises** (*callbacks* are not supported). For an example of a session store implementation, see [`MemoryStore`](src/session/memory.js).
 
 #### Compatible stores
 
