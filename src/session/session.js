@@ -12,12 +12,12 @@ class Session {
 
   //  sessionStore to set this Session
   save() {
-    this.req.sessionStore.set(this.id, this);
+    return this.req.sessionStore.set(this.id, this);
   }
 
   destroy() {
     delete this.req.session;
-    this.req.sessionStore.destroy(this.id);
+    return this.req.sessionStore.destroy(this.id);
   }
 }
 
