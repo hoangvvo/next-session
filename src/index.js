@@ -1,6 +1,4 @@
 import crypto from 'crypto';
-import isEqual from 'lodash.isequal';
-import omit from 'lodash.omit';
 import * as Promise from 'bluebird';
 import MemoryStore from './session/memory';
 import Cookie from './session/cookie';
@@ -9,6 +7,21 @@ import Session from './session/session';
 const env = process.env.NODE_ENV;
 
 const generateSessionId = () => crypto.randomBytes(16).toString('hex');
+
+const hash = (sess) => {
+  const str = JSON.stringify(sess, (key, val) => {
+    if (key === 'cookie') {
+      //  filtered out session.cookie
+      return undefined;
+    }
+    return val;
+  });
+  //  hash
+  return crypto
+    .createHash('sha1')
+    .update(str, 'utf8')
+    .digest('hex');
+};
 
 const session = (handler, options = {}) => {
   const name = options.name || 'sessionId';
@@ -67,18 +80,18 @@ const session = (handler, options = {}) => {
       //  Return a session object
       if (!req.sessionId) {
         //  If no sessionId found in Cookie header, generate one
-        return Promise.resolve(JSON.parse(JSON.stringify(req.sessionStore.generate(req))));
+        return Promise.resolve(hash(req.sessionStore.generate(req)));
       }
       return req.sessionStore.get(req.sessionId)
         .then((sess) => {
           if (sess) {
-            return req.sessionStore.createSession(req, sess);
+            return hash(req.sessionStore.createSession(req, sess));
           }
-          return JSON.parse(JSON.stringify(req.sessionStore.generate(req)));
+          return hash(req.sessionStore.generate(req));
         });
     };
 
-    return getSession().then((sess) => {
+    return getSession().then((hashedsess) => {
       const oldEnd = res.end;
       //  Proxy res.end
       res.end = function resEndProxy(...args) {
@@ -91,7 +104,7 @@ const session = (handler, options = {}) => {
         //  save session to store if there are changes (and there is a session)
         const saveSession = () => {
           if (req.session) {
-            if (!isEqual(omit(req.session, ['cookie']), omit(sess, ['cookie']))) {
+            if (hash(req.session) !== hashedsess) {
               return req.session.save();
             }
           }
