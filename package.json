@@ -1,6 +1,6 @@
 {
   "name": "next-session",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Simple promise-based session middleware for Next.js API Routes",
   "main": "lib/index.js",
   "files": [
@@ -32,8 +32,6 @@
   "dependencies": {
     "bluebird": "^3.5.5",
     "cookie": "^0.4.0",
-    "lodash.isequal": "^4.5.0",
-    "lodash.merge": "^4.6.2",
-    "lodash.omit": "^4.5.0"
+    "lodash.merge": "^4.6.2"
   }
 }
