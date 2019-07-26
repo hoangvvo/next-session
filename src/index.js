@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import isEqual from 'lodash.isequal';
 import omit from 'lodash.omit';
+import * as Promise from 'bluebird';
 import MemoryStore from './session/memory';
 import Cookie from './session/cookie';
 import Session from './session/session';

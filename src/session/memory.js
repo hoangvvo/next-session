@@ -1,5 +1,7 @@
 /* eslint-disable class-methods-use-this */
 
+import * as Promise from 'bluebird';
+
 const MemoryStoreSession = {};
 
 class MemoryStore {
