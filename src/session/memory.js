@@ -18,17 +18,18 @@ class MemoryStore {
 
       if (!expires || new Date() < expires) {
         //  check expires before returning
-        return sess;
+        return Promise.resolve(sess);
       }
 
       self.destroy(sid);
-      return null;
+      return Promise.resolve(null);
     }
-    return null;
+    return Promise.resolve(null);
   }
 
   set(sid, sess) {
     MemoryStoreSession[sid] = JSON.stringify(sess);
+    return Promise.resolve();
   }
 
   all() {
@@ -37,11 +38,11 @@ class MemoryStore {
     for (let i = 0, len = keys.length; i < len; i += 1) {
       arr.push(MemoryStoreSession[keys[i]]);
     }
-    return arr;
+    return Promise.resolve(arr);
   }
 
   destroy(sid) {
-    return delete MemoryStoreSession[sid];
+    Promise.resolve(delete MemoryStoreSession[sid]);
   }
 }
 
