@@ -1,7 +1,7 @@
 {
   "name": "next-session",
   "version": "0.1.0",
-  "description": "Simple session middleware for Next.js API Routes",
+  "description": "Simple promise-based session middleware for Next.js API Routes",
   "main": "lib/index.js",
   "files": [
     "lib/"
