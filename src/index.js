@@ -46,11 +46,12 @@ const session = (handler, options = {}) => {
   //  store readiness
   const storeReady = true;
 
-  return async (req, res) => {
-    //  No need to redefined
+  return (req, res) => {
+    //  No need to redefine
     if (req.session) return handler(req, res);
 
     //  check for store readiness before proceeded
+    //  TODO: handle storeReady false
     if (!storeReady) return handler(req, res);
 
     //  TODO: add pathname mismatch check
@@ -61,46 +62,53 @@ const session = (handler, options = {}) => {
     //  Get sessionId cookie from Next.js parsed req.cookies
     req.sessionId = req.cookies[name];
 
-    let sess;
-    if (!req.sessionId) {
-      //  If no sessionId found in Cookie header, generate one
-      sess = await JSON.parse(JSON.stringify(req.sessionStore.generate(req)));
-    } else {
-      sess = await req.sessionStore.get(req.sessionId);
-      if (sess) {
-        //  Session of req.sessionId found
-        req.sessionStore.createSession(req, sess);
-      } else {
-      //  no session of req.sessionId found
-        sess = JSON.parse(JSON.stringify(await req.sessionStore.generate(req)));
+    const getSession = () => {
+      //  Return a session object
+      if (!req.sessionId) {
+        //  If no sessionId found in Cookie header, generate one
+        return Promise.resolve(JSON.parse(JSON.stringify(req.sessionStore.generate(req))));
       }
-    }
-
-    //  Proxy res.end
-    const oldEnd = res.end;
-    res.end = function resEndProxy(...args) {
-      /**
-       *  reset expires to prolong session
-       *  req.session.cookie.resetExpires();
-       *  TODO: Implementing touch() + rollingSession
-       *  */
-
-      //  save session to store if there are changes (and there is a session)
-      if (req.session) {
-        if (!isEqual(omit(req.session, ['cookie']), omit(sess, ['cookie']))) {
-          req.session.save();
-        }
-      }
-
-      //  set the cookie to header if sessionId mismatch or no sessionId found in header Cookie
-      if (req.cookies[name] !== req.sessionId && req.session) {
-        res.setHeader('Set-Cookie', req.session.cookie.serialize(name, req.sessionId));
-      }
-
-      oldEnd.apply(this, args);
+      return req.sessionStore.get(req.sessionId)
+        .then((sess) => {
+          if (sess) {
+            return req.sessionStore.createSession(req, sess);
+          }
+          return JSON.parse(JSON.stringify(req.sessionStore.generate(req)));
+        });
     };
 
-    return handler(req, res);
+    return getSession().then((sess) => {
+      const oldEnd = res.end;
+      //  Proxy res.end
+      res.end = function resEndProxy(...args) {
+        /**
+         *  reset expires to prolong session
+         *  req.session.cookie.resetExpires();
+         *  TODO: Implementing touch() + rollingSession
+         *  */
+
+        //  save session to store if there are changes (and there is a session)
+        const saveSession = () => {
+          if (req.session) {
+            if (!isEqual(omit(req.session, ['cookie']), omit(sess, ['cookie']))) {
+              return req.session.save();
+            }
+          }
+          return Promise.resolve();
+        };
+
+        return saveSession().then(() => {
+          //  set the cookie to header if sessionId mismatch or no sessionId found in header Cookie
+          if (req.cookies[name] !== req.sessionId && req.session) {
+            res.setHeader('Set-Cookie', req.session.cookie.serialize(name, req.sessionId));
+          }
+
+          oldEnd.apply(this, args);
+        });
+      };
+
+      return handler(req, res);
+    });
   };
 };
 
