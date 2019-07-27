@@ -57,7 +57,6 @@ const handler = (req, res) => {
   //  your handle
 };
 
-//  wrap handler with session middleware and include options
 export default middleware(handler);
 ```
 
@@ -77,7 +76,7 @@ See Next.js 9 [API Routes](https://nextjs.org/docs#api-routes).
 |---------|-------------|---------|
 | name | The name of the cookie to be read from the request and set to the response. | `sessionId` |
 | store | The session store instance to be used. | `MemoryStore` |
-| generateId | The function to generate a new session ID. This needs to be a function that returns a string. | `crypto.randomBytes(16).toString('hex')` |
+| generateId | The function to generate a new session ID. This needs to return a string. | `crypto.randomBytes(16).toString('hex')` |
 | cookie.secure | Specifies the boolean value for the **Secure** `Set-Cookie` attribute. If set to true, cookie is only sent to the server with an encrypted request over the HTTPS protocol. | `false` |
 | cookie.httpOnly | Specifies the boolean value for the **httpOnly** `Set-Cookie` attribute. If set to true, cookies are inaccessible to client-side scripts. This is yo help mitigate [cross-site scripting (XSS) attacks](https://developer.mozilla.org/en-US/docs/Glossary/Cross-site_scripting). | `true` |
 | cookie.path | Specifies the value for the **Path** `Set-Cookie` attribute. This indicates a URL path that must exist in the requested URL in order to send the Cookie header | unset |
