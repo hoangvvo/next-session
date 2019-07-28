@@ -121,6 +121,8 @@ A compatible session store must include three functions: `set(sid)`, `get(sid)`,
 
 All functions should return **Promises** (*callbacks* are not supported). For an example of a session store implementation, see [`MemoryStore`](src/session/memory.js).
 
+If you are looking for callback stores (those in `express-session`) support, see [experiment branch](https://github.com/hoangvvo/next-session/tree/experiment).
+
 #### Compatible stores
 
 Make a PR to add your own compatible stores here.
