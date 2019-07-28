@@ -3,6 +3,7 @@ import * as Promise from 'bluebird';
 import MemoryStore from './session/memory';
 import Cookie from './session/cookie';
 import Session from './session/session';
+import parseToMs from './session/utils';
 //  environment
 const env = process.env.NODE_ENV;
 
@@ -28,6 +29,8 @@ const session = (handler, options = {}) => {
   const cookieOptions = options.cookie || {};
   const store = options.store || new MemoryStore();
   const generateId = options.generateId || generateSessionId;
+  const touchAfter = options.touchAfter ? parseToMs(options.touchAfter) : 0;
+  const rollingSession = options.rolling || false;
 
   //  Notify MemoryStore should not be used in production
   if (env === 'production' && store instanceof MemoryStore) {
@@ -92,33 +95,43 @@ const session = (handler, options = {}) => {
     };
 
     return getSession().then((hashedsess) => {
+      let sessionSaved = false;
       const oldEnd = res.end;
       //  Proxy res.end
       res.end = function resEndProxy(...args) {
-        /**
-         *  reset expires to prolong session
-         *  req.session.cookie.resetExpires();
-         *  TODO: Implementing touch() + rollingSession
-         *  */
-
         //  save session to store if there are changes (and there is a session)
         const saveSession = () => {
           if (req.session) {
             if (hash(req.session) !== hashedsess) {
+              sessionSaved = true;
               return req.session.save();
+            }
+            //  Touch: extend session time despite no modification
+            if (req.session.cookie.maxAge && touchAfter >= 0) {
+              const minuteSinceTouched = (
+                req.session.cookie.maxAge
+                - (req.session.cookie.expires - new Date())
+              );
+              if ((minuteSinceTouched < touchAfter)) {
+                return Promise.resolve();
+              }
+              return req.session.touch();
             }
           }
           return Promise.resolve();
         };
 
-        return saveSession().then(() => {
-          //  set the cookie to header if sessionId mismatch or no sessionId found in header Cookie
-          if (req.cookies[name] !== req.sessionId && req.session) {
-            res.setHeader('Set-Cookie', req.session.cookie.serialize(name, req.sessionId));
-          }
+        return saveSession()
+          .then(() => {
+            if (
+              (req.cookies[name] !== req.sessionId || sessionSaved || rollingSession)
+              && req.session
+            ) {
+              res.setHeader('Set-Cookie', req.session.cookie.serialize(name, req.sessionId));
+            }
 
-          oldEnd.apply(this, args);
-        });
+            oldEnd.apply(this, args);
+          });
       };
 
       return handler(req, res);

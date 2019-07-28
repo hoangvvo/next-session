@@ -77,12 +77,16 @@ See Next.js 9 [API Routes](https://nextjs.org/docs#api-routes).
 | name | The name of the cookie to be read from the request and set to the response. | `sessionId` |
 | store | The session store instance to be used. | `MemoryStore` |
 | generateId | The function to generate a new session ID. This needs to return a string. | `crypto.randomBytes(16).toString('hex')` |
+| rolling | Force the cookie to be set on every request despite no modification, extending the life time of the cookie in the browser | `false` |
+| touchAfter | On every request, the session store extends the life time of the session even when no changes are made (The same is done to Cookie). However, this may increase the load of the database. Setting this value will ask the store to only do so an amount of time since the Cookie is touched, with exception that the session is modified. Setting the value to `-1` will disable `touch()`. | `0` (Touch every time) |
 | cookie.secure | Specifies the boolean value for the **Secure** `Set-Cookie` attribute. If set to true, cookie is only sent to the server with an encrypted request over the HTTPS protocol. | `false` |
-| cookie.httpOnly | Specifies the boolean value for the **httpOnly** `Set-Cookie` attribute. If set to true, cookies are inaccessible to client-side scripts. This is yo help mitigate [cross-site scripting (XSS) attacks](https://developer.mozilla.org/en-US/docs/Glossary/Cross-site_scripting). | `true` |
-| cookie.path | Specifies the value for the **Path** `Set-Cookie` attribute. This indicates a URL path that must exist in the requested URL in order to send the Cookie header | unset |
+| cookie.httpOnly | Specifies the boolean value for the **httpOnly** `Set-Cookie` attribute. If set to true, cookies are inaccessible to client-side scripts. This is to help mitigate [cross-site scripting (XSS) attacks](https://developer.mozilla.org/en-US/docs/Glossary/Cross-site_scripting). | `true` |
+| cookie.path | Specifies the value for the **Path** `Set-Cookie` attribute. This indicates a URL path that must exist in the requested URL in order to send the Cookie header | `/` |
 | cookie.domain | Specifies the value for the **Domain** `Set-Cookie` attribute. Only allowed hosts to receive the cookie. If unspecified, it defaults to the  host of the current document location,  excluding subdomains. If Domain is specified, then subdomains are always included. | unset |
 | cookie.sameSite | Specifies the value for the **SameSite** `Set-Cookie` attribute. This lets servers require that a cookie shouldn't be sent with cross-site (where `Site` is defined by `Domain` attribute) requests, which provides some protection against cross-site request forgery attacks ( CSRF). | unset |
-| cookie.maxAge | Specifies the value for the **Max-Age** `Set-Cookie` attribute. The value **must** be in miliseconds. Determine the length of time before the cookies expire. If unspecified, the cookies will expire when the client closes (Session cookies). | unset (Session) |
+| cookie.maxAge | Specifies the value for the **Max-Age** `Set-Cookie` attribute. Determine the length of time before the cookies expire. If unspecified, the cookies will expire when the client closes (Session cookies). | unset (Session) |
+
+*For `touchAfter` and `cookie.maxAge`, you may use the following keywords: `years` (365 days), `months` (30 days), `days`, `hours`, `minutes`, `seconds`. If a number with none of the keywords above is provided, it will be assumed to be `miliseconds`. Ex: `9 months 10 days`.
 
 ### req.session
 

@@ -1,10 +1,11 @@
 import * as cookie from 'cookie';
+import parseToMs from './utils';
 
 class Cookie {
   constructor(options) {
     //  Set parameters
     this.path = options.path || '/';
-    this.maxAge = parseInt(options.maxAge, 10) || null;
+    this.maxAge = options.maxAge ? parseToMs(options.maxAge) : null;
     this.httpOnly = options.httpOnly || true;
     this.domain = options.domain || null;
     this.sameSite = options.sameSite || null;
