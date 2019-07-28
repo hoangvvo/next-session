@@ -2,6 +2,13 @@
   "name": "next-session",
   "version": "0.2.0",
   "description": "Simple promise-based session middleware for Next.js API Routes",
+  "keywords": [
+    "javascript",
+    "nextjs",
+    "session",
+    "middleware",
+    "promise"
+  ],
   "main": "lib/index.js",
   "files": [
     "lib/"
