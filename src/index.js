@@ -3,6 +3,7 @@ import * as Promise from 'bluebird';
 import MemoryStore from './session/memory';
 import Cookie from './session/cookie';
 import Session from './session/session';
+import parseToMs from './session/utils';
 //  environment
 const env = process.env.NODE_ENV;
 
@@ -28,7 +29,7 @@ const session = (handler, options = {}) => {
   const cookieOptions = options.cookie || {};
   const store = options.store || new MemoryStore();
   const generateId = options.generateId || generateSessionId;
-  const touchAfter = options.touchAfter || 0;
+  const touchAfter = options.touchAfter ? parseToMs(options.touchAfter) : 0;
   const rollingSession = options.rolling || false;
 
   //  Notify MemoryStore should not be used in production
@@ -110,7 +111,7 @@ const session = (handler, options = {}) => {
               const minuteSinceTouched = (
                 req.session.cookie.maxAge
                 - (req.session.cookie.expires - new Date())
-              ) / 60000;
+              );
               if ((minuteSinceTouched < touchAfter)) {
                 return Promise.resolve();
               }
