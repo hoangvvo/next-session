@@ -6,6 +6,9 @@ Simple *promise-based* session middleware for [Next.js](https://nextjs.org/) 9 A
 
 ```sh
 npm install --save next-session
+
+//  OR: :alembic: Experiment branch with experiment features
+npm install --save next-session@experiment
 ```
 
 ## Usage
