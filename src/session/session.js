@@ -3,8 +3,7 @@ import merge from 'lodash.merge';
 class Session {
   constructor(req, sess) {
     Object.defineProperty(this, 'req', { value: req });
-    // Object.defineProperty(this, 'id', { value: req.sessionId });
-    this.id = req.sessionId;
+    Object.defineProperty(this, 'id', { value: req.sessionId });
     if (typeof sess === 'object') {
       merge(this, sess);
     }
@@ -15,7 +14,7 @@ class Session {
     this.cookie.resetExpires();
     //  check if store supports touch()
     if (typeof this.req.sessionStore.touch === 'function') {
-      return this.req.sessionStore.touch();
+      return this.req.sessionStore.touch(this.id, this);
     }
     //  eslint-disable-next-line no-console
     console.warn('store does not implement touch()');
