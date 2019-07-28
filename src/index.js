@@ -1,5 +1,7 @@
+/* eslint-disable class-methods-use-this */
 import crypto from 'crypto';
 import * as Promise from 'bluebird';
+import EventEmitter from 'events';
 import MemoryStore from './session/memory';
 import Cookie from './session/cookie';
 import Session from './session/session';
@@ -24,6 +26,22 @@ const hash = (sess) => {
     .digest('hex');
 };
 
+class Store extends EventEmitter {
+  constructor() {
+    super();
+    EventEmitter.call(this);
+  }
+
+  createSession(req, sess) {
+    const thisSess = sess;
+    const { expires } = thisSess.cookie;
+    thisSess.cookie = new Cookie(thisSess.cookie);
+    if (typeof expires === 'string') thisSess.cookie.expires = new Date(expires);
+    req.session = new Session(req, thisSess);
+    return req.session;
+  }
+}
+
 const session = (handler, options = {}) => {
   const name = options.name || 'sessionId';
   const cookieOptions = options.cookie || {};
@@ -31,6 +49,7 @@ const session = (handler, options = {}) => {
   const generateId = options.generateId || generateSessionId;
   const touchAfter = options.touchAfter ? parseToMs(options.touchAfter) : 0;
   const rollingSession = options.rolling || false;
+  const storePromisify = options.storePromisify || false;
 
   //  Notify MemoryStore should not be used in production
   if (env === 'production' && store instanceof MemoryStore) {
@@ -41,22 +60,19 @@ const session = (handler, options = {}) => {
   //  Validate parameters
   if (typeof generateId !== 'function') throw new TypeError('generateId option must be a function');
 
+  //  Promisify callback-based store.
+  if (storePromisify) {
+    store.get = Promise.promisify(store.get);
+    store.set = Promise.promisify(store.set);
+    store.destroy = Promise.promisify(store.destroy);
+    if (typeof store.touch === 'function') store.touch = Promise.promisify(store.touch);
+  }
 
   //  Session generation function
   store.generate = (req) => {
     req.sessionId = generateId(req);
     req.session = new Session(req);
     req.session.cookie = new Cookie(cookieOptions);
-    return req.session;
-  };
-
-  //  Create session object (req.session) from store fetched session
-  store.createSession = (req, sess) => {
-    const thisSess = sess;
-    const { expires } = thisSess.cookie;
-    thisSess.cookie = new Cookie(thisSess.cookie);
-    if (typeof expires === 'string') thisSess.cookie.expires = new Date(expires);
-    req.session = new Session(req, thisSess);
     return req.session;
   };
 
@@ -138,5 +154,10 @@ const session = (handler, options = {}) => {
     });
   };
 };
+
+session.Store = Store;
+session.Cookie = Cookie;
+session.Session = Session;
+session.MemoryStore = MemoryStore;
 
 export default session;
