@@ -76,6 +76,7 @@ See Next.js 9 [API Routes](https://nextjs.org/docs#api-routes).
 |---------|-------------|---------|
 | name | The name of the cookie to be read from the request and set to the response. | `sessionId` |
 | store | The session store instance to be used. | `MemoryStore` |
+| storePromisify | *(experimental feature)* Promisify stores that are callback based. This allows you to use `next-session` with Connect stores (ex. used in [express-session](https://github.com/expressjs/session)) | `false` |
 | generateId | The function to generate a new session ID. This needs to return a string. | `crypto.randomBytes(16).toString('hex')` |
 | rolling | Force the cookie to be set on every request despite no modification, extending the life time of the cookie in the browser | `false` |
 | touchAfter | On every request, the session store extends the life time of the session even when no changes are made (The same is done to Cookie). However, this may increase the load of the database. Setting this value will ask the store to only do so an amount of time since the Cookie is touched, with exception that the session is modified. Setting the value to `-1` will disable `touch()`. | `0` (Touch every time) |
@@ -121,9 +122,13 @@ A compatible session store must include three functions: `set(sid)`, `get(sid)`,
 
 All functions should return **Promises** (*callbacks* are not supported). For an example of a session store implementation, see [`MemoryStore`](src/session/memory.js).
 
+*Experimental version only:* Store that does callback may be used by setting `storePromisify` to **true**.
+
 #### Compatible stores
 
 Make a PR to add your own compatible stores here.
+
+*Experimental version only:* See [express-session compatible stores](https://github.com/expressjs/session#compatible-session-stores)
 
 ## Contributing
 
