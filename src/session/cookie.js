@@ -1,5 +1,5 @@
 import * as cookie from 'cookie';
-import parseToMs from './utils';
+import { parseToMs } from './utils';
 
 class Cookie {
   constructor(options) {

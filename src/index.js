@@ -3,7 +3,7 @@ import * as Promise from 'bluebird';
 import MemoryStore from './session/memory';
 import Cookie from './session/cookie';
 import Session from './session/session';
-import parseToMs from './session/utils';
+import { parseToMs } from './session/utils';
 //  environment
 const env = process.env.NODE_ENV;
 
