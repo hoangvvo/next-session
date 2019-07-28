@@ -10,8 +10,21 @@ class Session {
     }
   }
 
+  //  touch the session
+  touch() {
+    this.cookie.resetExpires();
+    //  check if store supports touch()
+    if (typeof this.req.sessionStore.touch === 'function') {
+      return this.req.sessionStore.touch();
+    }
+    //  eslint-disable-next-line no-console
+    console.warn('store does not implement touch()');
+    return Promise.resolve();
+  }
+
   //  sessionStore to set this Session
   save() {
+    this.cookie.resetExpires();
     return this.req.sessionStore.set(this.id, this);
   }
 
