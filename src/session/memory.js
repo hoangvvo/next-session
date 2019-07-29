@@ -1,10 +1,16 @@
 /* eslint-disable class-methods-use-this */
 
 import * as Promise from 'bluebird';
+import Store from './store';
 
 const MemoryStoreSession = {};
 
-class MemoryStore {
+class MemoryStore extends Store {
+  // eslint-disable-next-line no-useless-constructor
+  constructor() {
+    super();
+  }
+
   get(sid) {
     const self = this;
 
