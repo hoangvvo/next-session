@@ -17,7 +17,7 @@
     "build": "babel src -d lib",
     "lint": "eslint src -c .eslintrc --ext js --ignore-path .gitignore",
     "lint:fix": "eslint src -c .eslintrc --ext js --ignore-path .gitignore --fix",
-    "test": "jest"
+    "test": "jest --coverage --coverageReporters=text-lcov | coveralls"
   },
   "repository": {
     "type": "git",
@@ -33,6 +33,7 @@
     "@babel/cli": "^7.5.5",
     "@babel/core": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
+    "coveralls": "^3.0.5",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.2.0",
     "eslint-plugin-import": "^2.18.2",
