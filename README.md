@@ -29,9 +29,10 @@ const handler = (req, res) => {
 //  wrap handler with session middleware and include options
 export default session(handler, {
   name: 'sid',
+  touchAfter: '6 months',
   cookies: {
     secure: true,
-    maxAge: 1209600000,
+    maxAge: '2 years',
   },
 });
 ```
