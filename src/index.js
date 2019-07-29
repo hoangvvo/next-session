@@ -1,8 +1,7 @@
-/* eslint-disable class-methods-use-this */
 import crypto from 'crypto';
 import * as Promise from 'bluebird';
-import EventEmitter from 'events';
 import MemoryStore from './session/memory';
+import Store from './session/store';
 import Cookie from './session/cookie';
 import Session from './session/session';
 import { parseToMs } from './session/utils';
@@ -25,22 +24,6 @@ const hash = (sess) => {
     .update(str, 'utf8')
     .digest('hex');
 };
-
-class Store extends EventEmitter {
-  constructor() {
-    super();
-    EventEmitter.call(this);
-  }
-
-  createSession(req, sess) {
-    const thisSess = sess;
-    const { expires } = thisSess.cookie;
-    thisSess.cookie = new Cookie(thisSess.cookie);
-    if (typeof expires === 'string') thisSess.cookie.expires = new Date(expires);
-    req.session = new Session(req, thisSess);
-    return req.session;
-  }
-}
 
 const session = (handler, options = {}) => {
   const name = options.name || 'sessionId';
@@ -68,14 +51,6 @@ const session = (handler, options = {}) => {
     if (typeof store.touch === 'function') store.touch = Promise.promisify(store.touch);
   }
 
-  //  Session generation function
-  store.generate = (req) => {
-    req.sessionId = generateId(req);
-    req.session = new Session(req);
-    req.session.cookie = new Cookie(cookieOptions);
-    return req.session;
-  };
-
   //  store readiness
   const storeReady = true;
 
@@ -99,14 +74,14 @@ const session = (handler, options = {}) => {
       //  Return a session object
       if (!req.sessionId) {
         //  If no sessionId found in Cookie header, generate one
-        return Promise.resolve(hash(req.sessionStore.generate(req)));
+        return Promise.resolve(hash(req.sessionStore.generate(req, generateId(), cookieOptions)));
       }
       return req.sessionStore.get(req.sessionId)
         .then((sess) => {
           if (sess) {
             return hash(req.sessionStore.createSession(req, sess));
           }
-          return hash(req.sessionStore.generate(req));
+          return hash(req.sessionStore.generate(req, generateId(), cookieOptions));
         });
     };
 
