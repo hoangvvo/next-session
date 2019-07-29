@@ -15,8 +15,9 @@
   ],
   "scripts": {
     "build": "babel src -d lib",
-    "lint": "eslint src -c .eslintrc --ext js --ignore-path .gitignore --fix",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint src -c .eslintrc --ext js --ignore-path .gitignore",
+    "lint:fix": "eslint src -c .eslintrc --ext js --ignore-path .gitignore --fix",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
