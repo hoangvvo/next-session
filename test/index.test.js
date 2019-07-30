@@ -1,7 +1,6 @@
 import http from 'http';
 import * as Promise from 'bluebird';
 import request from 'supertest';
-import merge from 'lodash.merge';
 import cookie from 'cookie';
 import session from '../lib/index';
 import MemoryStore from '../lib/session/memory';
@@ -9,7 +8,7 @@ import MemoryStore from '../lib/session/memory';
 const modifyReq = (handler, reqq) => (req, res) => {
   if (req.headers.cookie) req.cookies = cookie.parse(req.headers.cookie);
   else req.cookies = {};
-  merge(req, reqq);
+  Object.assign(req, reqq);
   //  special case for should do nothing if req.session is defined
   if (req.url === '/definedSessionTest') {
     req.session = {};
