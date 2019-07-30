@@ -12,6 +12,8 @@
 
 ### Minor
 
+- Remove `lodash.merge` dependency and to use `Object.assign`.
+- Add listener for store readiness.
 - Store is abstracted into `session/store.js`.
 
 ### Patches
