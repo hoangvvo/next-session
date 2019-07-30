@@ -1,11 +1,9 @@
-import merge from 'lodash.merge';
-
 class Session {
   constructor(req, sess) {
     Object.defineProperty(this, 'req', { value: req });
     Object.defineProperty(this, 'id', { value: req.sessionId });
     if (typeof sess === 'object') {
-      merge(this, sess);
+      Object.assign(this, sess);
     }
   }
 

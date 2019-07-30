@@ -52,14 +52,20 @@ const session = (handler, options = {}) => {
   }
 
   //  store readiness
-  const storeReady = true;
+  let storeReady = true;
+  store.on('disconnect', () => {
+    storeReady = false;
+  });
+  store.on('connect', () => {
+    storeReady = true;
+  });
 
   return (req, res) => {
     //  No need to redefine
     if (req.session) return handler(req, res);
 
     //  check for store readiness before proceeded
-    //  TODO: handle storeReady false
+
     if (!storeReady) return handler(req, res);
 
     //  TODO: add pathname mismatch check

@@ -1,7 +1,6 @@
 import http from 'http';
 import * as Promise from 'bluebird';
 import request from 'supertest';
-import merge from 'lodash.merge';
 import cookie from 'cookie';
 import url from 'url';
 import session from '../lib/index';
@@ -10,7 +9,7 @@ const modifyReq = (handler, reqq) => (req, res) => {
   req.query = url.parse(req.url, true).query;
   if (req.headers.cookie) req.cookies = cookie.parse(req.headers.cookie);
   else req.cookies = {};
-  merge(req, reqq);
+  Object.assign(req, reqq);
   return handler(req, res);
 };
 
