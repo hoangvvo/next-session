@@ -7,7 +7,7 @@ Simple *promise-based* session middleware for [Next.js](https://nextjs.org/) 9 A
 ## Installation
 
 ```sh
-npm install --save next-session
+npm install next-session
 ```
 
 ## Usage
