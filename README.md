@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.com/hoangvvo/next-session.svg?branch=master)](https://travis-ci.com/hoangvvo/next-session) [![Coverage Status](https://coveralls.io/repos/github/hoangvvo/next-session/badge.svg?branch=master)](https://coveralls.io/github/hoangvvo/next-session?branch=master)
 
-Simple *promise-based* session middleware for [Next.js](https://nextjs.org/) 9 API Routes.
+Simple *promise-based* session middleware for [Next.js](https://nextjs.org/).
 
 ## Installation
 
