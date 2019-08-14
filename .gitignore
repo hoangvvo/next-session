@@ -62,3 +62,6 @@ typings/
 
 # babel build
 lib/
+
+# package-lock
+package-lock.json
