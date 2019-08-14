@@ -12,6 +12,8 @@ npm install next-session
 
 ## Usage
 
+See a real-life usage in [nextjs-mongodb-app](https://github.com/hoangvvo/nextjs-mongodb-app).
+
 ```javascript
 import session from 'next-session';
 
