@@ -65,6 +65,36 @@ const handler = (req, res) => {
 export default middleware(handler);
 ```
 
+### Usage with `getInitialProps`
+
+*This is a temporary implementation for `getInitialProps`. Please be aware that it **will** be different in the next major version.*
+
+`next-session` may be used in `getInitialProps` by `await` calling `useSession` with arguments of `req` and `res`.
+
+```javascript
+import { useSession } from 'next-session';
+
+const Page = () => {
+  //  React components
+}
+
+Page.getInitialProps = async ({ req, res }) => {
+  await useSession(req, res);
+  if (req.session.views) {
+    //  On later visits, increase # of views by one on every request
+    req.session.views += 1;
+  } else {
+    //  On first visit, set # of views to 1
+    req.session.views = 1;
+  }
+  return {
+    views: req.session.views
+  }
+}
+```
+
+## API
+
 ### session(handler, options)
 
 Create a session middleware for `handler` with the given `options`.
