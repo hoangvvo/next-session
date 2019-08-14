@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0
+
+### Minor
+
+- Add support for `getIntialProps` (#12)
+
 ## 1.0.0
 
 :tada: **Stable release** :tada:
