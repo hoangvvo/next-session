@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { parse as parseCookie } from 'cookie';
 import * as Promise from 'bluebird';
 import MemoryStore from './session/memory';
 import Store from './session/store';
@@ -136,9 +137,21 @@ const session = (handler, options = {}) => {
   };
 };
 
+const useSession = (req, res, opts) => {
+  //  add req cookie
+  if (!req) return;
+  if (!res) {
+    throw new TypeError('Res not found! If you are passing handler, use the default import.');
+  }
+  req.cookies = req.cookies || parseCookie(req.headers.cookie);
+  // eslint-disable-next-line consistent-return
+  return session(() => null, opts)(req, res);
+};
+
 session.Store = Store;
 session.Cookie = Cookie;
 session.Session = Session;
 session.MemoryStore = MemoryStore;
 
+export { useSession };
 export default session;

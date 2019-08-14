@@ -2,7 +2,7 @@ import http from 'http';
 import * as Promise from 'bluebird';
 import request from 'supertest';
 import cookie from 'cookie';
-import session from '../lib/index';
+import session, { useSession } from '../lib/index';
 import MemoryStore from '../lib/session/memory';
 
 const modifyReq = (handler, reqq) => (req, res) => {
@@ -81,5 +81,34 @@ describe('session', () => {
       .then(() => agent.get('/').expect(''))
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
     //  should set cookie since session was destroyed
+  });
+});
+
+describe('useSession (getInitialProps)', () => {
+  test('useSession to register req.session', async () => {
+    const req = {
+      headers: {
+        cookie: '',
+      },
+    };
+    const res = {};
+    await useSession(req, res);
+    expect(req.session).toBeInstanceOf(session.Session);
+  });
+  test('useSession should return if no req', async () => {
+    expect(useSession()).toStrictEqual(undefined);
+  });
+  test('useSession should throw TypeError if no res argument', async () => {
+    expect(() => { useSession(() => {}); }).toThrow();
+  });
+  test('useSession to parse cookies', async () => {
+    const req = {
+      headers: {
+        cookie: 'sessionId=YmFieXlvdWFyZWJlYXV0aWZ1bA',
+      },
+    };
+    const res = {};
+    await useSession(req, res);
+    expect(req.cookies.sessionId).toStrictEqual('YmFieXlvdWFyZWJlYXV0aWZ1bA');
   });
 });

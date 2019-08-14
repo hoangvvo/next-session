@@ -1,7 +1,7 @@
 {
   "name": "next-session",
-  "version": "1.0.0",
-  "description": "Simple promise-based session middleware for Next.js API Routes",
+  "version": "1.1.0",
+  "description": "Simple promise-based session middleware for Next.js",
   "keywords": [
     "javascript",
     "nextjs",
@@ -17,7 +17,8 @@
     "build": "babel src -d lib",
     "lint": "eslint src -c .eslintrc --ext js --ignore-path .gitignore",
     "lint:fix": "eslint src -c .eslintrc --ext js --ignore-path .gitignore --fix",
-    "test": "jest --coverage --coverageReporters=text-lcov | coveralls"
+    "test": "jest --coverage --coverageReporters=text-lcov | coveralls",
+    "test:local": "jest --coverage"
   },
   "repository": {
     "type": "git",
