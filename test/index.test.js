@@ -1,9 +1,10 @@
-import http from 'http';
-import * as Promise from 'bluebird';
-import request from 'supertest';
-import cookie from 'cookie';
-import session, { useSession } from '../lib/index';
-import MemoryStore from '../lib/session/memory';
+const http = require('http');
+const Promise = require('bluebird');
+const request = require('supertest');
+const cookie = require('cookie');
+const session = require('../src/index');
+const { useSession } = require('../src/index');
+const MemoryStore = require('../src/session/memory');
 
 const modifyReq = (handler, reqq) => (req, res) => {
   if (req.headers.cookie) req.cookies = cookie.parse(req.headers.cookie);
@@ -51,7 +52,7 @@ describe('session', () => {
     //  Model req, res
     const req = { cookies: {} };
     const res = { end: () => null };
-    const handler = req => req.sessionStore;
+    const handler = (req) => req.sessionStore;
     return session(handler)(req, res).then((result) => {
       expect(result).toBeInstanceOf(MemoryStore);
     });

@@ -1,9 +1,9 @@
-import http from 'http';
-import * as Promise from 'bluebird';
-import request from 'supertest';
-import cookie from 'cookie';
-import url from 'url';
-import session from '../lib/index';
+const http = require('http');
+const Promise = require('bluebird');
+const request = require('supertest');
+const cookie = require('cookie');
+const url = require('url');
+const session = require('../src/index');
 
 const modifyReq = (handler, reqq) => (req, res) => {
   req.query = url.parse(req.url, true).query;
@@ -19,7 +19,7 @@ describe('session', () => {
       session((req, res) => {
         if (req.url === '/all') {
           req.sessionStore.all().then((sessions) => {
-            const users = sessions.map(sess => JSON.parse(sess).user);
+            const users = sessions.map((sess) => JSON.parse(sess).user);
             res.end(users.toString());
           });
         } else {

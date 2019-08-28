@@ -1,6 +1,6 @@
-import EventEmitter from 'events';
-import crypto from 'crypto';
-import Store from '../lib/session/store';
+const EventEmitter = require('events');
+const crypto = require('crypto');
+const Store = require('../src/session/store');
 
 describe('Store', () => {
   test('should extend EventEmitter', () => {
