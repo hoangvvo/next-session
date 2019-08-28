@@ -41,6 +41,13 @@ describe('session (basic)', () => {
     await useSession(req, res);
     expect(req.cookies.sessionId).toStrictEqual('YmFieXlvdWFyZWJlYXV0aWZ1bA');
   });
+
+  test('Deprecated session() should fallback to withSession', async () => {
+    const req = { cookies: {} };
+    const res = {};
+    const handler = (req) => req.session;
+    expect(await session(handler)(req, res)).toBeInstanceOf(session.Session);
+  });
 });
 
 describe('session (using withSession API Routes)', () => {
