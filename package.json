@@ -14,7 +14,6 @@
     "lib/"
   ],
   "scripts": {
-    "build": "babel src -d lib",
     "lint": "eslint src -c .eslintrc --ext js --ignore-path .gitignore",
     "lint:fix": "eslint src -c .eslintrc --ext js --ignore-path .gitignore --fix",
     "test": "jest --coverage --coverageReporters=text-lcov | coveralls",
@@ -31,9 +30,6 @@
   },
   "homepage": "https://github.com/hoangvvo/next-session#readme",
   "devDependencies": {
-    "@babel/cli": "^7.5.5",
-    "@babel/core": "^7.5.5",
-    "@babel/preset-env": "^7.5.5",
     "coveralls": "^3.0.5",
     "eslint": "^6.1.0",
     "eslint-config-airbnb-base": "^14.0.0",
