@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.0.0
+
+### Major
+
+- :boom: default import `session()` is replaced with named import `withSession()`:
+
+  ```javascript
+  //  BEFORE
+  import session from 'next-session';
+  //  AFTER
+  import { withSession } from 'next-session';
+
+  //  BEFORE
+  export session(handler);
+  //  AFTER
+  export withSession(handler);
+  ```
+
+### Minor
+
+- :sparkles: withSession now supports getInitialProps for `_app`, `_document`, and pages. (#20)
+
 ## 1.2.1
 
 This version drops `Bluebird`. If you care deeply about performance. Please use `Bluebird` to promisify `next-session`.
