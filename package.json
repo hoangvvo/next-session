@@ -40,5 +40,8 @@
   "dependencies": {
     "bluebird": "^3.5.5",
     "cookie": "^0.4.0"
+  },
+  "engines": {
+    "node": ">=6.0.0"
   }
 }
