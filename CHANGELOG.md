@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0
+
+This version drops `Bluebird`. If you care deeply about performance. Please use `Bluebird` to promisify `next-session`.
+
+### Minor
+
+- Remove `Babel` and rewrite with CommonJS (#18)
+- Remove `Bluebird` and use native Promise (#19)
+
 ## 1.1.0
 
 ### Minor
@@ -25,7 +34,7 @@
 ### Patches
 
 - Correct touch() arguments (3bffc16dd566127440e3716956dc0dd7c583b710).
-- Fix memoryStore not working:  memoryStore must extends Store (5c9741a87bdf34c659566bc3e26b4863d8c831ec).
+- Fix memoryStore not working: memoryStore must extends Store (5c9741a87bdf34c659566bc3e26b4863d8c831ec).
 
 ## 0.2.0
 
