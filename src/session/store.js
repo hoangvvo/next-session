@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
-import EventEmitter from 'events';
-import Session from './session';
-import Cookie from './cookie';
+const EventEmitter = require('events');
+const Session = require('./session');
+const Cookie = require('./cookie');
 
 class Store extends EventEmitter {
   constructor() {
@@ -26,4 +26,4 @@ class Store extends EventEmitter {
   }
 }
 
-export default Store;
+module.exports = Store;

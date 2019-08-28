@@ -16,4 +16,4 @@ const parseToMs = (str) => {
   return miliseconds;
 };
 //  eslint-disable-next-line import/prefer-default-export
-export { parseToMs };
+module.exports = { parseToMs };

@@ -30,9 +30,6 @@
   },
   "homepage": "https://github.com/hoangvvo/next-session#readme",
   "devDependencies": {
-    "@babel/cli": "^7.5.5",
-    "@babel/core": "^7.5.5",
-    "@babel/preset-env": "^7.5.5",
     "coveralls": "^3.0.5",
     "eslint": "^6.1.0",
     "eslint-config-airbnb-base": "^14.0.0",
@@ -43,5 +40,8 @@
   "dependencies": {
     "bluebird": "^3.5.5",
     "cookie": "^0.4.0"
+  },
+  "engines": {
+    "node": ">=6.0.0"
   }
 }

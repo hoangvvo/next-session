@@ -1,5 +1,5 @@
-import * as cookie from 'cookie';
-import { parseToMs } from './utils';
+const cookie = require('cookie');
+const { parseToMs } = require('./utils');
 
 class Cookie {
   constructor(options) {
@@ -37,4 +37,4 @@ class Cookie {
   }
 }
 
-export default Cookie;
+module.exports = Cookie;

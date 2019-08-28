@@ -1,7 +1,7 @@
 /* eslint-disable class-methods-use-this */
 
-import * as Promise from 'bluebird';
-import Store from './store';
+const Promise = require('bluebird');
+const Store = require('./store');
 
 const MemoryStoreSession = {};
 
@@ -54,4 +54,4 @@ class MemoryStore extends Store {
   }
 }
 
-export default MemoryStore;
+module.exports = MemoryStore;

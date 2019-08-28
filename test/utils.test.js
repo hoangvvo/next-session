@@ -1,4 +1,4 @@
-import { parseToMs } from '../lib/session/utils';
+const { parseToMs } = require('../src/session/utils');
 
 describe('parseToMs()', () => {
   test.each([
