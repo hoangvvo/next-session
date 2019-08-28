@@ -63,7 +63,6 @@ const applySession = (options = {}) => {
   });
 
   return (req, res) => {
-    if (!req || !res) return Promise.resolve();
     /**
      * Modify req and res to "inject" the middleware
      */
@@ -77,6 +76,9 @@ const applySession = (options = {}) => {
 
     //  Expose store
     req.sessionStore = store;
+
+    //  Try parse cookie if not already
+    req.cookies = req.cookies || (req.headers && parseCookie(req.headers.cookie));
 
     //  Get sessionId cookie from Next.js parsed req.cookies
     req.sessionId = req.cookies[name];
@@ -142,27 +144,26 @@ const applySession = (options = {}) => {
 };
 
 const useSession = (req, res, opts) => {
-  if (!req) return Promise.resolve();
-  req.cookies = req.cookies || parseCookie(req.headers.cookie);
+  if (!req || !res) return Promise.resolve();
   return applySession(opts)(req, res);
 };
 
 const withSession = (handler, options) => {
   const isApiRoutes = !Object.prototype.hasOwnProperty.call(handler, 'getInitialProps');
   const oldHandler = (isApiRoutes) ? handler : handler.getInitialProps;
-
   async function handlerProxy(...args) {
     let req;
     let res;
     if (isApiRoutes) {
       [req, res] = args;
     } else {
-      req = args[0].req || (args[0].ctx ? args[0].ctx.req : null);
-      res = args[0].res || (args[0].ctx ? args[0].ctx.res : null);
+      req = args[0].req || (args[0].ctx && args[0].ctx.req);
+      res = args[0].res || (args[0].ctx && args[0].ctx.res);
     }
-    req.cookies = req.cookies || parseCookie(req.headers.cookie);
-    await applySession(options)(req, res);
-    oldHandler.apply(this, args);
+    if (req && res) {
+      await applySession(options)(req, res);
+    }
+    return oldHandler.apply(this, args);
   }
 
   if (isApiRoutes) handler = handlerProxy;
