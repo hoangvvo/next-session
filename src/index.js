@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const parseCookie = require('cookie').parse;
-const Promise = require('bluebird');
+const { promisify } = require('util');
 const MemoryStore = require('./session/memory');
 const Store = require('./session/store');
 const Cookie = require('./session/cookie');
@@ -46,10 +46,10 @@ const session = (handler, options = {}) => {
 
   //  Promisify callback-based store.
   if (storePromisify) {
-    store.get = Promise.promisify(store.get);
-    store.set = Promise.promisify(store.set);
-    store.destroy = Promise.promisify(store.destroy);
-    if (typeof store.touch === 'function') store.touch = Promise.promisify(store.touch);
+    store.get = promisify(store.get);
+    store.set = promisify(store.set);
+    store.destroy = promisify(store.destroy);
+    if (typeof store.touch === 'function') store.touch = promisify(store.touch);
   }
 
   //  store readiness

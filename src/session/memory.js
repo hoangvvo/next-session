@@ -1,6 +1,5 @@
 /* eslint-disable class-methods-use-this */
 
-const Promise = require('bluebird');
 const Store = require('./store');
 
 const MemoryStoreSession = {};

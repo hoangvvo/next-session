@@ -1,5 +1,5 @@
 const http = require('http');
-const Promise = require('bluebird');
+const { promisify } = require('util');
 const request = require('supertest');
 const cookie = require('cookie');
 const url = require('url');
@@ -29,8 +29,8 @@ describe('session', () => {
       }),
     ),
   );
-  beforeEach(() => Promise.promisify(server.listen.bind(server))());
-  afterEach(() => Promise.promisify(server.close.bind(server))());
+  beforeEach(() => promisify(server.listen.bind(server))());
+  afterEach(() => promisify(server.close.bind(server))());
 
   test('should register different user and show all sessions', () => request(server).get('/').query('user=squidward')
     .then(() => request(server).get('/').query('user=spongebob'))

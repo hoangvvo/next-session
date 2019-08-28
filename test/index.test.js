@@ -1,5 +1,5 @@
 const http = require('http');
-const Promise = require('bluebird');
+const { promisify } = require('util');
 const request = require('supertest');
 const cookie = require('cookie');
 const session = require('../src/index');
@@ -38,8 +38,8 @@ describe('session', () => {
       }),
     ),
   );
-  beforeEach(() => Promise.promisify(server.listen.bind(server))());
-  afterEach(() => Promise.promisify(server.close.bind(server))());
+  beforeEach(() => promisify(server.listen.bind(server))());
+  afterEach(() => promisify(server.close.bind(server))());
 
   test('should export Session, Store, Cookie, and MemoryStore', () => {
     expect(typeof session.Session).toStrictEqual('function');
