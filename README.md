@@ -12,98 +12,128 @@ npm install next-session
 
 ## Usage
 
+:point_right: **Upgrading from v1.x to v2.x?** Please read the release notes [here](https://github.com/hoangvvo/next-session/releases/tag/v2.0.0)!
+
 See a real-life usage in [nextjs-mongodb-app](https://github.com/hoangvvo/nextjs-mongodb-app).
 
+There are two ways to use `next-session`. You can either:
+
+- Wrap the component (or API handler) with `withSession`.
+- `await useSession(req, res)` at the beginning of `getInitialProps` or API Routes's `handler`.
+
+### API Routes
+
+`next-session` can be used in **Next.js 9 [API Routes](https://nextjs.org/docs#api-routes])**. (those in `/pages/api/`)
+
+#### Using `withSession`
+
 ```javascript
-import session from 'next-session';
+import { withSession } from 'next-session';
 
 const handler = (req, res) => {
-  if (req.session.views) {
-    //  On later visits, increase # of views by one on every request
-    req.session.views += 1;
-  } else {
-    //  On first visit, set # of views to 1
-    req.session.views = 1;
-  }
+  req.session.views = req.session.views ? (req.session.views + 1) : 0;
   res.send(`In this session, you have visited this website ${req.session.views} time(s).`)
 };
-
-//  wrap handler with session middleware and include options
-export default session(handler, {
-  name: 'sid',
-  touchAfter: '6 months',
-  cookies: {
-    secure: true,
-    maxAge: '2 years',
-  },
-});
+export default withSession(handler, { ...yourOptions });
 ```
 
-### Using global middleware
+##### :bulb: Bonus tip: Using global middleware
 
-In reality, you would not want to wrap `session()` around handler in every function. You may run into situation where configuration of one `session()` is different from other. One solution is to create a *global* middleware.
+In reality, you would not want to wrap `withSession()` around handler in every function. You may run into situation where configuration of one `withSession()` is different from other. One solution is to create a *global* middleware.
 
-Create `middleware.js`.
+Create `withMiddleware.js`.
 
 ```javascript
-import session from 'next-session';
+import { withSession } from 'next-session';
 
-const middleware = handler => session(your(other(middlewares(handler))), { ...options});
+const withMiddleware = handler => withSession(your(other(middlewares(handler))), { ...options});
 
-export default middleware;
+export default withMiddleware;
 ```
 
 In each API Route, import and wrap `middleware` instead.
 
 ```javascript
-import middleware from 'path/to/your/middleware';
+import withMiddleware from 'path/to/your/withMiddleware';
 
 const handler = (req, res) => {
-  //  your handle
+  //  Your code
 };
 
-export default middleware(handler);
+export default withMiddleware(handler);
 ```
 
-### Usage with `getInitialProps`
-
-*This is a temporary implementation for `getInitialProps`. Please be aware that it **will** be different in the next major version.*
-
-`next-session` may be used in `getInitialProps` by `await` calling `useSession` with arguments of `req` and `res`.
+#### Using `useSession`
 
 ```javascript
 import { useSession } from 'next-session';
 
-const Page = () => {
-  //  React components
+const handler = async (req, res) => {
+  await useSession(req, res);
+  req.session.views = req.session.views ? (req.session.views + 1) : 0;
+  res.send(`In this session, you have visited this website ${req.session.views} time(s).`)
+};
+export default handler;
+```
+
+### _app.js, _document.js, and pages
+
+`next-session` can be used in **`_app.js`, `_document.js`, and pages**. (those not in `/pages/api/` but in `/pages/`). Generally, you want to use it in `_app.js` or `_document.js` for `req.session` to available globally.
+
+#### `withSession`
+
+```jsx
+import { withSession } from 'next-session'
+
+function Page({ views }) {
+  return <div>In this session, you have visited this website {views} time(s).</div>
+}
+
+Page.getInitialProps = ({ req }) => {
+  req.session.views = req.session.views ? (req.session.views + 1) : 0;
+  return ({ views: req.session.views });
+}
+
+export default withSession(Page);
+```
+
+#### `useSession`
+
+```jsx
+import { useSession } from 'next-session'
+
+function Page({ views }) {
+  return <div>In this session, you have visited this website {views} time(s).</div>
 }
 
 Page.getInitialProps = async ({ req, res }) => {
   await useSession(req, res);
-  if (req.session.views) {
-    //  On later visits, increase # of views by one on every request
-    req.session.views += 1;
-  } else {
-    //  On first visit, set # of views to 1
-    req.session.views = 1;
-  }
-  return {
-    views: req.session.views
-  }
+  req.session.views = req.session.views ? (req.session.views + 1) : 0;
+  return ({ views: req.session.views });
 }
+
+export default Page;
 ```
 
 ## API
 
-### session(handler, options)
+### withSession(handler, options)
 
 Create a session middleware for `handler` with the given `options`.
 
-#### handler
+`handler` can either be **Next.js 9 API Routes** or an **`_app`, `_document`, or page component (with `getInitialProps`)**.
 
-See Next.js 9 [API Routes](https://nextjs.org/docs#api-routes).
+### useSession(req, res, options)
 
-#### options
+`req` and `res` are request and response objects.
+
+In **API Routes**, this is passed from the `req` and `res` arguments.
+
+In `_document`, or page component, this is `ctx.req` and `ctx.res`. (see [this](https://github.com/zeit/next.js/#fetching-data-and-component-lifecycle) and [this](https://github.com/zeit/next.js/#custom-document))
+
+In `_app`, this is `appContext.ctx.req` and `appContext.ctx.res`. (see [this](https://github.com/zeit/next.js/#custom-app))
+
+### options
 
 `next-session` accepts the properties below.
 
