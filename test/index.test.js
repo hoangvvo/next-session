@@ -3,7 +3,7 @@ const { promisify } = require('util');
 const request = require('supertest');
 const cookie = require('cookie');
 const session = require('../src/index');
-const { useSession } = require('../src/index');
+const { useSession, withSession } = require('../src/index');
 const MemoryStore = require('../src/session/memory');
 
 const modifyReq = (handler, reqq) => (req, res) => {
@@ -20,7 +20,7 @@ const modifyReq = (handler, reqq) => (req, res) => {
 describe('session', () => {
   const server = http.createServer(
     modifyReq(
-      session((req, res) => {
+      withSession((req, res) => {
         if (req.method === 'POST') {
           req.session.johncena = 'invisible';
           return res.end();
@@ -53,7 +53,7 @@ describe('session', () => {
     const req = { cookies: {} };
     const res = { end: () => null };
     const handler = (req) => req.sessionStore;
-    return session(handler)(req, res).then((result) => {
+    return withSession(handler)(req, res).then((result) => {
       expect(result).toBeInstanceOf(MemoryStore);
     });
   });
@@ -61,7 +61,7 @@ describe('session', () => {
   test.each([10, 'string', true, {}])(
     'should throw if generateId is not a function',
     (generateId) => {
-      expect(() => { session(null, { generateId }); }).toThrow();
+      expect(() => { withSession(null, { generateId }); }).toThrow();
     },
   );
   test('should do nothing if req.session is defined', () => request(server).get('/definedSessionTest')
@@ -98,9 +98,6 @@ describe('useSession (getInitialProps)', () => {
   });
   test('useSession should return if no req', async () => {
     expect(useSession()).toStrictEqual(undefined);
-  });
-  test('useSession should throw TypeError if no res argument', async () => {
-    expect(() => { useSession(() => {}); }).toThrow();
   });
   test('useSession to parse cookies', async () => {
     const req = {
