@@ -17,7 +17,34 @@ const modifyReq = (handler, reqq) => (req, res) => {
   return handler(req, res);
 };
 
-describe('session', () => {
+describe('session (basic)', () => {
+  test('should export Session, Store, Cookie, and MemoryStore', () => {
+    expect(typeof session.Session).toStrictEqual('function');
+    expect(typeof session.Store).toStrictEqual('function');
+    expect(typeof session.Cookie).toStrictEqual('function');
+    expect(typeof session.MemoryStore).toStrictEqual('function');
+  });
+
+  test('should default to MemoryStore', async () => {
+    //  Model req, res
+    const req = { cookies: {} };
+    const res = { end: () => null };
+    const handler = async (req, res) => {
+      await useSession(req, res);
+      return req.sessionStore;
+    };
+    expect(await handler(req, res)).toBeInstanceOf(MemoryStore);
+  });
+
+  test.each([10, 'string', true, {}])(
+    'should throw if generateId is not a function',
+    (generateId) => {
+      expect(() => { withSession(null, { generateId }); }).toThrow();
+    },
+  );
+});
+
+describe('session (using withSession)', () => {
   const server = http.createServer(
     modifyReq(
       withSession((req, res) => {
@@ -41,29 +68,6 @@ describe('session', () => {
   beforeEach(() => promisify(server.listen.bind(server))());
   afterEach(() => promisify(server.close.bind(server))());
 
-  test('should export Session, Store, Cookie, and MemoryStore', () => {
-    expect(typeof session.Session).toStrictEqual('function');
-    expect(typeof session.Store).toStrictEqual('function');
-    expect(typeof session.Cookie).toStrictEqual('function');
-    expect(typeof session.MemoryStore).toStrictEqual('function');
-  });
-
-  test('should default to MemoryStore', () => {
-    //  Model req, res
-    const req = { cookies: {} };
-    const res = { end: () => null };
-    const handler = (req) => req.sessionStore;
-    return withSession(handler)(req, res).then((result) => {
-      expect(result).toBeInstanceOf(MemoryStore);
-    });
-  });
-
-  test.each([10, 'string', true, {}])(
-    'should throw if generateId is not a function',
-    (generateId) => {
-      expect(() => { withSession(null, { generateId }); }).toThrow();
-    },
-  );
   test('should do nothing if req.session is defined', () => request(server).get('/definedSessionTest')
     .then(({ header }) => expect(header).not.toHaveProperty('set-cookie')));
 
@@ -85,7 +89,7 @@ describe('session', () => {
   });
 });
 
-describe('useSession (getInitialProps)', () => {
+describe('useSession', () => {
   test('useSession to register req.session', async () => {
     const req = {
       headers: {
@@ -97,7 +101,9 @@ describe('useSession (getInitialProps)', () => {
     expect(req.session).toBeInstanceOf(session.Session);
   });
   test('useSession should return if no req', async () => {
-    expect(useSession()).toStrictEqual(undefined);
+    const req = undefined;
+    const res = undefined;
+    expect(await useSession(req, res).then(() => req && req.session)).toStrictEqual(undefined);
   });
   test('useSession to parse cookies', async () => {
     const req = {
