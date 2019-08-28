@@ -1,11 +1,11 @@
-import crypto from 'crypto';
-import { parse as parseCookie } from 'cookie';
-import * as Promise from 'bluebird';
-import MemoryStore from './session/memory';
-import Store from './session/store';
-import Cookie from './session/cookie';
-import Session from './session/session';
-import { parseToMs } from './session/utils';
+const crypto = require('crypto');
+const parseCookie = require('cookie').parse;
+const Promise = require('bluebird');
+const MemoryStore = require('./session/memory');
+const Store = require('./session/store');
+const Cookie = require('./session/cookie');
+const Session = require('./session/session');
+const { parseToMs } = require('./session/utils');
 //  environment
 const env = process.env.NODE_ENV;
 
@@ -148,10 +148,9 @@ const useSession = (req, res, opts) => {
   return session(() => null, opts)(req, res);
 };
 
-session.Store = Store;
-session.Cookie = Cookie;
-session.Session = Session;
-session.MemoryStore = MemoryStore;
-
-export { useSession };
-export default session;
+module.exports = session;
+module.exports.Store = Store;
+module.exports.Cookie = Cookie;
+module.exports.Session = Session;
+module.exports.MemoryStore = MemoryStore;
+module.exports.useSession = useSession;
