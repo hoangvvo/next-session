@@ -89,17 +89,16 @@ describe('session (using withSession)', () => {
   });
 });
 
-describe('useSession', () => {
-  test('useSession to register req.session', async () => {
-    const req = {
-      headers: {
-        cookie: '',
-      },
-    };
-    const res = {};
-    await useSession(req, res);
-    expect(req.session).toBeInstanceOf(session.Session);
+describe('withSession', () => {
+  test('withSession should return if no req', async () => {
+    const req = undefined;
+    const res = undefined;
+    const handler = (req) => req && req.session;
+    expect(await withSession(handler)(req, res)).toStrictEqual(undefined);
   });
+});
+
+describe('useSession', () => {
   test('useSession should return if no req', async () => {
     const req = undefined;
     const res = undefined;
@@ -114,5 +113,15 @@ describe('useSession', () => {
     const res = {};
     await useSession(req, res);
     expect(req.cookies.sessionId).toStrictEqual('YmFieXlvdWFyZWJlYXV0aWZ1bA');
+  });
+  test('useSession to register req.session', async () => {
+    const req = {
+      headers: {
+        cookie: '',
+      },
+    };
+    const res = {};
+    await useSession(req, res);
+    expect(req.session).toBeInstanceOf(session.Session);
   });
 });
