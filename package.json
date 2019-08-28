@@ -1,6 +1,6 @@
 {
   "name": "next-session",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Simple promise-based session middleware for Next.js",
   "keywords": [
     "javascript",
@@ -9,9 +9,9 @@
     "middleware",
     "promise"
   ],
-  "main": "lib/index.js",
+  "main": "src/index.js",
   "files": [
-    "lib/"
+    "src/"
   ],
   "scripts": {
     "lint": "eslint src -c .eslintrc --ext js --ignore-path .gitignore",
