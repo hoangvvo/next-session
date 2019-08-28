@@ -1,21 +1,9 @@
 const http = require('http');
 const { promisify } = require('util');
 const request = require('supertest');
-const cookie = require('cookie');
 const session = require('../src/index');
 const { useSession, withSession } = require('../src/index');
 const MemoryStore = require('../src/session/memory');
-
-const modifyReq = (handler, reqq) => (req, res) => {
-  if (req.headers.cookie) req.cookies = cookie.parse(req.headers.cookie);
-  else req.cookies = {};
-  Object.assign(req, reqq);
-  //  special case for should do nothing if req.session is defined
-  if (req.url === '/definedSessionTest') {
-    req.session = {};
-  }
-  return handler(req, res);
-};
 
 describe('session (basic)', () => {
   test('should export Session, Store, Cookie, and MemoryStore', () => {
@@ -42,9 +30,30 @@ describe('session (basic)', () => {
       expect(() => { withSession(null, { generateId }); }).toThrow();
     },
   );
+
+  test('useSession to parse cookies', async () => {
+    const req = {
+      headers: {
+        cookie: 'sessionId=YmFieXlvdWFyZWJlYXV0aWZ1bA',
+      },
+    };
+    const res = {};
+    await useSession(req, res);
+    expect(req.cookies.sessionId).toStrictEqual('YmFieXlvdWFyZWJlYXV0aWZ1bA');
+  });
 });
 
-describe('session (using withSession)', () => {
+describe('session (using withSession API Routes)', () => {
+  const modifyReq = (handler, reqq) => (req, res) => {
+    if (!req.headers.cookie) req.headers.cookie = '';
+    Object.assign(req, reqq);
+    //  special case for should do nothing if req.session is defined
+    if (req.url === '/definedSessionTest') {
+      req.session = {};
+    }
+    return handler(req, res);
+  };
+
   const server = http.createServer(
     modifyReq(
       withSession((req, res) => {
@@ -96,6 +105,24 @@ describe('withSession', () => {
     const handler = (req) => req && req.session;
     expect(await withSession(handler)(req, res)).toStrictEqual(undefined);
   });
+
+  function component(ctx) {
+    return component.getInitialProps(ctx);
+  }
+  component.getInitialProps = (context) => {
+    const req = context.req || (context.ctx && context.ctx.req);
+    return req.session;
+  };
+
+  test('useSession works with _app', async () => {
+    const contextObject = { ctx: { req: { headers: { cookie: '' } }, res: {} } };
+    expect(await withSession(component)(contextObject)).toBeInstanceOf(session.Session);
+  });
+
+  test('useSession works with _document and pages', async () => {
+    const contextObject = { req: { headers: { cookie: '' } }, res: {} };
+    expect(await withSession(component)(contextObject)).toBeInstanceOf(session.Session);
+  });
 });
 
 describe('useSession', () => {
@@ -103,16 +130,6 @@ describe('useSession', () => {
     const req = undefined;
     const res = undefined;
     expect(await useSession(req, res).then(() => req && req.session)).toStrictEqual(undefined);
-  });
-  test('useSession to parse cookies', async () => {
-    const req = {
-      headers: {
-        cookie: 'sessionId=YmFieXlvdWFyZWJlYXV0aWZ1bA',
-      },
-    };
-    const res = {};
-    await useSession(req, res);
-    expect(req.cookies.sessionId).toStrictEqual('YmFieXlvdWFyZWJlYXV0aWZ1bA');
   });
   test('useSession to register req.session', async () => {
     const req = {
