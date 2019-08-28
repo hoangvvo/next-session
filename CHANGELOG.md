@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.0
+## 1.2.1
 
 This version drops `Bluebird`. If you care deeply about performance. Please use `Bluebird` to promisify `next-session`.
 
