@@ -3,7 +3,7 @@ const { promisify } = require('util');
 const request = require('supertest');
 const cookie = require('cookie');
 const url = require('url');
-const session = require('../src/index');
+const { withSession } = require('../src/index');
 
 const modifyReq = (handler, reqq) => (req, res) => {
   req.query = url.parse(req.url, true).query;
@@ -16,7 +16,7 @@ const modifyReq = (handler, reqq) => (req, res) => {
 describe('session', () => {
   const server = http.createServer(
     modifyReq(
-      session((req, res) => {
+      withSession((req, res) => {
         if (req.url === '/all') {
           req.sessionStore.all().then((sessions) => {
             const users = sessions.map((sess) => JSON.parse(sess).user);

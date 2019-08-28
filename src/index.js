@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 const crypto = require('crypto');
 const parseCookie = require('cookie').parse;
 const { promisify } = require('util');
@@ -26,7 +27,7 @@ const hash = (sess) => {
     .digest('hex');
 };
 
-const session = (handler, options = {}) => {
+const applySession = (options = {}) => {
   const name = options.name || 'sessionId';
   const cookieOptions = options.cookie || {};
   const store = options.store || new MemoryStore();
@@ -62,17 +63,22 @@ const session = (handler, options = {}) => {
   });
 
   return (req, res) => {
-    //  No need to redefine
-    if (req.session) return handler(req, res);
+    /**
+     * Modify req and res to "inject" the middleware
+     */
+    if (req.session) return Promise.resolve();
 
     //  check for store readiness before proceeded
 
-    if (!storeReady) return handler(req, res);
+    if (!storeReady) return Promise.resolve();
 
     //  TODO: add pathname mismatch check
 
     //  Expose store
     req.sessionStore = store;
+
+    //  Try parse cookie if not already
+    req.cookies = req.cookies || (req.headers && parseCookie(req.headers.cookie));
 
     //  Get sessionId cookie from Next.js parsed req.cookies
     req.sessionId = req.cookies[name];
@@ -108,7 +114,7 @@ const session = (handler, options = {}) => {
             if (req.session.cookie.maxAge && touchAfter >= 0) {
               const minuteSinceTouched = (
                 req.session.cookie.maxAge
-                - (req.session.cookie.expires - new Date())
+                  - (req.session.cookie.expires - new Date())
               );
               if ((minuteSinceTouched < touchAfter)) {
                 return Promise.resolve();
@@ -123,7 +129,7 @@ const session = (handler, options = {}) => {
           .then(() => {
             if (
               (req.cookies[name] !== req.sessionId || sessionSaved || rollingSession)
-              && req.session
+                && req.session
             ) {
               res.setHeader('Set-Cookie', req.session.cookie.serialize(name, req.sessionId));
             }
@@ -132,25 +138,42 @@ const session = (handler, options = {}) => {
           });
       };
 
-      return handler(req, res);
+      return Promise.resolve();
     });
   };
 };
 
 const useSession = (req, res, opts) => {
-  //  add req cookie
-  if (!req) return;
-  if (!res) {
-    throw new TypeError('Res not found! If you are passing handler, use the default import.');
-  }
-  req.cookies = req.cookies || parseCookie(req.headers.cookie);
-  // eslint-disable-next-line consistent-return
-  return session(() => null, opts)(req, res);
+  if (!req || !res) return Promise.resolve();
+  return applySession(opts)(req, res);
 };
 
-module.exports = session;
+const withSession = (handler, options) => {
+  const isApiRoutes = !Object.prototype.hasOwnProperty.call(handler, 'getInitialProps');
+  const oldHandler = (isApiRoutes) ? handler : handler.getInitialProps;
+  async function handlerProxy(...args) {
+    let req;
+    let res;
+    if (isApiRoutes) {
+      [req, res] = args;
+    } else {
+      req = args[0].req || (args[0].ctx && args[0].ctx.req);
+      res = args[0].res || (args[0].ctx && args[0].ctx.res);
+    }
+    if (req && res) {
+      await applySession(options)(req, res);
+    }
+    return oldHandler.apply(this, args);
+  }
+
+  if (isApiRoutes) handler = handlerProxy;
+  else handler.getInitialProps = handlerProxy;
+  return handler;
+};
+
+module.exports.withSession = withSession;
+module.exports.useSession = useSession;
 module.exports.Store = Store;
 module.exports.Cookie = Cookie;
 module.exports.Session = Session;
 module.exports.MemoryStore = MemoryStore;
-module.exports.useSession = useSession;
