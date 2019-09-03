@@ -31,7 +31,7 @@ There are two ways to use `next-session`. You can either:
 import { withSession } from 'next-session';
 
 const handler = (req, res) => {
-  req.session.views = req.session.views ? (req.session.views + 1) : 0;
+  req.session.views = req.session.views ? (req.session.views + 1) : 1;
   res.send(`In this session, you have visited this website ${req.session.views} time(s).`)
 };
 export default withSession(handler, { ...yourOptions });
@@ -70,7 +70,7 @@ import { useSession } from 'next-session';
 
 const handler = async (req, res) => {
   await useSession(req, res);
-  req.session.views = req.session.views ? (req.session.views + 1) : 0;
+  req.session.views = req.session.views ? (req.session.views + 1) : 1;
   res.send(`In this session, you have visited this website ${req.session.views} time(s).`)
 };
 export default handler;
@@ -79,6 +79,15 @@ export default handler;
 ### _app.js, _document.js, and pages
 
 `next-session` can be used in **`_app.js`, `_document.js`, and pages**. (those not in `/pages/api/` but in `/pages/`). Generally, you want to use it in `_app.js` or `_document.js` for `req.session` to available globally.
+
+:rotating_light: Please be aware that `next-session` (as well as session stores) only work server-side. `getInitialProps`, however, will also be bundled in client-side. It is recommended to `require/import` the packages under the condition of `!process.browser`.
+
+```javascript
+if (!process.browser) {
+   const sessionStore = require('sessionStore');
+   // usage with `next-session` and your own logic here
+}
+```
 
 #### `withSession`
 
@@ -90,7 +99,7 @@ function Page({ views }) {
 }
 
 Page.getInitialProps = ({ req }) => {
-  req.session.views = req.session.views ? (req.session.views + 1) : 0;
+  req.session.views = req.session.views ? (req.session.views + 1) : 1;
   return ({ views: req.session.views });
 }
 
@@ -108,18 +117,38 @@ function Page({ views }) {
 
 Page.getInitialProps = async ({ req, res }) => {
   await useSession(req, res);
-  req.session.views = req.session.views ? (req.session.views + 1) : 0;
+  req.session.views = req.session.views ? (req.session.views + 1) : 1;
   return ({ views: req.session.views });
 }
 
 export default Page;
 ```
 
+##### :bulb: Recommended implementation using document middleware
+
+`next-session` can be used with the experimental [document middleware](https://github.com/zeit/next.js/issues/7208).
+
+In `nextjs.config.js`:
+
+```javascript
+module.exports = {
+  experimental: {
+    documentMiddleware: true
+  }
+};
+```
+
+In `_document.js`:
+
+```javascript
+export const middleware = async ({ req, res }) => {
+  await useSession(req, res);
+};
+```
+
 ## API
 
 ### withSession(handler, options)
-
-Create a session middleware for `handler` with the given `options`.
 
 `handler` can either be **Next.js 9 API Routes** or an **`_app`, `_document`, or page component (with `getInitialProps`)**.
 
