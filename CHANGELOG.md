@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.1
+
+### Patches
+
+- Documentation: Fix View Count examples and add document middleware implementation in README. (#27)
+
+Special thanks to @dbachrach (for pointing out `document middleware`) and @dorinesinenco for fixing the View Count example.
+
 ## 2.0.0
 
 ### Major
