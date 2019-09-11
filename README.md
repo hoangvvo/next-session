@@ -1,6 +1,9 @@
 # next-session
 
-[![Build Status](https://travis-ci.com/hoangvvo/next-session.svg?branch=master)](https://travis-ci.com/hoangvvo/next-session) [![Coverage Status](https://coveralls.io/repos/github/hoangvvo/next-session/badge.svg?branch=master)](https://coveralls.io/github/hoangvvo/next-session?branch=master)
+![npm](https://badgen.net/npm/v/next-session)
+[![Build Status](https://travis-ci.com/hoangvvo/next-session.svg?branch=master)](https://travis-ci.com/hoangvvo/next-session)
+[![Coverage Status](https://coveralls.io/repos/github/hoangvvo/next-session/badge.svg?branch=master)](https://coveralls.io/github/hoangvvo/next-session?branch=master)
+[![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](CONTRIBUTING.md)
 
 Simple *promise-based* session middleware for [Next.js](https://nextjs.org/).
 
@@ -212,7 +215,7 @@ The session store to use for session middleware (see `options` above).
 
 #### Implementation
 
-A compatible session store must include three functions: `set(sid)`, `get(sid)`, and `destroy()`.
+A compatible session store must include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`.
 
 All functions should return **Promises** (*callbacks* are not supported). For an example of a session store implementation, see [`MemoryStore`](src/session/memory.js).
 
