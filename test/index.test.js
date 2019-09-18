@@ -66,6 +66,9 @@ describe('session (using withSession API Routes)', () => {
       withSession((req, res) => {
         if (req.method === 'POST') {
           req.session.johncena = 'invisible';
+          if (req.headers["res-end-twice"]) {
+            res.end();
+          }
           return res.end();
         }
         if (req.method === 'GET') return res.end(req.session.johncena || '');
@@ -89,7 +92,7 @@ describe('session (using withSession API Routes)', () => {
 
   test('should create session properly and persist sessionId', () => {
     const agent = request.agent(server);
-    return agent.post('/')
+    return agent.post('/', { headers: { "res-end-twice": "true" } })
       .then(() => agent.get('/').expect('invisible'))
       .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
     //  should not set cookie since session with data is established
@@ -102,6 +105,14 @@ describe('session (using withSession API Routes)', () => {
       .then(() => agent.get('/').expect(''))
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
     //  should set cookie since session was destroyed
+  });
+
+  test('should support calling res.end() multiple times', () => {
+    const agent = request.agent(server);
+    return agent.post('/').set('res-end-twice', 'true')
+      .then(() => agent.get('/').expect('invisible'))
+      .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    //  should not set cookie since session with data is established
   });
 });
 

@@ -101,8 +101,14 @@ const applySession = (options = {}) => {
     return getSession().then((hashedsess) => {
       let sessionSaved = false;
       const oldEnd = res.end;
+      let ended = false;
       //  Proxy res.end
       res.end = function resEndProxy(...args) {
+        //  If res.end() is called multiple times, do nothing after the first time
+        if (ended) {
+          return false;
+        }
+        ended = true;
         //  save session to store if there are changes (and there is a session)
         const saveSession = () => {
           if (req.session) {
