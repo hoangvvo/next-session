@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.2
+
+### Patches
+
+- Fix `res.end` patch to handle multiple `res.end` calls (#29)
+- Fix TypeError for stores that use `Store.call` (#32)
+
+Special thanks to @dbachrach for working on the #29 and #32.
+
 ## 2.0.1
 
 ### Patches
