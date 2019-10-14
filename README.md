@@ -1,8 +1,8 @@
 # next-session
 
 ![npm](https://badgen.net/npm/v/next-session)
-[![Build Status](https://travis-ci.com/hoangvvo/next-session.svg?branch=master)](https://travis-ci.com/hoangvvo/next-session)
-[![Coverage Status](https://coveralls.io/repos/github/hoangvvo/next-session/badge.svg?branch=master)](https://coveralls.io/github/hoangvvo/next-session?branch=master)
+[![CircleCI](https://circleci.com/gh/hoangvvo/next-session.svg?style=svg)](https://circleci.com/gh/hoangvvo/next-session)
+[![codecov](https://codecov.io/gh/hoangvvo/next-session/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/next-session)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](CONTRIBUTING.md)
 
 Simple *promise-based* session middleware for [Next.js](https://nextjs.org/).

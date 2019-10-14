@@ -15,9 +15,7 @@
   ],
   "scripts": {
     "lint": "eslint src -c .eslintrc --ext js --ignore-path .gitignore",
-    "lint:fix": "eslint src -c .eslintrc --ext js --ignore-path .gitignore --fix",
-    "test": "jest --coverage --coverageReporters=text-lcov | coveralls",
-    "test:local": "jest --coverage"
+    "test": "jest --coverage --coverageReporters=text-lcov > coverage.lcov"
   },
   "repository": {
     "type": "git",
@@ -30,7 +28,6 @@
   },
   "homepage": "https://github.com/hoangvvo/next-session#readme",
   "devDependencies": {
-    "coveralls": "^3.0.5",
     "eslint": "^6.1.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.18.2",
