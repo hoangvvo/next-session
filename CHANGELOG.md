@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.3
+
+### Minor*
+
+- useSession() return session values (#36)
+
+### Patches
+
+- Switch to circleci and codecov (#35) (Remove dev dep `coveralls`)
+
 ## 2.0.2
 
 ### Patches
