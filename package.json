@@ -15,9 +15,7 @@
   ],
   "scripts": {
     "lint": "eslint src -c .eslintrc --ext js --ignore-path .gitignore",
-    "lint:fix": "eslint src -c .eslintrc --ext js --ignore-path .gitignore --fix",
-    "test": "jest --coverage --coverageReporters=text-lcov > coverage.lcov",
-    "test:local": "jest --coverage"
+    "test": "jest --coverage --coverageReporters=text-lcov > coverage.lcov"
   },
   "repository": {
     "type": "git",
