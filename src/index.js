@@ -151,7 +151,11 @@ const applySession = (options = {}) => {
 
 const useSession = (req, res, opts) => {
   if (!req || !res) return Promise.resolve();
-  return applySession(opts)(req, res);
+  return applySession(opts)(req, res).then(() => {
+    const session = { ...req.session };
+    delete session.cookie;
+    return session;
+  });
 };
 
 const withSession = (handler, options) => {
