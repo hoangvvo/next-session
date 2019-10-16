@@ -28,7 +28,7 @@ describe('session', () => {
     if (req.method === 'POST') {
       req.session.johncena = 'invisible';
     }
-    if (req.method === 'GET') res.write((req.session && req.session.johncena) || '');
+    if (req.method === 'GET') { res.end((req.session && req.session.johncena) || ''); return; }
     if (req.method === 'DELETE') {
       req.session.destroy();
     }
