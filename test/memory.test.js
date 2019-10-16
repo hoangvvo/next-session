@@ -3,9 +3,9 @@ const { parse } = require('url');
 const request = require('supertest');
 const setUpServer = require('./helper/setUpServer');
 
-describe('session', () => {
+describe('MemoryStore', () => {
   let server;
-  afterEach(() => promisify(server.close.bind(server))());
+  afterEach(() => server && server.close && promisify(server.close.bind(server))());
 
   test('should register different user and show all sessions', async () => {
     server = await setUpServer((req, res) => {
@@ -21,10 +21,31 @@ describe('session', () => {
     }, {
       beforeHandle: (req) => req.query = parse(req.url, true).query,
     });
-
-    await request(server).get('/').query('user=squidward')
+    const agent = request.agent(server);
+    await agent.get('/').query('user=squidward')
       .then(() => request(server).get('/').query('user=spongebob'))
       .then(() => request(server).get('/').query('user=patrick'))
       .then(() => request(server).get('/all').expect('squidward,spongebob,patrick'));
+  });
+
+  test('should not return session if it expired', async () => {
+    server = await setUpServer((req, res) => {
+      if (req.method === 'POST') {
+        req.session.hello = 'world'; res.end();
+      }
+      if (req.method === 'GET') {
+        res.end((req.session && req.session.hello) || '');
+      }
+    }, { nextSession: { cookie: { maxAge: 5000 } } });
+    const agent = request.agent(server);
+    await agent.post('/').then(() => agent.get('/').expect('world'));
+
+    //  Mock waiting for 10 second later for cookie to expire
+    const futureTime = new Date(Date.now() + 10000).valueOf();
+    global.Date.now = jest.fn(() => futureTime);
+
+    await agent.get('/').expect('');
+
+    global.Date.now.mockReset();
   });
 });
