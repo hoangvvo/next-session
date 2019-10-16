@@ -16,6 +16,17 @@ describe('session', () => {
     expect(typeof session.MemoryStore).toStrictEqual('function');
   });
 
+  test('should default to MemoryStore with warning', async () => {
+    const req = {}; const res = { end: () => null };
+    const consoleWarnSpy = jest.spyOn(global.console, 'warn');
+
+    await new Promise((resolve) => {
+      session()(req, res, resolve);
+    });
+    expect(consoleWarnSpy).toHaveBeenCalled();
+    expect(req.sessionStore).toBeInstanceOf(MemoryStore);
+  });
+
   test.each([10, 'string', true, {}])(
     'should throw if generateId is not a function (%p)',
     (generateId) => {
