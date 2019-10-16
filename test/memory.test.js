@@ -29,9 +29,13 @@ describe('MemoryStore', () => {
   });
 
   test('should not return session if it expired', async () => {
+    let sessionStore;
+    let sessionId;
     server = await setUpServer((req, res) => {
       if (req.method === 'POST') {
         req.session.hello = 'world'; res.end();
+        sessionStore = req.sessionStore;
+        sessionId = req.sessionId;
       }
       if (req.method === 'GET') {
         res.end((req.session && req.session.hello) || '');
@@ -45,6 +49,9 @@ describe('MemoryStore', () => {
     global.Date.now = jest.fn(() => futureTime);
 
     await agent.get('/').expect('');
+
+    //  Check in the store
+    expect(await sessionStore.get(sessionId)).toBeNull();
 
     global.Date.now.mockReset();
   });
