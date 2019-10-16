@@ -34,7 +34,7 @@ describe('session', () => {
     }
     res.end();
   };
-  afterEach(() => promisify(server.close.bind(server))());
+  afterEach(() => server && server.close && promisify(server.close.bind(server))());
 
   function setUpServer(handler, customOpts = {}) {
     let customIncomingMessage;
