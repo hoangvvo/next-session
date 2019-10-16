@@ -78,7 +78,7 @@ const session = (options = {}) => {
 
     //  Try parse cookie if not already
     req.cookies = req.cookies
-  || (req.headers && req.headers.cookie && parseCookie(req.headers.cookie)) || {};
+  || (req.headers && typeof req.headers.cookie === 'string' && parseCookie(req.headers.cookie)) || {};
 
 
     //  Get sessionId cookie from Next.js parsed req.cookies
