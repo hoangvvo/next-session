@@ -67,27 +67,29 @@ describe('session', () => {
   test('should create session properly and persist sessionId', async () => {
     await setUpServer(defaultHandler);
     const agent = request.agent(server);
-    await agent.post('/').then(() => agent.get('/').expect('invisible')).then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    await agent.post('/').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+    await agent.get('/').expect('invisible').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
     //  should not set cookie since session with data is established
   });
 
   test('should destroy session properly and refresh sessionId', async () => {
     await setUpServer(defaultHandler);
     const agent = request.agent(server);
-    await agent.post('/').then(() => agent.delete('/'));
-    await agent.get('/').expect('')
-      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+    await agent.post('/').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+    await agent.get('/').expect('invisible').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    await agent.delete('/');
+    await agent.get('/').expect('').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
     //  should set cookie since session was destroyed
   });
 
   test('should handle multiple res.end correctly', async () => {
     //  https://github.com/hoangvvo/next-session/pull/31
     await setUpServer((req, res) => {
+      res.end('Hello, world!');
       res.end();
-      return res.end();
     });
     const agent = request.agent(server);
-    await agent.post('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    await agent.get('/').expect('Hello, world!');
   });
 });
 
