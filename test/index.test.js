@@ -2,8 +2,9 @@ const http = require('http');
 const { promisify } = require('util');
 const request = require('supertest');
 const session = require('../src/index');
-const { useSession, withSession } = require('../src/index');
 const MemoryStore = require('../src/session/memory');
+
+const { useSession, withSession } = session;
 
 describe('session (basic)', () => {
   test('should export Session, Store, Cookie, and MemoryStore', () => {
@@ -109,8 +110,10 @@ describe('session (using withSession API Routes)', () => {
   });
 });
 
+//  Adapters
+
 describe('withSession', () => {
-  test('withSession should return if no req', async () => {
+  test('should do nothing if no request or response object given', async () => {
     const req = undefined;
     const res = undefined;
     const handler = (req) => req && req.session;
@@ -125,29 +128,25 @@ describe('withSession', () => {
     return req.session;
   };
 
-  test('useSession works with _app', async () => {
+  test('works with _app', async () => {
     const contextObject = { ctx: { req: { headers: { cookie: '' } }, res: {} } };
     expect(await withSession(component)(contextObject)).toBeInstanceOf(session.Session);
   });
 
-  test('useSession works with _document and pages', async () => {
+  test('works with _document and pages', async () => {
     const contextObject = { req: { headers: { cookie: '' } }, res: {} };
     expect(await withSession(component)(contextObject)).toBeInstanceOf(session.Session);
   });
 });
 
 describe('useSession', () => {
-  test('useSession should return if no req', async () => {
+  test('should do nothing if no request or response object given', async () => {
     const req = undefined;
     const res = undefined;
     expect(await useSession(req, res).then(() => req && req.session)).toStrictEqual(undefined);
   });
-  test('useSession to register req.session', async () => {
-    const req = {
-      headers: {
-        cookie: '',
-      },
-    };
+  test('should work', async () => {
+    const req = { headers: { cookie: '' } };
     const res = {};
     await useSession(req, res);
     expect(req.session).toBeInstanceOf(session.Session);
