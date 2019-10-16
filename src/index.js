@@ -27,7 +27,7 @@ const hash = (sess) => {
     .digest('hex');
 };
 
-const applySession = (options = {}) => {
+const session = (options = {}) => {
   const name = options.name || 'sessionId';
   const cookieOptions = options.cookie || {};
   const store = options.store || new MemoryStore();
@@ -62,16 +62,15 @@ const applySession = (options = {}) => {
     storeReady = true;
   });
 
-  return (req, res) => {
+  return (req, res, next) => {
     /**
      * Modify req and res to "inject" the middleware
      */
-    if (req.session) return Promise.resolve();
+    if (req.session) return next();
 
     //  check for store readiness before proceeded
 
-    if (!storeReady) return Promise.resolve();
-
+    if (!storeReady) return next();
     //  TODO: add pathname mismatch check
 
     //  Expose store
@@ -144,24 +143,28 @@ const applySession = (options = {}) => {
           });
       };
 
-      return Promise.resolve();
+      next();
     });
   };
 };
 
 const useSession = (req, res, opts) => {
   if (!req || !res) return Promise.resolve();
-  return applySession(opts)(req, res).then(() => {
-    const session = { ...req.session };
-    delete session.cookie;
-    return session;
+  return new Promise((resolve) => {
+    session(opts)(req, res, resolve);
+  }).then(() => {
+    const sessionValues = { ...req.session };
+    delete sessionValues.cookie;
+    return sessionValues;
   });
 };
 
 const withSession = (handler, options) => {
   const isApiRoutes = !Object.prototype.hasOwnProperty.call(handler, 'getInitialProps');
   const oldHandler = (isApiRoutes) ? handler : handler.getInitialProps;
-  async function handlerProxy(...args) {
+
+
+  function handlerProxy(...args) {
     let req;
     let res;
     if (isApiRoutes) {
@@ -171,17 +174,16 @@ const withSession = (handler, options) => {
       res = args[0].res || (args[0].ctx && args[0].ctx.res);
     }
     if (req && res) {
-      await applySession(options)(req, res);
-    }
-    return oldHandler.apply(this, args);
+      return new Promise((resolve) => {
+        session(options)(req, res, resolve);
+      }).then(() => oldHandler.apply(this, args));
+    } return oldHandler.apply(this, args);
   }
 
   if (isApiRoutes) handler = handlerProxy;
   else handler.getInitialProps = handlerProxy;
   return handler;
 };
-
-const session = (opts) => (req, res, next) => applySession(opts)(req, res).then(next());
 
 module.exports = session;
 module.exports.withSession = withSession;
