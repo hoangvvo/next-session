@@ -1,4 +1,4 @@
-const { createServer, IncomingMessage, ServerResponse } = require('http');
+const { createServer } = require('http');
 const { promisify } = require('util');
 const request = require('supertest');
 const session = require('../src/index');
@@ -37,22 +37,13 @@ describe('session', () => {
   afterEach(() => server && server.close && promisify(server.close.bind(server))());
 
   function setUpServer(handler, customOpts = {}) {
-    let customIncomingMessage;
-    let customServerResponse;
+    server = createServer();
 
-    if (typeof customOpts.request === 'object') {
-      customIncomingMessage = { ...IncomingMessage };
-      Object.assign(customIncomingMessage, customOpts.request);
-    }
-    if (typeof customOpts.response === 'object') {
-      customServerResponse = { ...ServerResponse };
-      Object.assign(customServerResponse, customOpts.response);
+    if (customOpts.beforeHandle) {
+      server.on('request', customOpts.beforeHandle);
     }
 
-    server = createServer({
-      IncomingMessage: IncomingMessage || customIncomingMessage,
-      ServerResponse: ServerResponse || customServerResponse,
-    }, withSession(handler, {
+    server.on('request', withSession(handler, {
       ...customOpts.nextSession,
     }));
 
@@ -60,7 +51,7 @@ describe('session', () => {
   }
 
   test('should do nothing if req.session is defined', async () => {
-    await setUpServer((req, res) => { res.end(); }, { request: { session: {} } });
+    await setUpServer(defaultHandler, { beforeHandle: (req) => req.session = {} });
     await request(server).get('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
   });
 
