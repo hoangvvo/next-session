@@ -31,9 +31,11 @@ describe('MemoryStore', () => {
   test('should not return session if it expired', async () => {
     let sessionStore;
     let sessionId;
+    let sessionInstance;
     server = await setUpServer((req, res) => {
       if (req.method === 'POST') {
         req.session.hello = 'world'; res.end();
+        sessionInstance = req.session;
         sessionStore = req.sessionStore;
         sessionId = req.sessionId;
       }
@@ -52,6 +54,9 @@ describe('MemoryStore', () => {
 
     //  Check in the store
     expect(await sessionStore.get(sessionId)).toBeNull();
+
+    //  Touch will return undefind
+    expect(await sessionStore.touch(sessionId, sessionInstance)).toBeUndefined();
 
     global.Date.now.mockReset();
   });
