@@ -39,6 +39,13 @@ class MemoryStore extends Store {
     return Promise.resolve();
   }
 
+  touch(sid, sess) {
+    if (MemoryStoreSession[sid]) {
+      MemoryStoreSession[sid].cookie = sess.cookie;
+    }
+    return Promise.resolve();
+  }
+
   all() {
     const arr = [];
     const keys = Object.keys(MemoryStoreSession);
