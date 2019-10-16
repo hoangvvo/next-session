@@ -4,7 +4,7 @@ const setUpServer = require('./helper/setUpServer');
 const session = require('../src/index');
 const MemoryStore = require('../src/session/memory');
 
-const { useSession, withSession } = session;
+const { useSession, withSession, Store } = session;
 
 //  Core
 
@@ -31,6 +31,31 @@ describe('session', () => {
     [10, 'string', true, {}].forEach((generateId) => {
       expect(() => { session({ generateId }); }).toThrow();
     });
+  });
+
+  test('can promisify callback store', async () => {
+    class CbStore extends Store {
+      constructor() {
+        super();
+        this.sessions = 1;
+      }
+
+      /* eslint-disable no-unused-expressions */
+      get(sid, cb) { cb && cb(null, this.sessions); }
+
+      set(sid, sess, cb) { cb && cb(null, this.sessions); }
+
+      destroy(sid, cb) { cb && cb(null, this.sessions); }
+    }
+
+    const req = {}; const res = { end: () => null };
+    await new Promise((resolve) => {
+      session({ store: new CbStore(), storePromisify: true })(req, res, resolve);
+    });
+    // facebook/jest#2549
+    expect(req.sessionStore.get().constructor.name).toStrictEqual('Promise');
+    expect(req.sessionStore.set().constructor.name).toStrictEqual('Promise');
+    expect(req.sessionStore.destroy().constructor.name).toStrictEqual('Promise');
   });
 
   let server;
