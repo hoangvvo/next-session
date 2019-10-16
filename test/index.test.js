@@ -61,23 +61,21 @@ describe('session', () => {
 
   test('should do nothing if req.session is defined', async () => {
     await setUpServer((req, res) => { res.end(); }, { request: { session: {} } });
-    await request(server).get('/')
-      .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    await request(server).get('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
   });
 
   test('should create session properly and persist sessionId', async () => {
     await setUpServer(defaultHandler);
     const agent = request.agent(server);
-    return agent.post('/').then(() => agent.get('/').expect('invisible')).then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    await agent.post('/').then(() => agent.get('/').expect('invisible')).then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
     //  should not set cookie since session with data is established
   });
 
   test('should destroy session properly and refresh sessionId', async () => {
     await setUpServer(defaultHandler);
     const agent = request.agent(server);
-    return agent.post('/')
-      .then(() => agent.delete('/'))
-      .then(() => agent.get('/').expect(''))
+    await agent.post('/').then(() => agent.delete('/'));
+    await agent.get('/').expect('')
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
     //  should set cookie since session was destroyed
   });
@@ -89,7 +87,7 @@ describe('session', () => {
       return res.end();
     });
     const agent = request.agent(server);
-    agent.post('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    await agent.post('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
   });
 });
 
