@@ -27,12 +27,11 @@ describe('session', () => {
     expect(req.sessionStore).toBeInstanceOf(MemoryStore);
   });
 
-  test.each([10, 'string', true, {}])(
-    'should throw if generateId is not a function (%p)',
-    (generateId) => {
+  test('should throw if generateId is not a function', () => {
+    [10, 'string', true, {}].forEach((generateId) => {
       expect(() => { session({ generateId }); }).toThrow();
-    },
-  );
+    })
+  })
 
   let server;
   const defaultHandler = (req, res) => {
@@ -130,6 +129,7 @@ describe('useSession', () => {
     const res = undefined;
     expect(await useSession(req, res).then(() => req && req.session)).toStrictEqual(undefined);
   });
+
   test('should work', async () => {
     const req = { headers: { cookie: '' } };
     const res = {};
