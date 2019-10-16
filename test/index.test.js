@@ -1,6 +1,6 @@
-const { createServer } = require('http');
 const { promisify } = require('util');
 const request = require('supertest');
+const setUpServer = require('./helper/setUpServer');
 const session = require('../src/index');
 const MemoryStore = require('../src/session/memory');
 
@@ -30,8 +30,8 @@ describe('session', () => {
   test('should throw if generateId is not a function', () => {
     [10, 'string', true, {}].forEach((generateId) => {
       expect(() => { session({ generateId }); }).toThrow();
-    })
-  })
+    });
+  });
 
   let server;
   const defaultHandler = (req, res) => {
@@ -46,27 +46,13 @@ describe('session', () => {
   };
   afterEach(() => server && server.close && promisify(server.close.bind(server))());
 
-  function setUpServer(handler, customOpts = {}) {
-    server = createServer();
-
-    if (customOpts.beforeHandle) {
-      server.on('request', customOpts.beforeHandle);
-    }
-
-    server.on('request', withSession(handler, {
-      ...customOpts.nextSession,
-    }));
-
-    return promisify(server.listen.bind(server))();
-  }
-
   test('should do nothing if req.session is defined', async () => {
-    await setUpServer(defaultHandler, { beforeHandle: (req) => req.session = {} });
+    server = await setUpServer(defaultHandler, { beforeHandle: (req) => req.session = {} });
     await request(server).get('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
   });
 
   test('should create session properly and persist sessionId', async () => {
-    await setUpServer(defaultHandler);
+    server = await setUpServer(defaultHandler);
     const agent = request.agent(server);
     await agent.post('/').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
     await agent.get('/').expect('invisible').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
@@ -74,7 +60,7 @@ describe('session', () => {
   });
 
   test('should destroy session properly and refresh sessionId', async () => {
-    await setUpServer(defaultHandler);
+    server = await setUpServer(defaultHandler);
     const agent = request.agent(server);
     await agent.post('/').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
     await agent.get('/').expect('invisible').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
@@ -85,7 +71,7 @@ describe('session', () => {
 
   test('should handle multiple res.end correctly', async () => {
     //  https://github.com/hoangvvo/next-session/pull/31
-    await setUpServer((req, res) => {
+    server = await setUpServer((req, res) => {
       res.end('Hello, world!');
       res.end();
     });
