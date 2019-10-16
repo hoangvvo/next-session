@@ -7,8 +7,6 @@ const Store = require('./session/store');
 const Cookie = require('./session/cookie');
 const Session = require('./session/session');
 const { parseToMs } = require('./session/utils');
-//  environment
-const env = process.env.NODE_ENV;
 
 const generateSessionId = () => crypto.randomBytes(16).toString('hex');
 
@@ -37,10 +35,8 @@ const session = (options = {}) => {
   const storePromisify = options.storePromisify || false;
 
   //  Notify MemoryStore should not be used in production
-  if (env === 'production' && store instanceof MemoryStore) {
-    // eslint-disable-next-line no-console
-    console.warn('MemoryStore is not designed for production environment.');
-  }
+  //  eslint-disable-next-line no-console
+  console.warn('MemoryStore should not be used in production environment.');
 
   //  Validate parameters
   if (typeof generateId !== 'function') throw new TypeError('generateId option must be a function');
