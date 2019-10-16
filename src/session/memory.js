@@ -23,7 +23,7 @@ class MemoryStore extends Store {
         ? new Date(sess.cookie.expires)
         : sess.cookie.expires;
 
-      if (!expires || new Date() < expires) {
+      if (!expires || Date.now() < expires) {
         //  check expires before returning
         return Promise.resolve(sess);
       }
@@ -39,11 +39,17 @@ class MemoryStore extends Store {
     return Promise.resolve();
   }
 
-  touch(sid, sess) {
-    if (MemoryStoreSession[sid]) {
-      MemoryStoreSession[sid].cookie = sess.cookie;
-    }
-    return Promise.resolve();
+  touch(sid, session) {
+    return this.get(sid).then((sess) => {
+      if (sess) {
+        const newSess = {
+          ...sess,
+          cookie: session.cookie,
+        };
+        return this.set(sid, newSess);
+      }
+      return undefined;
+    });
   }
 
   all() {
