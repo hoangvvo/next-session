@@ -41,13 +41,6 @@ describe('session (basic)', () => {
     await useSession(req, res);
     expect(req.cookies.sessionId).toStrictEqual('YmFieXlvdWFyZWJlYXV0aWZ1bA');
   });
-
-  test('Deprecated session() should fallback to withSession', async () => {
-    const req = { cookies: {} };
-    const res = {};
-    const handler = (req) => req.session;
-    expect(await session(handler)(req, res)).toBeInstanceOf(session.Session);
-  });
 });
 
 describe('session (using withSession API Routes)', () => {
@@ -66,7 +59,7 @@ describe('session (using withSession API Routes)', () => {
       withSession((req, res) => {
         if (req.method === 'POST') {
           req.session.johncena = 'invisible';
-          if (req.headers["res-end-twice"]) {
+          if (req.headers['res-end-twice']) {
             res.end();
           }
           return res.end();
@@ -92,7 +85,7 @@ describe('session (using withSession API Routes)', () => {
 
   test('should create session properly and persist sessionId', () => {
     const agent = request.agent(server);
-    return agent.post('/', { headers: { "res-end-twice": "true" } })
+    return agent.post('/', { headers: { 'res-end-twice': 'true' } })
       .then(() => agent.get('/').expect('invisible'))
       .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
     //  should not set cookie since session with data is established

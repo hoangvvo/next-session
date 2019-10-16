@@ -181,12 +181,9 @@ const withSession = (handler, options) => {
   return handler;
 };
 
-module.exports = (handler, options) => {
-  //  Deprecated usage
-  // eslint-disable-next-line no-console
-  console.warn('The use of default import session() is deprecated. Please see https://github.com/hoangvvo/next-session/releases/tag/v2.0.0');
-  return withSession(handler, options);
-};
+const session = (opts) => (req, res, next) => applySession(opts)(req, res).then(next());
+
+module.exports = session;
 module.exports.withSession = withSession;
 module.exports.useSession = useSession;
 module.exports.Store = Store;
