@@ -72,7 +72,8 @@ describe('session', () => {
     //  should not set cookie since session with data is established
   });
 
-  test('should destroy session properly and refresh sessionId', () => {
+  test('should destroy session properly and refresh sessionId', async () => {
+    await setUpServer(defaultHandler);
     const agent = request.agent(server);
     return agent.post('/')
       .then(() => agent.delete('/'))
