@@ -8,13 +8,14 @@ class MemoryStore extends Store {
   // eslint-disable-next-line no-useless-constructor
   constructor() {
     super();
+    this.sessions = MemoryStoreSession;
   }
 
   get(sid) {
     const self = this;
 
     let expires;
-    let sess = MemoryStoreSession[sid];
+    let sess = this.sessions[sid];
     if (sess) {
       sess = JSON.parse(sess);
 
@@ -35,7 +36,7 @@ class MemoryStore extends Store {
   }
 
   set(sid, sess) {
-    MemoryStoreSession[sid] = JSON.stringify(sess);
+    this.sessions[sid] = JSON.stringify(sess);
     return Promise.resolve();
   }
 
@@ -54,15 +55,16 @@ class MemoryStore extends Store {
 
   all() {
     const arr = [];
-    const keys = Object.keys(MemoryStoreSession);
+    const keys = Object.keys(this.sessions);
     for (let i = 0, len = keys.length; i < len; i += 1) {
-      arr.push(MemoryStoreSession[keys[i]]);
+      arr.push(this.sessions[keys[i]]);
     }
     return Promise.resolve(arr);
   }
 
   destroy(sid) {
-    Promise.resolve(delete MemoryStoreSession[sid]);
+    delete this.sessions[sid];
+    return Promise.resolve();
   }
 }
 
