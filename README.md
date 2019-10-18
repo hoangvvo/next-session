@@ -1,6 +1,7 @@
 # next-session
 
-![npm](https://badgen.net/npm/v/next-session)
+[![npm](https://badgen.net/npm/v/next-session)](https://www.npmjs.com/package/next-session)
+[![minified size](https://badgen.net/bundlephobia/min/next-session)](https://bundlephobia.com/result?p=next-session)
 [![CircleCI](https://circleci.com/gh/hoangvvo/next-session.svg?style=svg)](https://circleci.com/gh/hoangvvo/next-session)
 [![codecov](https://codecov.io/gh/hoangvvo/next-session/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/next-session)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](CONTRIBUTING.md)
@@ -21,12 +22,33 @@ See a real-life usage in [nextjs-mongodb-app](https://github.com/hoangvvo/nextjs
 
 There are two ways to use `next-session`. You can either:
 
-- Wrap the component (or API handler) with `withSession`.
-- `await useSession(req, res)` at the beginning of `getInitialProps` or API Routes's `handler`.
+1. Using as a Connect styled middleware with [next-connect](https://www.npmjs.com/package/next-connect).
+2. Wrap the component (or API handler) with `withSession`.
+3. `await useSession(req, res)` at the beginning of `getInitialProps` or API Routes's `handler`.
+
+Even though `next-session` meant to use with `Next.js`, it also supports [Express.js](https://github.com/expressjs/express) (using `1`), [Koa.js](https://github.com/koajs/koa) (using `3`), [Micro](https://github.com/zeit/micro) (using `2`), and many others.
 
 ### API Routes
 
 `next-session` can be used in **Next.js 9 [API Routes](https://nextjs.org/docs#api-routes])**. (those in `/pages/api/`)
+
+#### Using with `next-connect`
+
+```javascript
+import session from 'next-session';
+import nextConnect from 'next-connect';
+
+const handler = nextConnect();
+
+handler.use(session({ ...yourOptions }));
+
+handler.use((req, res) => {
+  req.session.views = req.session.views ? (req.session.views + 1) : 1;
+  res.send(`In this session, you have visited this website ${req.session.views} time(s).`)
+});
+
+export default handler;
+```
 
 #### Using `withSession`
 
@@ -81,7 +103,7 @@ export default handler;
 
 ### _app.js, _document.js, and pages
 
-`next-session` can be used in **`_app.js`, `_document.js`, and pages**. (those not in `/pages/api/` but in `/pages/`). Generally, you want to use it in `_app.js` or `_document.js` for `req.session` to available globally.
+`next-session` can be used in **`_app.js`, `_document.js`, and pages**. (those not in `/pages/api/` but in `/pages/`).
 
 :rotating_light: Please be aware that `next-session` (as well as session stores) only work server-side. `getInitialProps`, however, will also be bundled in client-side. It is recommended to `require/import` the packages under the condition of `!process.browser`.
 
@@ -151,6 +173,10 @@ export const middleware = async ({ req, res }) => {
 
 ## API
 
+### session(options)
+
+Create a Connect session middleware with the given options. In `Next.js`, this must be used with [next-connect](#using-with-next-connect).
+
 ### withSession(handler, options)
 
 `handler` can either be **Next.js 9 API Routes** or an **`_app`, `_document`, or page component (with `getInitialProps`)**.
@@ -215,11 +241,11 @@ The session store to use for session middleware (see `options` above).
 
 #### Implementation
 
-A compatible session store must include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`.
+A compatible session store must extend from `./src/session/store` and include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness.
 
 All functions should return **Promises** (*callbacks* are not supported). For an example of a session store implementation, see [`MemoryStore`](src/session/memory.js).
 
- Stores that return callbacks may be used by setting `storePromisify` to **true**.
+Stores that return callbacks may be used by setting `storePromisify` to **true**.
 
 #### Compatible stores
 
