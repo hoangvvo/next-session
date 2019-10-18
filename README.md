@@ -103,7 +103,7 @@ export default handler;
 
 ### _app.js, _document.js, and pages
 
-`next-session` can be used in **`_app.js`, `_document.js`, and pages**. (those not in `/pages/api/` but in `/pages/`). Generally, you want to use it in `_app.js` or `_document.js` for `req.session` to available globally.
+`next-session` can be used in **`_app.js`, `_document.js`, and pages**. (those not in `/pages/api/` but in `/pages/`).
 
 :rotating_light: Please be aware that `next-session` (as well as session stores) only work server-side. `getInitialProps`, however, will also be bundled in client-side. It is recommended to `require/import` the packages under the condition of `!process.browser`.
 
@@ -172,6 +172,10 @@ export const middleware = async ({ req, res }) => {
 ```
 
 ## API
+
+### session(options)
+
+Create a Connect session middleware with the given options. In `Next.js`, this must be used with [next-connect](#using-with-next-connect).
 
 ### withSession(handler, options)
 
