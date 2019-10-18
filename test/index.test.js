@@ -83,7 +83,7 @@ describe('session', () => {
   afterEach(() => server && server.close && promisify(server.close.bind(server))());
 
   test('should do nothing if req.session is defined', async () => {
-    server = await setUpServer(defaultHandler, { beforeHandle: (req) => req.session = {} });
+    server = await setUpServer(defaultHandler, undefined, (req) => req.session = {});
     await request(server).get('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
   });
 
