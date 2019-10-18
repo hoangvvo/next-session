@@ -241,11 +241,11 @@ The session store to use for session middleware (see `options` above).
 
 #### Implementation
 
-A compatible session store must include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`.
+A compatible session store must extend from `./src/session/store` and include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness.
 
 All functions should return **Promises** (*callbacks* are not supported). For an example of a session store implementation, see [`MemoryStore`](src/session/memory.js).
 
- Stores that return callbacks may be used by setting `storePromisify` to **true**.
+Stores that return callbacks may be used by setting `storePromisify` to **true**.
 
 #### Compatible stores
 
