@@ -58,6 +58,15 @@ describe('session', () => {
     expect(req.sessionStore.destroy().constructor.name).toStrictEqual('Promise');
   });
 
+  test('can parse cookie (for getInitialProps)', async () => {
+    const req = { headers: { cookie: 'sessionId=YmFieXlvdWFyZWJlYXV0aWZ1bA' } };
+    const res = {};
+    await new Promise((resolve) => {
+      session()(req, res, resolve);
+    });
+    expect(req.cookies.sessionId).toStrictEqual('YmFieXlvdWFyZWJlYXV0aWZ1bA');
+  });
+
   let server;
   const defaultHandler = (req, res) => {
     if (req.method === 'POST') {
