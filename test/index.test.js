@@ -127,6 +127,20 @@ describe('session', () => {
     const agent = request.agent(server);
     await agent.get('/').expect('Hello, world!');
   });
+
+  test('should not touch according to touchAfter', async () => {
+    server = await setUpServer((req, res) => {
+      if (req.method === 'POST') req.session.test = 'test';
+      res.end(`${req.session.cookie.expires.valueOf()}`);
+    }, { touchAfter: '5000', cookie: { maxAge: '1 day' } });
+
+    const agent = request.agent(server);
+    await agent.post('/');
+    let originalExpires;
+    await agent.get('/').then((res) => { originalExpires = res.text; });
+    //  Some miliseconds passed... hopefully
+    await agent.get('/').expect(originalExpires);
+  });
 });
 
 //  Adapters
