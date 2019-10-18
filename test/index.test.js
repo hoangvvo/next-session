@@ -1,8 +1,10 @@
 const { promisify } = require('util');
 const request = require('supertest');
+const crypto = require('crypto');
 const setUpServer = require('./helper/setUpServer');
 const session = require('../src/index');
 const MemoryStore = require('../src/session/memory');
+const Cookie = require('../src/session/cookie');
 
 const { useSession, withSession, Store } = session;
 
@@ -46,6 +48,8 @@ describe('session', () => {
       set(sid, sess, cb) { cb && cb(null, this.sessions); }
 
       destroy(sid, cb) { cb && cb(null, this.sessions); }
+
+      touch(sid, cb) { cb && cb(null, this.sessions); }
     }
 
     const req = {}; const res = { end: () => null };
@@ -56,6 +60,16 @@ describe('session', () => {
     expect(req.sessionStore.get().constructor.name).toStrictEqual('Promise');
     expect(req.sessionStore.set().constructor.name).toStrictEqual('Promise');
     expect(req.sessionStore.destroy().constructor.name).toStrictEqual('Promise');
+    expect(req.sessionStore.touch().constructor.name).toStrictEqual('Promise');
+  });
+
+  test('can parse cookie (for getInitialProps)', async () => {
+    const req = { headers: { cookie: 'sessionId=YmVsaWV2ZWlueW91cnNlbGY' } };
+    const res = {};
+    await new Promise((resolve) => {
+      session()(req, res, resolve);
+    });
+    expect(req.cookies.sessionId).toStrictEqual('YmVsaWV2ZWlueW91cnNlbGY');
   });
 
   let server;
@@ -71,8 +85,19 @@ describe('session', () => {
   };
   afterEach(() => server && server.close && promisify(server.close.bind(server))());
 
+  test('should work accordingly to store readiness', async () => {
+    const store = new MemoryStore();
+    server = await setUpServer(defaultHandler, { store });
+    const agent = request.agent(server);
+    await agent.get('/');
+    store.emit('disconnect');
+    await agent.get('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    store.emit('connect');
+    await agent.get('/').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+  });
+
   test('should do nothing if req.session is defined', async () => {
-    server = await setUpServer(defaultHandler, { beforeHandle: (req) => req.session = {} });
+    server = await setUpServer(defaultHandler, undefined, (req) => req.session = {});
     await request(server).get('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
   });
 
@@ -102,6 +127,20 @@ describe('session', () => {
     });
     const agent = request.agent(server);
     await agent.get('/').expect('Hello, world!');
+  });
+
+  test('should not touch according to touchAfter', async () => {
+    server = await setUpServer((req, res) => {
+      if (req.method === 'POST') req.session.test = 'test';
+      res.end(`${req.session.cookie.expires.valueOf()}`);
+    }, { touchAfter: '5000', cookie: { maxAge: '1 day' } });
+
+    const agent = request.agent(server);
+    await agent.post('/');
+    let originalExpires;
+    await agent.get('/').then((res) => { originalExpires = res.text; });
+    //  Some miliseconds passed... hopefully
+    await agent.get('/').expect(originalExpires);
   });
 });
 
@@ -146,5 +185,18 @@ describe('useSession', () => {
     const res = {};
     await useSession(req, res);
     expect(req.session).toBeInstanceOf(session.Session);
+  });
+
+  test('should return session values', async () => {
+    const store = new MemoryStore();
+    const sess = { hello: 'world', foo: 'bar', cookie: new Cookie({}) };
+    store.sessions = { YmVsaWV2ZWlueW91cnNlbGY: JSON.stringify(sess) };
+    const req = { headers: { cookie: 'sessionId=YmVsaWV2ZWlueW91cnNlbGY' } };
+    const res = {};
+    const sessions = await useSession(req, res, { store });
+    //  useSession returns does not contain Cookie
+    delete sess.cookie;
+    const hash = (str) => crypto.createHash('sha1').update(JSON.stringify(str), 'utf8').digest('hex');
+    expect(hash(sessions)).toStrictEqual(hash(sess));
   });
 });

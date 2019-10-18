@@ -18,9 +18,7 @@ describe('MemoryStore', () => {
         req.session.user = req.query.user;
         res.end();
       }
-    }, {
-      beforeHandle: (req) => req.query = parse(req.url, true).query,
-    });
+    }, undefined, (req) => req.query = parse(req.url, true).query);
     const agent = request.agent(server);
     await agent.get('/').query('user=squidward')
       .then(() => request(server).get('/').query('user=spongebob'))
@@ -42,7 +40,7 @@ describe('MemoryStore', () => {
       if (req.method === 'GET') {
         res.end((req.session && req.session.hello) || '');
       }
-    }, { nextSession: { cookie: { maxAge: 5000 } } });
+    }, { cookie: { maxAge: 5000 } });
     const agent = request.agent(server);
     await agent.post('/').then(() => agent.get('/').expect('world'));
 
