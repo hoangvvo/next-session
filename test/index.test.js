@@ -1,8 +1,10 @@
 const { promisify } = require('util');
 const request = require('supertest');
+const crypto = require('crypto');
 const setUpServer = require('./helper/setUpServer');
 const session = require('../src/index');
 const MemoryStore = require('../src/session/memory');
+const Cookie = require('../src/session/cookie');
 
 const { useSession, withSession, Store } = session;
 
@@ -59,12 +61,12 @@ describe('session', () => {
   });
 
   test('can parse cookie (for getInitialProps)', async () => {
-    const req = { headers: { cookie: 'sessionId=YmFieXlvdWFyZWJlYXV0aWZ1bA' } };
+    const req = { headers: { cookie: 'sessionId=YmVsaWV2ZWlueW91cnNlbGY' } };
     const res = {};
     await new Promise((resolve) => {
       session()(req, res, resolve);
     });
-    expect(req.cookies.sessionId).toStrictEqual('YmFieXlvdWFyZWJlYXV0aWZ1bA');
+    expect(req.cookies.sessionId).toStrictEqual('YmVsaWV2ZWlueW91cnNlbGY');
   });
 
   let server;
@@ -155,5 +157,18 @@ describe('useSession', () => {
     const res = {};
     await useSession(req, res);
     expect(req.session).toBeInstanceOf(session.Session);
+  });
+
+  test('should return session values', async () => {
+    const store = new MemoryStore();
+    const sess = { hello: 'world', foo: 'bar', cookie: new Cookie({}) };
+    store.sessions = { YmVsaWV2ZWlueW91cnNlbGY: JSON.stringify(sess) };
+    const req = { headers: { cookie: 'sessionId=YmVsaWV2ZWlueW91cnNlbGY' } };
+    const res = {};
+    const sessions = await useSession(req, res, { store });
+    //  useSession returns does not contain Cookie
+    delete sess.cookie;
+    const hash = (str) => crypto.createHash('sha1').update(JSON.stringify(str), 'utf8').digest('hex');
+    expect(hash(sessions)).toStrictEqual(hash(sess));
   });
 });
