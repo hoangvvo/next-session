@@ -48,6 +48,8 @@ describe('session', () => {
       set(sid, sess, cb) { cb && cb(null, this.sessions); }
 
       destroy(sid, cb) { cb && cb(null, this.sessions); }
+
+      touch(sid, cb) { cb && cb(null, this.sessions); }
     }
 
     const req = {}; const res = { end: () => null };
