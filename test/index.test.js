@@ -60,6 +60,7 @@ describe('session', () => {
     expect(req.sessionStore.get().constructor.name).toStrictEqual('Promise');
     expect(req.sessionStore.set().constructor.name).toStrictEqual('Promise');
     expect(req.sessionStore.destroy().constructor.name).toStrictEqual('Promise');
+    expect(req.sessionStore.touch().constructor.name).toStrictEqual('Promise');
   });
 
   test('can parse cookie (for getInitialProps)', async () => {
