@@ -22,12 +22,31 @@ See a real-life usage in [nextjs-mongodb-app](https://github.com/hoangvvo/nextjs
 
 There are two ways to use `next-session`. You can either:
 
+- Using as a Connect styled middleware with [next-connect](https://www.npmjs.com/package/next-connect).
 - Wrap the component (or API handler) with `withSession`.
 - `await useSession(req, res)` at the beginning of `getInitialProps` or API Routes's `handler`.
 
 ### API Routes
 
 `next-session` can be used in **Next.js 9 [API Routes](https://nextjs.org/docs#api-routes])**. (those in `/pages/api/`)
+
+#### Using with `next-connect`
+
+```javascript
+import session from 'next-session';
+import nextConnect from 'next-connect';
+
+const handler = nextConnect();
+
+handler.use(session({ ...yourOptions }));
+
+handler.use((req, res) => {
+  req.session.views = req.session.views ? (req.session.views + 1) : 1;
+  res.send(`In this session, you have visited this website ${req.session.views} time(s).`)
+});
+
+export default handler;
+```
 
 #### Using `withSession`
 
