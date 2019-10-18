@@ -25,6 +25,8 @@ const hash = (sess) => {
     .digest('hex');
 };
 
+let storeReady = true;
+
 const session = (options = {}) => {
   const name = options.name || 'sessionId';
   const cookieOptions = options.cookie || {};
@@ -50,7 +52,6 @@ const session = (options = {}) => {
   }
 
   //  store readiness
-  let storeReady = true;
   store.on('disconnect', () => {
     storeReady = false;
   });
