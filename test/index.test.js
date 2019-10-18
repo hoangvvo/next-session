@@ -82,6 +82,17 @@ describe('session', () => {
   };
   afterEach(() => server && server.close && promisify(server.close.bind(server))());
 
+  test('should work accordingly to store readiness', async () => {
+    const store = new MemoryStore();
+    server = await setUpServer(defaultHandler, { store });
+    const agent = request.agent(server);
+    await agent.get('/');
+    store.emit('disconnect');
+    await agent.get('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    store.emit('connect');
+    await agent.get('/').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+  });
+
   test('should do nothing if req.session is defined', async () => {
     server = await setUpServer(defaultHandler, undefined, (req) => req.session = {});
     await request(server).get('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
