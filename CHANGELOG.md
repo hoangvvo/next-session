@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.1.0
+
+### Minor
+
+- Add support connect style middleware (#39, #40)
+- Rewrite, improve tests (#43, #45, #47)
+- Fix touch implementation in MemoryStore (#44, 834910fc2359df600a50be23e5960ca94071f768)
+
+### Patches
+
+- Fix TypeError when req.header.cookie is undefined (#41)
+- Memory Store usage should still be warned even in dev env (#42)
+- Fix storeReady variable scoping (c3f7a8abe726fbfd36416873fb72144b9165699e)
+
 ## 2.0.3
 
 ### Minor*
