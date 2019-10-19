@@ -191,6 +191,33 @@ In `_document`, or page component, this is `ctx.req` and `ctx.res`. (see [this](
 
 In `_app`, this is `appContext.ctx.req` and `appContext.ctx.res`. (see [this](https://github.com/zeit/next.js/#custom-app))
 
+#### Return session values
+
+For convenience, `useSession` also returns all session values.
+
+```javascript
+const sessions = await useSession(req, res);
+console.log(sessions);
+
+/**
+ * {
+ *  currentUser: "Bob",
+ *  views: 123
+ * }
+ */
+**/
+```
+
+This is helpful in `getInitialProps` when the only goal is to retrieve the session data, not to manipulate them.
+
+```javascript
+function Page({ views, currentUser }) {
+  return <div>Hello, {currentUser}. In this session, you have visited this website {views} time(s).</div>
+}
+
+Page.getInitialProps = async ({ req, res }) => await useSession(req, res);
+```
+
 ### options
 
 `next-session` accepts the properties below.
