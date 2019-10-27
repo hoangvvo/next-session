@@ -1,14 +1,10 @@
-const { promisify } = require('util');
 const { parse } = require('url');
 const request = require('supertest');
 const setUpServer = require('./helper/setUpServer');
 
 describe('MemoryStore', () => {
-  let server;
-  afterEach(() => server && server.close && promisify(server.close.bind(server))());
-
   test('should register different user and show all sessions', async () => {
-    server = await setUpServer((req, res) => {
+    const server = setUpServer((req, res) => {
       if (req.url === '/all') {
         req.sessionStore.all().then((sessions) => {
           const users = sessions.map((sess) => JSON.parse(sess).user);
@@ -30,7 +26,7 @@ describe('MemoryStore', () => {
     let sessionStore;
     let sessionId;
     let sessionInstance;
-    server = await setUpServer((req, res) => {
+    const server = setUpServer((req, res) => {
       if (req.method === 'POST') {
         req.session.hello = 'world'; res.end();
         sessionInstance = req.session;
