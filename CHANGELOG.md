@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.1
+
+# Patches
+
+- Only warn if store is memoryStore (1d53f7d39c48e14288b738437c4577767534c08b)
+
 ## 2.1.0
 
 ### Minor
