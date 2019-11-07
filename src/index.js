@@ -38,7 +38,7 @@ const session = (options = {}) => {
 
   //  Notify MemoryStore should not be used in production
   //  eslint-disable-next-line no-console
-  console.warn('MemoryStore should not be used in production environment.');
+  if (store instanceof MemoryStore) console.warn('MemoryStore should not be used in production environment.');
 
   //  Validate parameters
   if (typeof generateId !== 'function') throw new TypeError('generateId option must be a function');
