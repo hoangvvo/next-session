@@ -2,9 +2,8 @@
     "env": {
         "jest": true
     },
-    "extends": "airbnb-base",
+    "extends": ["airbnb-base", "plugin:react/recommended"],
     "rules": {
-        "no-shadow": [2, {"allow": ["req", "res"]}],
-        "no-return-assign": "off"
+        "react/react-in-jsx-scope": "off",
     }
 }
