@@ -11,11 +11,7 @@ class Session {
   touch() {
     this.cookie.resetExpires();
     //  check if store supports touch()
-    if (typeof this.req.sessionStore.touch === 'function') {
-      return this.req.sessionStore.touch(this.id, this);
-    }
-    //  eslint-disable-next-line no-console
-    console.warn('store does not implement touch()');
+    if (typeof this.req.sessionStore.touch === 'function') return this.req.sessionStore.touch(this.id, this);
     return Promise.resolve();
   }
 

@@ -15,17 +15,6 @@ describe('session', () => {
     expect(typeof session.MemoryStore).toStrictEqual('function');
   });
 
-  test('should default to MemoryStore with warning', async () => {
-    const req = {}; const res = { end: () => null };
-    const consoleWarnSpy = jest.spyOn(global.console, 'warn');
-
-    await new Promise((resolve) => {
-      session()(req, res, resolve);
-    });
-    expect(consoleWarnSpy).toHaveBeenCalled();
-    expect(req.sessionStore).toBeInstanceOf(MemoryStore);
-  });
-
   test('can promisify callback store', async () => {
     class CbStore extends Store {
       constructor() {
@@ -33,19 +22,18 @@ describe('session', () => {
         this.sessions = 1;
       }
 
-      /* eslint-disable no-unused-expressions */
-      get(sid, cb) { cb && cb(null, this.sessions); }
+      get(sid, cb) { if (cb) cb(null, this.sessions); }
 
-      set(sid, sess, cb) { cb && cb(null, this.sessions); }
+      set(sid, sess, cb) { if (cb) cb(null, this.sessions); }
 
-      destroy(sid, cb) { cb && cb(null, this.sessions); }
+      destroy(sid, cb) { if (cb) cb(null, this.sessions); }
 
-      touch(sid, cb) { cb && cb(null, this.sessions); }
+      touch(sid, sess, cb) { if (cb) cb(null, this.sessions); }
     }
 
-    const req = {}; const res = { end: () => null };
+    const req = { cookies: {} }; const res = { end: () => null };
     await new Promise((resolve) => {
-      session({ store: new CbStore(), storePromisify: true })(req, res, resolve);
+      session({ store: new CbStore() })(req, res, resolve);
     });
     // facebook/jest#2549
     expect(req.sessionStore.get().constructor.name).toStrictEqual('Promise');

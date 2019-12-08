@@ -26,13 +26,10 @@ function session(options = {}) {
   const touchAfter = options.touchAfter ? parseToMs(options.touchAfter) : 0;
   const rollingSession = options.rolling || false;
 
-  //  eslint-disable-next-line no-console
-  if (store instanceof MemoryStore) console.warn('MemoryStore should not be used in production environment.');
-
   //  Promisify callback-based store.
   if (store.get.length > 1) store.get = promisify(store.get);
   if (store.set.length > 2) store.set = promisify(store.set);
-  if (store.destroy.length > 2) store.destroy = promisify(store.destroy);
+  if (store.destroy.length > 1) store.destroy = promisify(store.destroy);
   if (store.touch && store.touch.length > 2) store.touch = promisify(store.touch);
 
   store.on('disconnect', () => {
