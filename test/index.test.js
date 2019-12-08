@@ -1,11 +1,9 @@
 const request = require('supertest');
-const crypto = require('crypto');
 const setUpServer = require('./helper/setUpServer');
 const session = require('../src/index');
 const MemoryStore = require('../src/session/memory');
-const Cookie = require('../src/session/cookie');
 
-const { useSession, withSession, Store } = session;
+const { Store } = session;
 
 //  Core
 
@@ -94,6 +92,7 @@ describe('session', () => {
   });
 
   test('should do nothing if req.session is defined', async () => {
+    // eslint-disable-next-line no-return-assign
     const server = setUpServer(defaultHandler, undefined, (req) => req.session = {});
     await request(server).get('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
   });
@@ -142,58 +141,3 @@ describe('session', () => {
 });
 
 //  Adapters
-
-describe('withSession', () => {
-  test('should do nothing if no request or response object given', async () => {
-    const req = undefined;
-    const res = undefined;
-    const handler = (req) => req && req.session;
-    expect(await withSession(handler)(req, res)).toStrictEqual(undefined);
-  });
-
-  function component(ctx) {
-    return component.getInitialProps(ctx);
-  }
-  component.getInitialProps = (context) => {
-    const req = context.req || (context.ctx && context.ctx.req);
-    return req.session;
-  };
-
-  test('works with _app', async () => {
-    const contextObject = { ctx: { req: { headers: { cookie: '' } }, res: {} } };
-    expect(await withSession(component)(contextObject)).toBeInstanceOf(session.Session);
-  });
-
-  test('works with _document and pages', async () => {
-    const contextObject = { req: { headers: { cookie: '' } }, res: {} };
-    expect(await withSession(component)(contextObject)).toBeInstanceOf(session.Session);
-  });
-});
-
-describe('useSession', () => {
-  test('should do nothing if no request or response object given', async () => {
-    const req = undefined;
-    const res = undefined;
-    expect(await useSession(req, res).then(() => req && req.session)).toStrictEqual(undefined);
-  });
-
-  test('should work', async () => {
-    const req = { headers: { cookie: '' } };
-    const res = {};
-    await useSession(req, res);
-    expect(req.session).toBeInstanceOf(session.Session);
-  });
-
-  test('should return session values', async () => {
-    const store = new MemoryStore();
-    const sess = { hello: 'world', foo: 'bar', cookie: new Cookie({}) };
-    store.sessions = { YmVsaWV2ZWlueW91cnNlbGY: JSON.stringify(sess) };
-    const req = { headers: { cookie: 'sessionId=YmVsaWV2ZWlueW91cnNlbGY' } };
-    const res = {};
-    const sessions = await useSession(req, res, { store });
-    //  useSession returns does not contain Cookie
-    delete sess.cookie;
-    const hash = (str) => crypto.createHash('sha1').update(JSON.stringify(str), 'utf8').digest('hex');
-    expect(hash(sessions)).toStrictEqual(hash(sess));
-  });
-});

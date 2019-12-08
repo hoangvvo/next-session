@@ -147,46 +147,7 @@ const session = (options = {}) => {
   };
 };
 
-const useSession = (req, res, opts) => {
-  if (!req || !res) return Promise.resolve();
-  return new Promise((resolve) => {
-    session(opts)(req, res, resolve);
-  }).then(() => {
-    const sessionValues = { ...req.session };
-    delete sessionValues.cookie;
-    return sessionValues;
-  });
-};
-
-const withSession = (handler, options) => {
-  const isApiRoutes = !Object.prototype.hasOwnProperty.call(handler, 'getInitialProps');
-  const oldHandler = (isApiRoutes) ? handler : handler.getInitialProps;
-
-
-  function handlerProxy(...args) {
-    let req;
-    let res;
-    if (isApiRoutes) {
-      [req, res] = args;
-    } else {
-      req = args[0].req || (args[0].ctx && args[0].ctx.req);
-      res = args[0].res || (args[0].ctx && args[0].ctx.res);
-    }
-    if (req && res) {
-      return new Promise((resolve) => {
-        session(options)(req, res, resolve);
-      }).then(() => oldHandler.apply(this, args));
-    } return oldHandler.apply(this, args);
-  }
-
-  if (isApiRoutes) handler = handlerProxy;
-  else handler.getInitialProps = handlerProxy;
-  return handler;
-};
-
 module.exports = session;
-module.exports.withSession = withSession;
-module.exports.useSession = useSession;
 module.exports.Store = Store;
 module.exports.Cookie = Cookie;
 module.exports.Session = Session;

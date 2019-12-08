@@ -1,5 +1,5 @@
 const { createServer } = require('http');
-const { withSession } = require('../../src/index');
+const session = require('../../src/index');
 
 module.exports = function setUpServer(handler, nextSessionOpts = {}, beforeHandle) {
   const server = createServer();
@@ -8,7 +8,12 @@ module.exports = function setUpServer(handler, nextSessionOpts = {}, beforeHandl
     server.on('request', beforeHandle);
   }
 
-  server.on('request', withSession(handler, nextSessionOpts));
+  server.on('request', async (req, res) => {
+    await new Promise((resolve) => {
+      session(nextSessionOpts)(req, res, resolve);
+    });
+    await handler(req, res);
+  });
 
   return server;
 };
