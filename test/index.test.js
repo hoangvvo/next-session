@@ -60,15 +60,6 @@ describe('session', () => {
     expect(req.sessionStore.touch().constructor.name).toStrictEqual('Promise');
   });
 
-  test('can parse cookie (for getInitialProps)', async () => {
-    const req = { headers: { cookie: 'sessionId=YmVsaWV2ZWlueW91cnNlbGY' } };
-    const res = {};
-    await new Promise((resolve) => {
-      session()(req, res, resolve);
-    });
-    expect(req.cookies.sessionId).toStrictEqual('YmVsaWV2ZWlueW91cnNlbGY');
-  });
-
   const defaultHandler = (req, res) => {
     if (req.method === 'POST') {
       req.session.johncena = 'invisible';

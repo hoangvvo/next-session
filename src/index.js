@@ -1,6 +1,5 @@
 /* eslint-disable no-param-reassign */
 const crypto = require('crypto');
-const parseCookie = require('cookie').parse;
 const { promisify } = require('util');
 const MemoryStore = require('./session/memory');
 const Store = require('./session/store');
@@ -72,11 +71,6 @@ const session = (options = {}) => {
 
     //  Expose store
     req.sessionStore = store;
-
-    //  Try parse cookie if not already
-    req.cookies = req.cookies
-  || (req.headers && typeof req.headers.cookie === 'string' && parseCookie(req.headers.cookie)) || {};
-
 
     //  Get sessionId cookie from Next.js parsed req.cookies
     req.sessionId = req.cookies[name];
