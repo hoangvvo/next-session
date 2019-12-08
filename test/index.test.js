@@ -26,12 +26,6 @@ describe('session', () => {
     expect(req.sessionStore).toBeInstanceOf(MemoryStore);
   });
 
-  test('should throw if generateId is not a function', () => {
-    [10, 'string', true, {}].forEach((generateId) => {
-      expect(() => { session({ generateId }); }).toThrow();
-    });
-  });
-
   test('can promisify callback store', async () => {
     class CbStore extends Store {
       constructor() {

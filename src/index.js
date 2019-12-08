@@ -7,7 +7,7 @@ const Cookie = require('./session/cookie');
 const Session = require('./session/session');
 const { parseToMs } = require('./session/utils');
 
-const generateSessionId = () => crypto.randomBytes(16).toString('hex');
+const genidFn = () => crypto.randomBytes(16).toString('hex');
 
 const hash = (sess) => {
   const str = JSON.stringify(sess, (key, val) => {
@@ -30,25 +30,19 @@ const session = (options = {}) => {
   const name = options.name || 'sessionId';
   const cookieOptions = options.cookie || {};
   const store = options.store || new MemoryStore();
-  const generateId = options.generateId || generateSessionId;
+  const genid = options.genid || genidFn;
   const touchAfter = options.touchAfter ? parseToMs(options.touchAfter) : 0;
   const rollingSession = options.rolling || false;
-  const storePromisify = options.storePromisify || false;
 
   //  Notify MemoryStore should not be used in production
   //  eslint-disable-next-line no-console
   if (store instanceof MemoryStore) console.warn('MemoryStore should not be used in production environment.');
 
-  //  Validate parameters
-  if (typeof generateId !== 'function') throw new TypeError('generateId option must be a function');
-
   //  Promisify callback-based store.
-  if (storePromisify) {
-    store.get = promisify(store.get);
-    store.set = promisify(store.set);
-    store.destroy = promisify(store.destroy);
-    if (typeof store.touch === 'function') store.touch = promisify(store.touch);
-  }
+  if (store.get.length > 1) store.get = promisify(store.get);
+  if (store.set.length > 2) store.set = promisify(store.set);
+  if (store.destroy.length > 2) store.destroy = promisify(store.destroy);
+  if (store.touch && store.touch.length > 2) store.touch = promisify(store.touch);
 
   //  store readiness
   store.on('disconnect', () => {
@@ -79,14 +73,14 @@ const session = (options = {}) => {
       //  Return a session object
       if (!req.sessionId) {
         //  If no sessionId found in Cookie header, generate one
-        return Promise.resolve(hash(req.sessionStore.generate(req, generateId(), cookieOptions)));
+        return Promise.resolve(hash(req.sessionStore.generate(req, genid(), cookieOptions)));
       }
       return req.sessionStore.get(req.sessionId)
         .then((sess) => {
           if (sess) {
             return hash(req.sessionStore.createSession(req, sess));
           }
-          return hash(req.sessionStore.generate(req, generateId(), cookieOptions));
+          return hash(req.sessionStore.generate(req, genid(), cookieOptions));
         });
     };
 
