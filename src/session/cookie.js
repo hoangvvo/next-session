@@ -1,11 +1,10 @@
-const cookie = require('cookie');
-const { parseToMs } = require('./utils');
+import { serialize } from 'cookie';
 
-class Cookie {
+export default class Cookie {
   constructor(options) {
     //  Set parameters
     this.path = options.path || '/';
-    this.maxAge = options.maxAge ? parseToMs(options.maxAge) : null;
+    this.maxAge = options.maxAge || null;
     this.httpOnly = options.httpOnly || true;
     this.domain = options.domain || null;
     this.sameSite = options.sameSite || null;
@@ -33,8 +32,6 @@ class Cookie {
 
   //  cookie serialize to use for set header
   serialize(name, val) {
-    return cookie.serialize(name, val, this.cookieOptions);
+    return serialize(name, val, this.cookieOptions);
   }
 }
-
-module.exports = Cookie;
