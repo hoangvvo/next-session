@@ -4,39 +4,63 @@ const setUpServer = require('./helper/setUpServer');
 
 describe('MemoryStore', () => {
   test('should register different user and show all sessions', async () => {
-    const server = setUpServer((req, res) => {
-      if (req.url === '/all') {
-        req.sessionStore.all().then((sessions) => {
-          const users = sessions.map((sess) => JSON.parse(sess).user);
-          res.end(users.toString());
-        });
-      } else {
-        req.session.user = req.query.user;
-        res.end();
+    const server = setUpServer(
+      (req, res) => {
+        if (req.url === '/all') {
+          req.sessionStore.all().then(sessions => {
+            const users = sessions.map(sess => JSON.parse(sess).user);
+            res.end(users.toString());
+          });
+        } else {
+          req.session.user = req.query.user;
+          res.end();
+        }
+      },
+      undefined,
+      req => {
+        req.query = parse(req.url, true).query;
       }
-    }, undefined, (req) => req.query = parse(req.url, true).query);
+    );
     const agent = request.agent(server);
-    await agent.get('/').query('user=squidward')
-      .then(() => request(server).get('/').query('user=spongebob'))
-      .then(() => request(server).get('/').query('user=patrick'))
-      .then(() => request(server).get('/all').expect('squidward,spongebob,patrick'));
+    await agent
+      .get('/')
+      .query('user=squidward')
+      .then(() =>
+        request(server)
+          .get('/')
+          .query('user=spongebob')
+      )
+      .then(() =>
+        request(server)
+          .get('/')
+          .query('user=patrick')
+      )
+      .then(() =>
+        request(server)
+          .get('/all')
+          .expect('squidward,spongebob,patrick')
+      );
   });
 
   test('should not return session if it expired', async () => {
     let sessionStore;
     let sessionId;
     let sessionInstance;
-    const server = setUpServer((req, res) => {
-      if (req.method === 'POST') {
-        req.session.hello = 'world'; res.end();
-        sessionInstance = req.session;
-        sessionStore = req.sessionStore;
-        sessionId = req.sessionId;
-      }
-      if (req.method === 'GET') {
-        res.end((req.session && req.session.hello) || '');
-      }
-    }, { cookie: { maxAge: 5000 } });
+    const server = setUpServer(
+      (req, res) => {
+        if (req.method === 'POST') {
+          req.session.hello = 'world';
+          res.end();
+          sessionInstance = req.session;
+          sessionStore = req.sessionStore;
+          sessionId = req.sessionId;
+        }
+        if (req.method === 'GET') {
+          res.end((req.session && req.session.hello) || '');
+        }
+      },
+      { cookie: { maxAge: 5000 } }
+    );
     const agent = request.agent(server);
     await agent.post('/').then(() => agent.get('/').expect('world'));
 
@@ -50,7 +74,9 @@ describe('MemoryStore', () => {
     expect(await sessionStore.get(sessionId)).toBeNull();
 
     //  Touch will return undefind
-    expect(await sessionStore.touch(sessionId, sessionInstance)).toBeUndefined();
+    expect(
+      await sessionStore.touch(sessionId, sessionInstance)
+    ).toBeUndefined();
 
     global.Date.now.mockReset();
   });

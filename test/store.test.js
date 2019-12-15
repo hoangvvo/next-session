@@ -10,7 +10,9 @@ describe('Store', () => {
   test('should be able to generate Session and convert String() expires to Date() expires on createSession', () => {
     const store = new Store();
     const req = {};
-    let sess = store.generate(req, crypto.randomBytes(16).toString('hex'), { maxAge: 100000 });
+    let sess = store.generate(req, crypto.randomBytes(16).toString('hex'), {
+      maxAge: 100000,
+    });
     //  force sess.cookie.expires to be string
     sess = JSON.parse(JSON.stringify(sess));
     store.createSession(req, sess);
@@ -24,6 +26,7 @@ describe('Store', () => {
       Store.call(this, options);
     }
 
+    // eslint-disable-next-line no-unused-vars
     const store = new SubStore();
   });
 });

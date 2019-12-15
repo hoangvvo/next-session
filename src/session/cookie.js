@@ -15,7 +15,9 @@ module.exports = class Cookie {
 
   //  reset expires to prolong session cookie (typically in every request)
   resetExpires() {
-    if (this.expires && this.maxAge) { this.expires = new Date(Date.now() + this.maxAge); }
+    if (this.expires && this.maxAge) {
+      this.expires = new Date(Date.now() + this.maxAge);
+    }
   }
 
   //  cookie options as an object

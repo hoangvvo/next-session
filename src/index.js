@@ -8,7 +8,9 @@ const Session = require('./session/session');
 const genidFn = () => crypto.randomBytes(16).toString('hex');
 
 function hash(sess) {
-  const str = JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));
+  const str = JSON.stringify(sess, (key, val) =>
+    key === 'cookie' ? undefined : val
+  );
   return crypto
     .createHash('sha1')
     .update(str, 'utf8')
@@ -29,7 +31,8 @@ module.exports = function session(options = {}) {
   if (store.get.length > 1) store.get = promisify(store.get);
   if (store.set.length > 2) store.set = promisify(store.set);
   if (store.destroy.length > 1) store.destroy = promisify(store.destroy);
-  if (store.touch && store.touch.length > 2) store.touch = promisify(store.touch);
+  if (store.touch && store.touch.length > 2)
+    store.touch = promisify(store.touch);
 
   store.on('disconnect', () => {
     storeReady = false;
@@ -47,16 +50,16 @@ module.exports = function session(options = {}) {
     function getSession() {
       if (!req.sessionId) {
         return Promise.resolve(
-          hash(req.sessionStore.generate(req, genid(), cookieOptions)),
+          hash(req.sessionStore.generate(req, genid(), cookieOptions))
         );
       }
-      return req.sessionStore.get(req.sessionId).then((sess) => {
+      return req.sessionStore.get(req.sessionId).then(sess => {
         if (sess) return hash(req.sessionStore.createSession(req, sess));
         return hash(req.sessionStore.generate(req, genid(), cookieOptions));
       });
     }
 
-    return getSession().then((hashedsess) => {
+    return getSession().then(hashedsess => {
       let sessionSaved = false;
       const oldEnd = res.end;
       let ended = false;
@@ -74,8 +77,9 @@ module.exports = function session(options = {}) {
               return req.session.save();
             }
             if (req.session.cookie.maxAge && touchAfter >= 0) {
-              const minuteSinceTouched = req.session.cookie.maxAge
-                - (req.session.cookie.expires - new Date());
+              const minuteSinceTouched =
+                req.session.cookie.maxAge -
+                (req.session.cookie.expires - new Date());
               if (minuteSinceTouched < touchAfter) return Promise.resolve();
               return req.session.touch();
             }
@@ -85,14 +89,14 @@ module.exports = function session(options = {}) {
 
         return saveSession().then(() => {
           if (
-            (req.cookies[name] !== req.sessionId
-              || sessionSaved
-              || rollingSession)
-            && req.session
+            (req.cookies[name] !== req.sessionId ||
+              sessionSaved ||
+              rollingSession) &&
+            req.session
           ) {
             res.setHeader(
               'Set-Cookie',
-              req.session.cookie.serialize(name, req.sessionId),
+              req.session.cookie.serialize(name, req.sessionId)
             );
           }
 

@@ -1,9 +1,17 @@
 {
-    "env": {
-        "jest": true
-    },
-    "extends": ["airbnb-base", "plugin:react/recommended"],
-    "rules": {
-        "react/react-in-jsx-scope": "off",
+  "env": {
+    "jest": true
+  },
+  "extends": ["airbnb", "prettier", "prettier/react"],
+  "plugins": ["prettier"],
+  "rules": {
+    "prettier/prettier": "error",
+    "react/prop-types": "off",
+    "react/jsx-props-no-spreading": "off"
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
     }
+  }
 }

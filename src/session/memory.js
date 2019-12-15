@@ -18,9 +18,10 @@ module.exports = class MemoryStore extends Store {
       sess = JSON.parse(sess);
 
       //  converting string Date to Date()
-      expires = typeof sess.cookie.expires === 'string'
-        ? new Date(sess.cookie.expires)
-        : sess.cookie.expires;
+      expires =
+        typeof sess.cookie.expires === 'string'
+          ? new Date(sess.cookie.expires)
+          : sess.cookie.expires;
 
       if (!expires || Date.now() < expires) {
         //  check expires before returning
@@ -39,7 +40,7 @@ module.exports = class MemoryStore extends Store {
   }
 
   touch(sid, session) {
-    return this.get(sid).then((sess) => {
+    return this.get(sid).then(sess => {
       if (sess) {
         const newSess = {
           ...sess,
