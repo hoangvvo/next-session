@@ -1,9 +1,9 @@
-const util = require('util');
-const EventEmitter = require('events');
-const Session = require('./session');
-const Cookie = require('./cookie');
+import util from 'util';
+import EventEmitter from 'events';
+import Session from './session';
+import Cookie from './cookie';
 
-function Store() {
+export default function Store() {
   EventEmitter.call(this);
 }
 
@@ -24,5 +24,3 @@ Store.prototype.createSession = function createSession(req, sess) {
   req.session = new Session(req, thisSess);
   return req.session;
 };
-
-module.exports = Store;

@@ -1,10 +1,14 @@
-const crypto = require('crypto');
-const { promisify } = require('util');
-const MemoryStore = require('./session/memory');
-const Store = require('./session/store');
-const Cookie = require('./session/cookie');
-const Session = require('./session/session');
-const { parseToMs } = require('./session/utils');
+import crypto from 'crypto';
+import { promisify } from 'util';
+import MemoryStore from './session/memory';
+import Store from './session/store';
+import Cookie from './session/cookie';
+import Session from './session/session';
+
+export {
+  Store, Cookie, Session, MemoryStore,
+};
+
 
 const genidFn = () => crypto.randomBytes(16).toString('hex');
 
@@ -18,12 +22,12 @@ function hash(sess) {
 
 let storeReady = true;
 
-function session(options = {}) {
+export default function session(options = {}) {
   const name = options.name || 'sessionId';
   const cookieOptions = options.cookie || {};
   const store = options.store || new MemoryStore();
   const genid = options.genid || genidFn;
-  const touchAfter = options.touchAfter ? parseToMs(options.touchAfter) : 0;
+  const touchAfter = options.touchAfter || 0;
   const rollingSession = options.rolling || false;
 
   //  Promisify callback-based store.
@@ -105,9 +109,3 @@ function session(options = {}) {
     });
   };
 }
-
-module.exports = session;
-module.exports.Store = Store;
-module.exports.Cookie = Cookie;
-module.exports.Session = Session;
-module.exports.MemoryStore = MemoryStore;
