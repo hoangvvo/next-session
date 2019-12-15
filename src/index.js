@@ -1,14 +1,9 @@
-import crypto from 'crypto';
-import { promisify } from 'util';
-import MemoryStore from './session/memory';
-import Store from './session/store';
-import Cookie from './session/cookie';
-import Session from './session/session';
-
-export {
-  Store, Cookie, Session, MemoryStore,
-};
-
+const crypto = require('crypto');
+const { promisify } = require('util');
+const MemoryStore = require('./session/memory');
+const Store = require('./session/store');
+const Cookie = require('./session/cookie');
+const Session = require('./session/session');
 
 const genidFn = () => crypto.randomBytes(16).toString('hex');
 
@@ -22,7 +17,7 @@ function hash(sess) {
 
 let storeReady = true;
 
-export default function session(options = {}) {
+module.exports = function session(options = {}) {
   const name = options.name || 'sessionId';
   const cookieOptions = options.cookie || {};
   const store = options.store || new MemoryStore();
@@ -108,4 +103,9 @@ export default function session(options = {}) {
       next();
     });
   };
-}
+};
+
+module.exports.Store = Store;
+module.exports.Cookie = Cookie;
+module.exports.Session = Session;
+module.exports.MemoryStore = MemoryStore;

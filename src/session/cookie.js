@@ -1,6 +1,6 @@
-import { serialize } from 'cookie';
+const { serialize } = require('cookie');
 
-export default class Cookie {
+module.exports = class Cookie {
   constructor(options) {
     //  Set parameters
     this.path = options.path || '/';
@@ -34,4 +34,4 @@ export default class Cookie {
   serialize(name, val) {
     return serialize(name, val, this.cookieOptions);
   }
-}
+};

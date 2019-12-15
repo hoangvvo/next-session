@@ -1,4 +1,4 @@
-export default class Session {
+module.exports = class Session {
   constructor(req, sess) {
     Object.defineProperty(this, 'req', { value: req });
     Object.defineProperty(this, 'id', { value: req.sessionId });
@@ -25,4 +25,4 @@ export default class Session {
     delete this.req.session;
     return this.req.sessionStore.destroy(this.id);
   }
-}
+};

@@ -1,8 +1,8 @@
-import Store from './store';
+const Store = require('./store');
 
 const MemoryStoreSession = {};
 
-export default class MemoryStore extends Store {
+module.exports = class MemoryStore extends Store {
   // eslint-disable-next-line no-useless-constructor
   constructor() {
     super();
@@ -64,4 +64,4 @@ export default class MemoryStore extends Store {
     delete this.sessions[sid];
     return Promise.resolve();
   }
-}
+};
