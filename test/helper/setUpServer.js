@@ -1,6 +1,6 @@
 const { createServer } = require('http');
 const { parse: parseCookie } = require('cookie');
-const session = require('../../src/index');
+const session = require('../../lib/index');
 
 module.exports = function setUpServer(handler, nextSessionOpts = {}, beforeHandle) {
   const server = createServer();

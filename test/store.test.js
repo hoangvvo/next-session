@@ -1,6 +1,6 @@
 const EventEmitter = require('events');
 const crypto = require('crypto');
-const Store = require('../src/session/store');
+const Store = require('../lib/session/store');
 
 describe('Store', () => {
   test('should extend EventEmitter', () => {
@@ -21,7 +21,6 @@ describe('Store', () => {
     // Some express-compatible stores use this pattern like
     // https://github.com/voxpelli/node-connect-pg-simple/blob/master/index.js
     function SubStore(options) {
-      options = options || {};
       Store.call(this, options);
     }
 
