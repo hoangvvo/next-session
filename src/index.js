@@ -1,9 +1,8 @@
 const crypto = require('crypto');
 const { promisify } = require('util');
-const MemoryStore = require('./session/memory');
-const Store = require('./session/store');
-const Cookie = require('./session/cookie');
-const Session = require('./session/session');
+const Store = require('./store');
+const Cookie = require('./cookie');
+const Session = require('./session');
 
 const genidFn = () => crypto.randomBytes(16).toString('hex');
 
@@ -22,7 +21,7 @@ let storeReady = true;
 module.exports = function session(options = {}) {
   const name = options.name || 'sessionId';
   const cookieOptions = options.cookie || {};
-  const store = options.store || new MemoryStore();
+  const { store } = options;
   const genid = options.genid || genidFn;
   const touchAfter = options.touchAfter || 0;
   const rollingSession = options.rolling || false;
@@ -112,4 +111,3 @@ module.exports = function session(options = {}) {
 module.exports.Store = Store;
 module.exports.Cookie = Cookie;
 module.exports.Session = Session;
-module.exports.MemoryStore = MemoryStore;

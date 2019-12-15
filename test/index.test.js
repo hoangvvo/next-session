@@ -1,18 +1,17 @@
 const request = require('supertest');
 const setUpServer = require('./helper/setUpServer');
 const session = require('../lib/index');
-const MemoryStore = require('../lib/session/memory');
+const MemoryStore = require('../lib/store/memory');
 
 const { Store } = session;
 
 //  Core
 
 describe('session', () => {
-  test('should export Session, Store, Cookie, and MemoryStore', () => {
+  test('should export Session, Store, Cookie', () => {
     expect(typeof session.Session).toStrictEqual('function');
     expect(typeof session.Store).toStrictEqual('function');
     expect(typeof session.Cookie).toStrictEqual('function');
-    expect(typeof session.MemoryStore).toStrictEqual('function');
   });
 
   test('can promisify callback store', async () => {

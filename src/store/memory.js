@@ -1,4 +1,4 @@
-const Store = require('./store');
+const Store = require('../store');
 
 const MemoryStoreSession = {};
 

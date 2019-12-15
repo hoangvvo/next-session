@@ -1,6 +1,7 @@
 const { createServer } = require('http');
 const { parse: parseCookie } = require('cookie');
 const session = require('../../lib/index');
+const MemoryStore = require('../../lib/store/memory');
 
 module.exports = function setUpServer(
   handler,
@@ -8,6 +9,9 @@ module.exports = function setUpServer(
   beforeHandle
 ) {
   const server = createServer();
+
+  // eslint-disable-next-line no-param-reassign
+  nextSessionOpts.store = nextSessionOpts.store || new MemoryStore();
 
   if (typeof beforeHandle === 'function') {
     server.on('request', beforeHandle);
