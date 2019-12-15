@@ -19,7 +19,7 @@ function hash(sess) {
 let storeReady = true;
 
 module.exports = function session(options = {}) {
-  const name = options.name || 'sessionId';
+  const name = options.name || 'sid';
   const cookieOptions = options.cookie || {};
   const { store } = options;
   const genid = options.genid || genidFn;
