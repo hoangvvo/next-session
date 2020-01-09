@@ -29,14 +29,17 @@ function proxyEnd(res, fn) {
 
 let storeReady = true;
 
-async function initSession(req, options) {
+async function initSession(req, options, store) {
+  const name = options.name || DEFAULT_NAME;
+  req.sessionId = req.cookies[name];
+  req.sessionStore = store || options.store || new MemoryStore();
   const generateId = options.generateId || generateSessionId;
   const cookieOptions = options.cookie || {};
   if (req.sessionId) {
-    const sess = await req.sessionStore.get(req.sessionId);
-    if (sess) req.sessionStore.createSession(req, sess);
+    const sess = await store.get(req.sessionId);
+    if (sess) store.createSession(req, sess);
   }
-  if (!req.session) req.sessionStore.generate(req, generateId(), cookieOptions);
+  if (!req.session) store.generate(req, generateId(), cookieOptions);
   // FIXME: Possible dataloss
   req.originalSession = JSON.parse(JSON.stringify(req.session));
   return req.session;
@@ -79,7 +82,6 @@ function commitSession(req, res, options) {
 }
 
 function session(options = {}) {
-  const name = options.name || DEFAULT_NAME;
   const store = options.store || new MemoryStore();
   const storePromisify = options.storePromisify || false;
 
@@ -100,30 +102,18 @@ function session(options = {}) {
   });
 
   return async (req, res, next) => {
-    if (req.session) { next(); return; }
-
-    //  check for store readiness before proceeded
-    if (!storeReady) { next(); return; }
+    if (req.session || !storeReady) { next(); return; }
     //  TODO: add pathname mismatch check
-    //  Expose store
-    req.sessionStore = store;
-
     //  Try parse cookie if not already
     req.cookies = req.cookies
   || (req.headers && typeof req.headers.cookie === 'string' && parseCookie(req.headers.cookie)) || {};
-
-    //  Get sessionId cookie;
-    req.sessionId = req.cookies[name];
-
-    await initSession(req, options);
-
+    await initSession(req, options, store);
     commitSession(req, res, options);
-
     next();
   };
 }
 
-const useSession = (req, res, opts) => {
+function useSession(req, res, opts) {
   if (!req || !res) return Promise.resolve();
   return new Promise((resolve) => {
     session(opts)(req, res, resolve);
@@ -132,9 +122,9 @@ const useSession = (req, res, opts) => {
     delete sessionValues.cookie;
     return sessionValues;
   });
-};
+}
 
-const withSession = (handler, options) => {
+function withSession(handler, options) {
   const isApiRoutes = !Object.prototype.hasOwnProperty.call(handler, 'getInitialProps');
   const oldHandler = (isApiRoutes) ? handler : handler.getInitialProps;
 
@@ -157,7 +147,7 @@ const withSession = (handler, options) => {
   if (isApiRoutes) handler = handlerProxy;
   else handler.getInitialProps = handlerProxy;
   return handler;
-};
+}
 
 module.exports = session;
 module.exports.withSession = withSession;
