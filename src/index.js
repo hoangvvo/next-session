@@ -6,9 +6,6 @@ const MemoryStore = require('./session/memory');
 const Store = require('./session/store');
 const Cookie = require('./session/cookie');
 const Session = require('./session/session');
-const { parseToMs } = require('./session/utils');
-
-const DEFAULT_NAME = 'sessionId';
 
 function proxyEnd(res, fn) {
   let ended = false;
@@ -25,11 +22,13 @@ function proxyEnd(res, fn) {
 
 let storeReady = true;
 
-async function initSession(req, options = {}, store) {
-  const name = options.name || DEFAULT_NAME;
+async function initialize(req, res, options = {}, store) {
+  const name = options.name || 'sessionId';
+  const autoCommit = options.autoCommit || true;
   req.sessionId = req.cookies[name];
   req.sessionStore = store || options.store || new MemoryStore();
   req.sessionOpts = options;
+  req.sessionOpts.name = name;
   const generateId = options.generateId || function generateId() { return crypto.randomBytes(16).toString('hex'); };
   const cookieOptions = options.cookie || {};
   if (req.sessionId) {
@@ -39,43 +38,15 @@ async function initSession(req, options = {}, store) {
   if (!req.session) req.sessionStore.generate(req, generateId(), cookieOptions);
   // FIXME: Possible dataloss
   req.originalSession = JSON.parse(JSON.stringify(req.session));
+  // autocommit
+  if (autoCommit) {
+    proxyEnd(res, async (done) => {
+      if (req.session) { await req.session.commit(res); }
+      done();
+    });
+  }
+
   return req.session;
-}
-
-async function saveSession(req) {
-  const touchAfter = req.sessionOpts.touchAfter ? parseToMs(req.sessionOpts.touchAfter) : 0;
-  const stringify = (sess) => JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));
-  if (!req.session) return false;
-  if (stringify(req.session) !== stringify(req.originalSession)) {
-    await req.session.save();
-    return true;
-  }
-  //  Touch: extend session time despite no modification
-  if (req.session.cookie.maxAge && touchAfter >= 0) {
-    const minuteSinceTouched = (
-      req.session.cookie.maxAge
-          - (req.session.cookie.expires - new Date())
-    );
-    if ((minuteSinceTouched >= touchAfter)) {
-      await req.session.touch();
-      return true;
-    }
-    return false;
-  }
-  return false;
-}
-
-function commitSession(req, res) {
-  const name = req.sessionOpts.name || DEFAULT_NAME;
-  const rollingSession = req.sessionOpts.rolling || false;
-  proxyEnd(res, async (done) => {
-    const saved = await saveSession(req);
-    if (
-      (saved || rollingSession || req.cookies[name] !== req.sessionId)
-          && req.session
-    ) res.setHeader('Set-Cookie', req.session.cookie.serialize(name, req.sessionId));
-    done();
-  });
 }
 
 function session(options = {}) {
@@ -103,8 +74,7 @@ function session(options = {}) {
     //  TODO: add pathname mismatch check
     req.cookies = req.cookies
   || (req.headers && typeof req.headers.cookie === 'string' && parseCookie(req.headers.cookie)) || {};
-    await initSession(req, options, store);
-    commitSession(req, res);
+    await initialize(req, res, options, store);
     next();
   };
 }
@@ -146,8 +116,7 @@ function withSession(handler, options) {
 }
 
 module.exports = session;
-module.exports.initSession = initSession;
-module.exports.commitSession = commitSession;
+module.exports.initialize = initialize;
 module.exports.withSession = withSession;
 module.exports.useSession = useSession;
 module.exports.Store = Store;

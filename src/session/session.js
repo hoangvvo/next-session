@@ -1,3 +1,7 @@
+const { parseToMs } = require('./utils');
+
+function stringify(sess) { return JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val)); }
+
 class Session {
   constructor(req, sess) {
     Object.defineProperty(this, 'req', { value: req });
@@ -28,6 +32,34 @@ class Session {
   destroy() {
     delete this.req.session;
     return this.req.sessionStore.destroy(this.id);
+  }
+
+  async commit(res) {
+    const { name } = this.req.sessionOpts;
+    const rollingSession = this.req.sessionOpts.rolling || false;
+    const touchAfter = this.req.sessionOpts.touchAfter
+      ? parseToMs(this.req.sessionOpts.touchAfter)
+      : 0;
+
+    let saved = false;
+
+    if (stringify(this) !== stringify(this.req.originalSession)) {
+      await this.save();
+      saved = true;
+    }
+    //  Touch: extend session time despite no modification
+    if (this.cookie.maxAge && touchAfter >= 0) {
+      const minuteSinceTouched = (
+        this.cookie.maxAge
+          - (this.cookie.expires - new Date())
+      );
+      if ((minuteSinceTouched >= touchAfter)) await this.touch();
+    }
+
+    if (
+      (saved || rollingSession || this.req.cookies[name] !== this.req.sessionId)
+        && this
+    ) res.setHeader('Set-Cookie', this.cookie.serialize(name, this.req.sessionId));
   }
 }
 
