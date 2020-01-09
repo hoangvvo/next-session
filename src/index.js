@@ -8,23 +8,10 @@ const Cookie = require('./session/cookie');
 const Session = require('./session/session');
 const { parseToMs } = require('./session/utils');
 
+const DEFAULT_NAME = 'sessionId';
+
 function generateSessionId() {
   return crypto.randomBytes(16).toString('hex');
-}
-
-function hash(sess) {
-  const str = JSON.stringify(sess, (key, val) => {
-    if (key === 'cookie') {
-      //  filtered out session.cookie
-      return undefined;
-    }
-    return val;
-  });
-  //  hash
-  return crypto
-    .createHash('sha1')
-    .update(str, 'utf8')
-    .digest('hex');
 }
 
 function proxyEnd(res, fn) {
@@ -47,39 +34,42 @@ async function initSession(req, options) {
   const cookieOptions = options.cookie || {};
   if (req.sessionId) {
     const sess = await req.sessionStore.get(req.sessionId);
-    if (sess) return req.sessionStore.createSession(req, sess);
+    if (sess) req.sessionStore.createSession(req, sess);
   }
-  return req.sessionStore.generate(req, generateId(), cookieOptions);
+  if (!req.session) req.sessionStore.generate(req, generateId(), cookieOptions);
+  // FIXME: Possible dataloss
+  req.originalSession = JSON.parse(JSON.stringify(req.session));
+  return req.session;
 }
 
-async function saveSession(req, hashedSess, options) {
+async function saveSession(req, options) {
   const touchAfter = options.touchAfter ? parseToMs(options.touchAfter) : 0;
-  if (req.session) {
-    if (hash(req.session) !== hashedSess) {
-      await req.session.save();
+  const stringify = (sess) => JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));
+  if (!req.session) return false;
+  if (stringify(req.session) !== stringify(req.originalSession)) {
+    await req.session.save();
+    return true;
+  }
+  //  Touch: extend session time despite no modification
+  if (req.session.cookie.maxAge && touchAfter >= 0) {
+    const minuteSinceTouched = (
+      req.session.cookie.maxAge
+          - (req.session.cookie.expires - new Date())
+    );
+    if ((minuteSinceTouched >= touchAfter)) {
+      await req.session.touch();
       return true;
     }
-    //  Touch: extend session time despite no modification
-    if (req.session.cookie.maxAge && touchAfter >= 0) {
-      const minuteSinceTouched = (
-        req.session.cookie.maxAge
-            - (req.session.cookie.expires - new Date())
-      );
-      if ((minuteSinceTouched >= touchAfter)) {
-        await req.session.touch();
-        return true;
-      }
-      return false;
-    }
+    return false;
   }
   return false;
 }
 
-function commitSession(req, res, hashedSess, options) {
-  const name = options.name || 'sessionId';
+function commitSession(req, res, options) {
+  const name = options.name || DEFAULT_NAME;
   const rollingSession = options.rolling || false;
   proxyEnd(res, async (done) => {
-    const saved = await saveSession(req, hashedSess, options);
+    const saved = await saveSession(req, options);
     if (
       (saved || rollingSession || req.cookies[name] !== req.sessionId)
           && req.session
@@ -89,7 +79,7 @@ function commitSession(req, res, hashedSess, options) {
 }
 
 function session(options = {}) {
-  const name = options.name || 'sessionId';
+  const name = options.name || DEFAULT_NAME;
   const store = options.store || new MemoryStore();
   const storePromisify = options.storePromisify || false;
 
@@ -125,10 +115,9 @@ function session(options = {}) {
     //  Get sessionId cookie;
     req.sessionId = req.cookies[name];
 
-    const sess = await initSession(req, options);
-    const hashedSess = hash(sess);
+    await initSession(req, options);
 
-    commitSession(req, res, hashedSess, options);
+    commitSession(req, res, options);
 
     next();
   };
