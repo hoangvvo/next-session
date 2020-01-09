@@ -93,10 +93,6 @@ function session(options = {}) {
   const store = options.store || new MemoryStore();
   const storePromisify = options.storePromisify || false;
 
-  //  Notify MemoryStore should not be used in production
-  //  eslint-disable-next-line no-console
-  if (store instanceof MemoryStore) console.warn('MemoryStore should not be used in production environment.');
-
   //  Promisify callback-based store.
   if (storePromisify) {
     store.get = promisify(store.get);
