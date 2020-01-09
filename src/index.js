@@ -60,13 +60,9 @@ const session = (options = {}) => {
   });
 
   return (req, res, next) => {
-    /**
-     * Modify req and res to "inject" the middleware
-     */
     if (req.session) return next();
 
     //  check for store readiness before proceeded
-
     if (!storeReady) return next();
     //  TODO: add pathname mismatch check
 
@@ -76,7 +72,6 @@ const session = (options = {}) => {
     //  Try parse cookie if not already
     req.cookies = req.cookies
   || (req.headers && typeof req.headers.cookie === 'string' && parseCookie(req.headers.cookie)) || {};
-
 
     //  Get sessionId cookie from Next.js parsed req.cookies
     req.sessionId = req.cookies[name];
@@ -103,9 +98,7 @@ const session = (options = {}) => {
       //  Proxy res.end
       res.end = function resEndProxy(...args) {
         //  If res.end() is called multiple times, do nothing after the first time
-        if (ended) {
-          return false;
-        }
+        if (res.headersSent || res.finished || ended) return false;
         ended = true;
         //  save session to store if there are changes (and there is a session)
         const saveSession = () => {
