@@ -29,24 +29,25 @@ function proxyEnd(res, fn) {
 
 let storeReady = true;
 
-async function initSession(req, options, store) {
+async function initSession(req, options = {}, store) {
   const name = options.name || DEFAULT_NAME;
   req.sessionId = req.cookies[name];
   req.sessionStore = store || options.store || new MemoryStore();
+  req.sessionOpts = options;
   const generateId = options.generateId || generateSessionId;
   const cookieOptions = options.cookie || {};
   if (req.sessionId) {
-    const sess = await store.get(req.sessionId);
-    if (sess) store.createSession(req, sess);
+    const sess = await req.sessionStore.get(req.sessionId);
+    if (sess) req.sessionStore.createSession(req, sess);
   }
-  if (!req.session) store.generate(req, generateId(), cookieOptions);
+  if (!req.session) req.sessionStore.generate(req, generateId(), cookieOptions);
   // FIXME: Possible dataloss
   req.originalSession = JSON.parse(JSON.stringify(req.session));
   return req.session;
 }
 
-async function saveSession(req, options) {
-  const touchAfter = options.touchAfter ? parseToMs(options.touchAfter) : 0;
+async function saveSession(req) {
+  const touchAfter = req.sessionOpts.touchAfter ? parseToMs(req.sessionOpts.touchAfter) : 0;
   const stringify = (sess) => JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));
   if (!req.session) return false;
   if (stringify(req.session) !== stringify(req.originalSession)) {
@@ -68,11 +69,11 @@ async function saveSession(req, options) {
   return false;
 }
 
-function commitSession(req, res, options) {
-  const name = options.name || DEFAULT_NAME;
-  const rollingSession = options.rolling || false;
+function commitSession(req, res) {
+  const name = req.sessionOpts.name || DEFAULT_NAME;
+  const rollingSession = req.sessionOpts.rolling || false;
   proxyEnd(res, async (done) => {
-    const saved = await saveSession(req, options);
+    const saved = await saveSession(req);
     if (
       (saved || rollingSession || req.cookies[name] !== req.sessionId)
           && req.session
@@ -104,11 +105,10 @@ function session(options = {}) {
   return async (req, res, next) => {
     if (req.session || !storeReady) { next(); return; }
     //  TODO: add pathname mismatch check
-    //  Try parse cookie if not already
     req.cookies = req.cookies
   || (req.headers && typeof req.headers.cookie === 'string' && parseCookie(req.headers.cookie)) || {};
     await initSession(req, options, store);
-    commitSession(req, res, options);
+    commitSession(req, res);
     next();
   };
 }
@@ -150,6 +150,7 @@ function withSession(handler, options) {
 }
 
 module.exports = session;
+module.exports.initSession = initSession;
 module.exports.withSession = withSession;
 module.exports.useSession = useSession;
 module.exports.Store = Store;
