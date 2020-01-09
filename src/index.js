@@ -50,6 +50,28 @@ async function initSession(req, generateId, cookieOptions) {
   return req.sessionStore.generate(req, generateId(), cookieOptions);
 }
 
+async function saveSession(req, hashedSess, touchAfter) {
+  if (req.session) {
+    if (hash(req.session) !== hashedSess) {
+      await req.session.save();
+      return true;
+    }
+    //  Touch: extend session time despite no modification
+    if (req.session.cookie.maxAge && touchAfter >= 0) {
+      const minuteSinceTouched = (
+        req.session.cookie.maxAge
+            - (req.session.cookie.expires - new Date())
+      );
+      if ((minuteSinceTouched >= touchAfter)) {
+        await req.session.touch();
+        return true;
+      }
+      return false;
+    }
+  }
+  return false;
+}
+
 function session(options = {}) {
   const name = options.name || 'sessionId';
   const cookieOptions = options.cookie || {};
@@ -83,12 +105,11 @@ function session(options = {}) {
   });
 
   return async (req, res, next) => {
-    if (req.session) return next();
+    if (req.session) { next(); return; }
 
     //  check for store readiness before proceeded
-    if (!storeReady) return next();
+    if (!storeReady) { next(); return; }
     //  TODO: add pathname mismatch check
-
     //  Expose store
     req.sessionStore = store;
 
@@ -96,46 +117,20 @@ function session(options = {}) {
     req.cookies = req.cookies
   || (req.headers && typeof req.headers.cookie === 'string' && parseCookie(req.headers.cookie)) || {};
 
-    //  Get sessionId cookie from Next.js parsed req.cookies
-    req.sessionId = req.cookies[name];
+    //  Get sessionId cookie;
+    const cookieId = req.cookies[name];
+    req.sessionId = cookieId;
 
     const sess = await initSession(req, generateId, cookieOptions);
-    const hashedsess = hash(sess);
-    // /
-    let sessionSaved = false;
+    const hashedSess = hash(sess);
 
-    proxyEnd(res, (done) => {
-      const saveSession = () => {
-        if (req.session) {
-          if (hash(req.session) !== hashedsess) {
-            sessionSaved = true;
-            return req.session.save();
-          }
-          //  Touch: extend session time despite no modification
-          if (req.session.cookie.maxAge && touchAfter >= 0) {
-            const minuteSinceTouched = (
-              req.session.cookie.maxAge
-                  - (req.session.cookie.expires - new Date())
-            );
-            if ((minuteSinceTouched < touchAfter)) {
-              return Promise.resolve();
-            }
-            return req.session.touch();
-          }
-        }
-        return Promise.resolve();
-      };
-
-      return saveSession()
-        .then(() => {
-          if (
-            (req.cookies[name] !== req.sessionId || sessionSaved || rollingSession)
-                && req.session
-          ) {
-            res.setHeader('Set-Cookie', req.session.cookie.serialize(name, req.sessionId));
-          }
-          done();
-        });
+    proxyEnd(res, async (done) => {
+      const saved = await saveSession(req, hashedSess, touchAfter);
+      if (
+        (saved || rollingSession || cookieId !== req.sessionId)
+            && req.session
+      ) res.setHeader('Set-Cookie', req.session.cookie.serialize(name, req.sessionId));
+      done();
     });
 
     next();
@@ -156,7 +151,6 @@ const useSession = (req, res, opts) => {
 const withSession = (handler, options) => {
   const isApiRoutes = !Object.prototype.hasOwnProperty.call(handler, 'getInitialProps');
   const oldHandler = (isApiRoutes) ? handler : handler.getInitialProps;
-
 
   function handlerProxy(...args) {
     let req;
