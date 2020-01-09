@@ -42,7 +42,9 @@ function proxyEnd(res, fn) {
 
 let storeReady = true;
 
-async function initSession(req, generateId, cookieOptions) {
+async function initSession(req, options) {
+  const generateId = options.generateId || generateSessionId;
+  const cookieOptions = options.cookie || {};
   if (req.sessionId) {
     const sess = await req.sessionStore.get(req.sessionId);
     if (sess) return req.sessionStore.createSession(req, sess);
@@ -50,7 +52,8 @@ async function initSession(req, generateId, cookieOptions) {
   return req.sessionStore.generate(req, generateId(), cookieOptions);
 }
 
-async function saveSession(req, hashedSess, touchAfter) {
+async function saveSession(req, hashedSess, options) {
+  const touchAfter = options.touchAfter ? parseToMs(options.touchAfter) : 0;
   if (req.session) {
     if (hash(req.session) !== hashedSess) {
       await req.session.save();
@@ -74,19 +77,13 @@ async function saveSession(req, hashedSess, touchAfter) {
 
 function session(options = {}) {
   const name = options.name || 'sessionId';
-  const cookieOptions = options.cookie || {};
   const store = options.store || new MemoryStore();
-  const generateId = options.generateId || generateSessionId;
-  const touchAfter = options.touchAfter ? parseToMs(options.touchAfter) : 0;
   const rollingSession = options.rolling || false;
   const storePromisify = options.storePromisify || false;
 
   //  Notify MemoryStore should not be used in production
   //  eslint-disable-next-line no-console
   if (store instanceof MemoryStore) console.warn('MemoryStore should not be used in production environment.');
-
-  //  Validate parameters
-  if (typeof generateId !== 'function') throw new TypeError('generateId option must be a function');
 
   //  Promisify callback-based store.
   if (storePromisify) {
@@ -121,11 +118,11 @@ function session(options = {}) {
     const cookieId = req.cookies[name];
     req.sessionId = cookieId;
 
-    const sess = await initSession(req, generateId, cookieOptions);
+    const sess = await initSession(req, options);
     const hashedSess = hash(sess);
 
     proxyEnd(res, async (done) => {
-      const saved = await saveSession(req, hashedSess, touchAfter);
+      const saved = await saveSession(req, hashedSess, options);
       if (
         (saved || rollingSession || cookieId !== req.sessionId)
             && req.session
