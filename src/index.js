@@ -27,6 +27,19 @@ function hash(sess) {
     .digest('hex');
 }
 
+function proxyEnd(res, fn) {
+  let ended = false;
+  const oldEnd = res.end;
+  res.end = function resEndProxy(...args) {
+    const self = this;
+    if (res.headersSent || res.finished || ended) return;
+    ended = true;
+    fn(() => {
+      oldEnd.apply(self, args);
+    });
+  };
+}
+
 let storeReady = true;
 
 async function initSession(req, generateId, cookieOptions) {
@@ -90,14 +103,8 @@ function session(options = {}) {
     const hashedsess = hash(sess);
     // /
     let sessionSaved = false;
-    const oldEnd = res.end;
-    let ended = false;
-    //  Proxy res.end
-    res.end = function resEndProxy(...args) {
-      //  If res.end() is called multiple times, do nothing after the first time
-      if (res.headersSent || res.finished || ended) return false;
-      ended = true;
-      //  save session to store if there are changes (and there is a session)
+
+    proxyEnd(res, (done) => {
       const saveSession = () => {
         if (req.session) {
           if (hash(req.session) !== hashedsess) {
@@ -127,10 +134,9 @@ function session(options = {}) {
           ) {
             res.setHeader('Set-Cookie', req.session.cookie.serialize(name, req.sessionId));
           }
-
-          oldEnd.apply(this, args);
+          done();
         });
-    };
+    });
 
     next();
   };
