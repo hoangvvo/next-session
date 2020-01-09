@@ -75,10 +75,22 @@ async function saveSession(req, hashedSess, options) {
   return false;
 }
 
+function commitSession(req, res, hashedSess, options) {
+  const name = options.name || 'sessionId';
+  const rollingSession = options.rolling || false;
+  proxyEnd(res, async (done) => {
+    const saved = await saveSession(req, hashedSess, options);
+    if (
+      (saved || rollingSession || req.cookies[name] !== req.sessionId)
+          && req.session
+    ) res.setHeader('Set-Cookie', req.session.cookie.serialize(name, req.sessionId));
+    done();
+  });
+}
+
 function session(options = {}) {
   const name = options.name || 'sessionId';
   const store = options.store || new MemoryStore();
-  const rollingSession = options.rolling || false;
   const storePromisify = options.storePromisify || false;
 
   //  Notify MemoryStore should not be used in production
@@ -115,20 +127,12 @@ function session(options = {}) {
   || (req.headers && typeof req.headers.cookie === 'string' && parseCookie(req.headers.cookie)) || {};
 
     //  Get sessionId cookie;
-    const cookieId = req.cookies[name];
-    req.sessionId = cookieId;
+    req.sessionId = req.cookies[name];
 
     const sess = await initSession(req, options);
     const hashedSess = hash(sess);
 
-    proxyEnd(res, async (done) => {
-      const saved = await saveSession(req, hashedSess, options);
-      if (
-        (saved || rollingSession || cookieId !== req.sessionId)
-            && req.session
-      ) res.setHeader('Set-Cookie', req.session.cookie.serialize(name, req.sessionId));
-      done();
-    });
+    commitSession(req, res, hashedSess, options);
 
     next();
   };
