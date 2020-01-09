@@ -8,9 +8,11 @@ const Cookie = require('./session/cookie');
 const Session = require('./session/session');
 const { parseToMs } = require('./session/utils');
 
-const generateSessionId = () => crypto.randomBytes(16).toString('hex');
+function generateSessionId() {
+  return crypto.randomBytes(16).toString('hex');
+}
 
-const hash = (sess) => {
+function hash(sess) {
   const str = JSON.stringify(sess, (key, val) => {
     if (key === 'cookie') {
       //  filtered out session.cookie
@@ -23,11 +25,19 @@ const hash = (sess) => {
     .createHash('sha1')
     .update(str, 'utf8')
     .digest('hex');
-};
+}
 
 let storeReady = true;
 
-const session = (options = {}) => {
+async function initSession(req, generateId, cookieOptions) {
+  if (req.sessionId) {
+    const sess = await req.sessionStore.get(req.sessionId);
+    if (sess) return req.sessionStore.createSession(req, sess);
+  }
+  return req.sessionStore.generate(req, generateId(), cookieOptions);
+}
+
+function session(options = {}) {
   const name = options.name || 'sessionId';
   const cookieOptions = options.cookie || {};
   const store = options.store || new MemoryStore();
@@ -59,7 +69,7 @@ const session = (options = {}) => {
     storeReady = true;
   });
 
-  return (req, res, next) => {
+  return async (req, res, next) => {
     if (req.session) return next();
 
     //  check for store readiness before proceeded
@@ -76,69 +86,55 @@ const session = (options = {}) => {
     //  Get sessionId cookie from Next.js parsed req.cookies
     req.sessionId = req.cookies[name];
 
-    const getSession = () => {
-      //  Return a session object
-      if (!req.sessionId) {
-        //  If no sessionId found in Cookie header, generate one
-        return Promise.resolve(hash(req.sessionStore.generate(req, generateId(), cookieOptions)));
-      }
-      return req.sessionStore.get(req.sessionId)
-        .then((sess) => {
-          if (sess) {
-            return hash(req.sessionStore.createSession(req, sess));
+    const sess = await initSession(req, generateId, cookieOptions);
+    const hashedsess = hash(sess);
+    // /
+    let sessionSaved = false;
+    const oldEnd = res.end;
+    let ended = false;
+    //  Proxy res.end
+    res.end = function resEndProxy(...args) {
+      //  If res.end() is called multiple times, do nothing after the first time
+      if (res.headersSent || res.finished || ended) return false;
+      ended = true;
+      //  save session to store if there are changes (and there is a session)
+      const saveSession = () => {
+        if (req.session) {
+          if (hash(req.session) !== hashedsess) {
+            sessionSaved = true;
+            return req.session.save();
           }
-          return hash(req.sessionStore.generate(req, generateId(), cookieOptions));
+          //  Touch: extend session time despite no modification
+          if (req.session.cookie.maxAge && touchAfter >= 0) {
+            const minuteSinceTouched = (
+              req.session.cookie.maxAge
+                  - (req.session.cookie.expires - new Date())
+            );
+            if ((minuteSinceTouched < touchAfter)) {
+              return Promise.resolve();
+            }
+            return req.session.touch();
+          }
+        }
+        return Promise.resolve();
+      };
+
+      return saveSession()
+        .then(() => {
+          if (
+            (req.cookies[name] !== req.sessionId || sessionSaved || rollingSession)
+                && req.session
+          ) {
+            res.setHeader('Set-Cookie', req.session.cookie.serialize(name, req.sessionId));
+          }
+
+          oldEnd.apply(this, args);
         });
     };
 
-    return getSession().then((hashedsess) => {
-      let sessionSaved = false;
-      const oldEnd = res.end;
-      let ended = false;
-      //  Proxy res.end
-      res.end = function resEndProxy(...args) {
-        //  If res.end() is called multiple times, do nothing after the first time
-        if (res.headersSent || res.finished || ended) return false;
-        ended = true;
-        //  save session to store if there are changes (and there is a session)
-        const saveSession = () => {
-          if (req.session) {
-            if (hash(req.session) !== hashedsess) {
-              sessionSaved = true;
-              return req.session.save();
-            }
-            //  Touch: extend session time despite no modification
-            if (req.session.cookie.maxAge && touchAfter >= 0) {
-              const minuteSinceTouched = (
-                req.session.cookie.maxAge
-                  - (req.session.cookie.expires - new Date())
-              );
-              if ((minuteSinceTouched < touchAfter)) {
-                return Promise.resolve();
-              }
-              return req.session.touch();
-            }
-          }
-          return Promise.resolve();
-        };
-
-        return saveSession()
-          .then(() => {
-            if (
-              (req.cookies[name] !== req.sessionId || sessionSaved || rollingSession)
-                && req.session
-            ) {
-              res.setHeader('Set-Cookie', req.session.cookie.serialize(name, req.sessionId));
-            }
-
-            oldEnd.apply(this, args);
-          });
-      };
-
-      next();
-    });
+    next();
   };
-};
+}
 
 const useSession = (req, res, opts) => {
   if (!req || !res) return Promise.resolve();
