@@ -2,7 +2,7 @@ const request = require('supertest');
 const crypto = require('crypto');
 const setUpServer = require('./helper/setUpServer');
 const session = require('../src/index');
-const { initSession } = require('../src/index');
+const { initialize } = require('../src/index');
 const MemoryStore = require('../src/session/memory');
 const Cookie = require('../src/session/cookie');
 
@@ -24,8 +24,8 @@ describe('session', () => {
       session()(req, res, resolve);
     });
     expect(req.sessionStore).toBeInstanceOf(MemoryStore);
-    const req2 = { cookies: {} };
-    await initSession(req2);
+    const req2 = { cookies: {} }; const res2 = { end: () => null };
+    await initialize(req2, res2);
     expect(req2.sessionStore).toBeInstanceOf(MemoryStore);
   });
 
@@ -124,6 +124,17 @@ describe('session', () => {
     await agent.get('/').then((res) => { originalExpires = res.text; });
     //  Some miliseconds passed... hopefully
     await agent.get('/').expect(originalExpires);
+  });
+
+  test('should allow manually committing session', async () => {
+    const server = setUpServer(defaultHandler, { autoCommit: false });
+    await request(server).post('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    const server2 = setUpServer(async (req, res) => {
+      req.session.test = 'ok';
+      await req.session.commit(res);
+      res.end();
+    }, { autoCommit: false });
+    await request(server2).post('/').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
   });
 });
 

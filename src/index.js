@@ -24,7 +24,7 @@ let storeReady = true;
 
 async function initialize(req, res, options = {}, store) {
   const name = options.name || 'sessionId';
-  const autoCommit = options.autoCommit || true;
+  const autoCommit = options.autoCommit !== undefined ? options.autoCommit : true;
   req.sessionId = req.cookies[name];
   req.sessionStore = store || options.store || new MemoryStore();
   req.sessionOpts = options;
