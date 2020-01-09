@@ -19,19 +19,10 @@ describe('session', () => {
 
   test('should default to MemoryStore with warning', async () => {
     const req = {}; const res = { end: () => null };
-    const consoleWarnSpy = jest.spyOn(global.console, 'warn');
-
     await new Promise((resolve) => {
       session()(req, res, resolve);
     });
-    expect(consoleWarnSpy).toHaveBeenCalled();
     expect(req.sessionStore).toBeInstanceOf(MemoryStore);
-  });
-
-  test('should throw if generateId is not a function', () => {
-    [10, 'string', true, {}].forEach((generateId) => {
-      expect(() => { session({ generateId }); }).toThrow();
-    });
   });
 
   test('can promisify callback store', async () => {
