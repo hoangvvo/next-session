@@ -10,10 +10,6 @@ const { parseToMs } = require('./session/utils');
 
 const DEFAULT_NAME = 'sessionId';
 
-function generateSessionId() {
-  return crypto.randomBytes(16).toString('hex');
-}
-
 function proxyEnd(res, fn) {
   let ended = false;
   const oldEnd = res.end;
@@ -34,7 +30,7 @@ async function initSession(req, options = {}, store) {
   req.sessionId = req.cookies[name];
   req.sessionStore = store || options.store || new MemoryStore();
   req.sessionOpts = options;
-  const generateId = options.generateId || generateSessionId;
+  const generateId = options.generateId || function generateId() { return crypto.randomBytes(16).toString('hex'); };
   const cookieOptions = options.cookie || {};
   if (req.sessionId) {
     const sess = await req.sessionStore.get(req.sessionId);
@@ -151,6 +147,7 @@ function withSession(handler, options) {
 
 module.exports = session;
 module.exports.initSession = initSession;
+module.exports.commitSession = commitSession;
 module.exports.withSession = withSession;
 module.exports.useSession = useSession;
 module.exports.Store = Store;
