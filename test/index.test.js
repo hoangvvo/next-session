@@ -2,6 +2,7 @@ const request = require('supertest');
 const crypto = require('crypto');
 const setUpServer = require('./helper/setUpServer');
 const session = require('../src/index');
+const { initSession } = require('../src/index');
 const MemoryStore = require('../src/session/memory');
 const Cookie = require('../src/session/cookie');
 
@@ -17,12 +18,15 @@ describe('session', () => {
     expect(typeof session.MemoryStore).toStrictEqual('function');
   });
 
-  test('should default to MemoryStore with warning', async () => {
+  test('should default to MemoryStore', async () => {
     const req = {}; const res = { end: () => null };
     await new Promise((resolve) => {
       session()(req, res, resolve);
     });
     expect(req.sessionStore).toBeInstanceOf(MemoryStore);
+    const req2 = { cookies: {} };
+    await initSession(req2);
+    expect(req2.sessionStore).toBeInstanceOf(MemoryStore);
   });
 
   test('can promisify callback store', async () => {
@@ -51,15 +55,6 @@ describe('session', () => {
     expect(req.sessionStore.set().constructor.name).toStrictEqual('Promise');
     expect(req.sessionStore.destroy().constructor.name).toStrictEqual('Promise');
     expect(req.sessionStore.touch().constructor.name).toStrictEqual('Promise');
-  });
-
-  test('can parse cookie (for getInitialProps)', async () => {
-    const req = { headers: { cookie: 'sessionId=YmVsaWV2ZWlueW91cnNlbGY' } };
-    const res = {};
-    await new Promise((resolve) => {
-      session()(req, res, resolve);
-    });
-    expect(req.cookies.sessionId).toStrictEqual('YmVsaWV2ZWlueW91cnNlbGY');
   });
 
   const defaultHandler = (req, res) => {
