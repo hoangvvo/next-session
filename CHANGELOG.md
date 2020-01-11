@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.2.0
+
+### Minor
+
+- Allow manual session commit (#59)
+
+### Patches
+
+- Futhur check for headersSent (dd561a71c12ab6248b02873dd50cb114046be430)
+
 ## 2.1.1
 
 ### Patches
