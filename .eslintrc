@@ -5,6 +5,7 @@
     "extends": "airbnb-base",
     "rules": {
         "no-shadow": [2, {"allow": ["req", "res"]}],
-        "no-return-assign": "off"
+        "no-return-assign": "off",
+        "no-underscore-dangle": "off",
     }
 }

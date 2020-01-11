@@ -17,21 +17,12 @@ describe('session', () => {
     expect(typeof session.MemoryStore).toStrictEqual('function');
   });
 
-  test('should default to MemoryStore with warning', async () => {
+  test('should default to MemoryStore', async () => {
     const req = {}; const res = { end: () => null };
-    const consoleWarnSpy = jest.spyOn(global.console, 'warn');
-
     await new Promise((resolve) => {
       session()(req, res, resolve);
     });
-    expect(consoleWarnSpy).toHaveBeenCalled();
     expect(req.sessionStore).toBeInstanceOf(MemoryStore);
-  });
-
-  test('should throw if generateId is not a function', () => {
-    [10, 'string', true, {}].forEach((generateId) => {
-      expect(() => { session({ generateId }); }).toThrow();
-    });
   });
 
   test('can promisify callback store', async () => {
@@ -60,15 +51,6 @@ describe('session', () => {
     expect(req.sessionStore.set().constructor.name).toStrictEqual('Promise');
     expect(req.sessionStore.destroy().constructor.name).toStrictEqual('Promise');
     expect(req.sessionStore.touch().constructor.name).toStrictEqual('Promise');
-  });
-
-  test('can parse cookie (for getInitialProps)', async () => {
-    const req = { headers: { cookie: 'sessionId=YmVsaWV2ZWlueW91cnNlbGY' } };
-    const res = {};
-    await new Promise((resolve) => {
-      session()(req, res, resolve);
-    });
-    expect(req.cookies.sessionId).toStrictEqual('YmVsaWV2ZWlueW91cnNlbGY');
   });
 
   const defaultHandler = (req, res) => {
@@ -138,6 +120,17 @@ describe('session', () => {
     await agent.get('/').then((res) => { originalExpires = res.text; });
     //  Some miliseconds passed... hopefully
     await agent.get('/').expect(originalExpires);
+  });
+
+  test('should allow manually committing session', async () => {
+    const server = setUpServer(defaultHandler, { autoCommit: false });
+    await request(server).post('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    const server2 = setUpServer(async (req, res) => {
+      req.session.test = 'ok';
+      await req.session.commit(res);
+      res.end();
+    }, { autoCommit: false });
+    await request(server2).post('/').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
   });
 });
 
