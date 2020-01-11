@@ -6,6 +6,7 @@ const MemoryStore = require('./session/memory');
 const Store = require('./session/store');
 const Cookie = require('./session/cookie');
 const Session = require('./session/session');
+const { parseToMs } = require('./session/utils');
 
 function proxyEnd(res, fn) {
   let ended = false;
@@ -22,24 +23,29 @@ function proxyEnd(res, fn) {
 
 let storeReady = true;
 
-async function initialize(req, res, options = {}, store) {
-  const name = options.name || 'sessionId';
-  const autoCommit = options.autoCommit !== undefined ? options.autoCommit : true;
-  req.sessionId = req.cookies[name];
-  req.sessionStore = store || options.store || new MemoryStore();
-  req.sessionOpts = options;
-  req.sessionOpts.name = name;
-  const generateId = options.generateId || function generateId() { return crypto.randomBytes(16).toString('hex'); };
-  const cookieOptions = options.cookie || {};
+async function initialize(req, res, options) {
+  // eslint-disable-next-line no-multi-assign
+  const originalId = req.sessionId = req.headers && req.headers.cookie
+    ? parseCookie(req.headers.cookie)[options.name]
+    : null;
+
+  req.sessionStore = options.store;
+
   if (req.sessionId) {
     const sess = await req.sessionStore.get(req.sessionId);
     if (sess) req.sessionStore.createSession(req, sess);
   }
-  if (!req.session) req.sessionStore.generate(req, generateId(), cookieOptions);
-  // FIXME: Possible dataloss
-  req.originalSession = JSON.parse(JSON.stringify(req.session));
+  if (!req.session) req.sessionStore.generate(req, options.generateId(), options.cookie);
+
+  req._session = {
+    // FIXME: Possible dataloss
+    original: JSON.parse(JSON.stringify(req.session)),
+    originalId,
+    options,
+  };
+
   // autocommit
-  if (autoCommit) {
+  if (options.autoCommit) {
     proxyEnd(res, async (done) => {
       if (req.session) { await req.session.commit(res); }
       done();
@@ -49,9 +55,20 @@ async function initialize(req, res, options = {}, store) {
   return req.session;
 }
 
-function session(options = {}) {
-  const store = options.store || new MemoryStore();
-  const storePromisify = options.storePromisify || false;
+function session(opts = {}) {
+  const options = {
+    name: opts.name || 'sessionId',
+    store: opts.store || new MemoryStore(),
+    storePromisify: opts.storePromisify || false,
+    generateId: opts.genid || opts.generateId || function generateId() { return crypto.randomBytes(16).toString('hex'); },
+    rolling: opts.rolling || false,
+    touchAfter: opts.touchAfter ? parseToMs(opts.touchAfter) : 0,
+    cookie: opts.cookie || {},
+    autoCommit: typeof opts.autoCommit !== 'undefined' ? opts.autoCommit : true,
+  };
+
+
+  const { store, storePromisify } = options;
 
   //  Promisify callback-based store.
   if (storePromisify) {
@@ -72,9 +89,7 @@ function session(options = {}) {
   return async (req, res, next) => {
     if (req.session || !storeReady) { next(); return; }
     //  TODO: add pathname mismatch check
-    req.cookies = req.cookies
-  || (req.headers && typeof req.headers.cookie === 'string' && parseCookie(req.headers.cookie)) || {};
-    await initialize(req, res, options, store);
+    await initialize(req, res, options);
     next();
   };
 }

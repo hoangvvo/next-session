@@ -1,5 +1,3 @@
-const { parseToMs } = require('./utils');
-
 function stringify(sess) { return JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val)); }
 
 class Session {
@@ -35,15 +33,11 @@ class Session {
   }
 
   async commit(res) {
-    const { name } = this.req.sessionOpts;
-    const rollingSession = this.req.sessionOpts.rolling || false;
-    const touchAfter = this.req.sessionOpts.touchAfter
-      ? parseToMs(this.req.sessionOpts.touchAfter)
-      : 0;
+    const { name, rolling, touchAfter } = this.req._session.options;
 
     let saved = false;
 
-    if (stringify(this) !== stringify(this.req.originalSession)) {
+    if (stringify(this) !== stringify(this.req._session.original)) {
       await this.save();
       saved = true;
     }
@@ -57,7 +51,7 @@ class Session {
     }
 
     if (
-      (saved || rollingSession || this.req.cookies[name] !== this.req.sessionId)
+      (saved || rolling || this.req._session.originalId !== this.req.sessionId)
         && this
     ) res.setHeader('Set-Cookie', this.cookie.serialize(name, this.req.sessionId));
   }

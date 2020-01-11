@@ -2,7 +2,6 @@ const request = require('supertest');
 const crypto = require('crypto');
 const setUpServer = require('./helper/setUpServer');
 const session = require('../src/index');
-const { initialize } = require('../src/index');
 const MemoryStore = require('../src/session/memory');
 const Cookie = require('../src/session/cookie');
 
@@ -24,9 +23,6 @@ describe('session', () => {
       session()(req, res, resolve);
     });
     expect(req.sessionStore).toBeInstanceOf(MemoryStore);
-    const req2 = { cookies: {} }; const res2 = { end: () => null };
-    await initialize(req2, res2);
-    expect(req2.sessionStore).toBeInstanceOf(MemoryStore);
   });
 
   test('can promisify callback store', async () => {
