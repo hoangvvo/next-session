@@ -1,7 +1,7 @@
 # next-session
 
 [![npm](https://badgen.net/npm/v/next-session)](https://www.npmjs.com/package/next-session)
-[![minified size](https://badgen.net/bundlephobia/min/next-session)](https://bundlephobia.com/result?p=next-session)
+[![install size](https://packagephobia.now.sh/badge?p=next-session@2.1.0)](https://packagephobia.now.sh/result?p=next-session@2.1.0)
 [![CircleCI](https://circleci.com/gh/hoangvvo/next-session.svg?style=svg)](https://circleci.com/gh/hoangvvo/next-session)
 [![codecov](https://codecov.io/gh/hoangvvo/next-session/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/next-session)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](CONTRIBUTING.md)
@@ -215,7 +215,7 @@ function Page({ views, currentUser }) {
   return <div>Hello, {currentUser}. In this session, you have visited this website {views} time(s).</div>
 }
 
-Page.getInitialProps = async ({ req, res }) => await useSession(req, res);
+Page.getInitialProps = ({ req, res }) => useSession(req, res);
 ```
 
 ### options
@@ -229,7 +229,8 @@ Page.getInitialProps = async ({ req, res }) => await useSession(req, res);
 | storePromisify | Promisify stores that are callback based. This allows you to use `next-session` with Connect stores (ex. used in [express-session](https://github.com/expressjs/session)) | `false` |
 | generateId | The function to generate a new session ID. This needs to return a string. | `crypto.randomBytes(16).toString('hex')` |
 | rolling | Force the cookie to be set on every request despite no modification, extending the life time of the cookie in the browser | `false` |
-| touchAfter | On every request, the session store extends the life time of the session even when no changes are made (The same is done to Cookie). However, this may increase the load of the database. Setting this value will ask the store to only do so an amount of time since the Cookie is touched, with exception that the session is modified. Setting the value to `-1` will disable `touch()`. | `0` (Touch every time) |
+| touchAfter | On every request, session's life time are usually extended despite no changes. This value defer the process (to lower database load). Disable `touch()` by setting this to `-1`. | `0` (Touch every time) |
+| autoCommit | Automatically save session and set cookie header | `true` |
 | cookie.secure | Specifies the boolean value for the **Secure** `Set-Cookie` attribute. If set to true, cookie is only sent to the server with an encrypted request over the HTTPS protocol. | `false` |
 | cookie.httpOnly | Specifies the boolean value for the **httpOnly** `Set-Cookie` attribute. If set to true, cookies are inaccessible to client-side scripts. This is to help mitigate [cross-site scripting (XSS) attacks](https://developer.mozilla.org/en-US/docs/Glossary/Cross-site_scripting). | `true` |
 | cookie.path | Specifies the value for the **Path** `Set-Cookie` attribute. This indicates a URL path that must exist in the requested URL in order to send the Cookie header | `/` |
@@ -250,6 +251,10 @@ if (loggedIn) req.session.user = 'John Doe';
 const currentUser = req.session.user; // "John Doe"
 ```
 
+#### req.session.id
+
+The unique id that associates to the current session.
+
 #### req.session.destroy()
 
 Destroy to current session and remove it from session store.
@@ -258,9 +263,9 @@ Destroy to current session and remove it from session store.
 if (loggedOut) req.session.destroy();
 ```
 
-#### req.session.id
+#### req.session.commit(res)
 
-The unique id that associates to the current session. This should not be modified.
+If `options.autoCommit` is `false`, call this to save session to store and set cookie header.
 
 ### Session Store
 
