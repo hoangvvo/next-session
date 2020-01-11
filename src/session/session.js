@@ -1,8 +1,9 @@
 function stringify(sess) { return JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val)); }
 
 class Session {
-  constructor(req, sess) {
+  constructor(req, res, sess) {
     Object.defineProperty(this, 'req', { value: req });
+    Object.defineProperty(this, 'res', { value: res });
     Object.defineProperty(this, 'id', { value: req.sessionId });
     if (typeof sess === 'object') {
       Object.assign(this, sess);
@@ -32,7 +33,7 @@ class Session {
     return this.req.sessionStore.destroy(this.id);
   }
 
-  async commit(res) {
+  async commit() {
     const { name, rolling, touchAfter } = this.req._session.options;
 
     let saved = false;
@@ -53,7 +54,7 @@ class Session {
     if (
       (saved || rolling || this.req._session.originalId !== this.req.sessionId)
         && this
-    ) res.setHeader('Set-Cookie', this.cookie.serialize(name, this.req.sessionId));
+    ) this.res.setHeader('Set-Cookie', this.cookie.serialize(name, this.req.sessionId));
   }
 }
 

@@ -227,7 +227,7 @@ Page.getInitialProps = ({ req, res }) => useSession(req, res);
 | name | The name of the cookie to be read from the request and set to the response. | `sessionId` |
 | store | The session store instance to be used. | `MemoryStore` |
 | storePromisify | Promisify stores that are callback based. This allows you to use `next-session` with Connect stores (ex. used in [express-session](https://github.com/expressjs/session)) | `false` |
-| generateId | The function to generate a new session ID. This needs to return a string. | `crypto.randomBytes(16).toString('hex')` |
+| genid | The function to generate a new session ID. This needs to return a string. | `crypto.randomBytes(16).toString('hex')` |
 | rolling | Force the cookie to be set on every request despite no modification, extending the life time of the cookie in the browser | `false` |
 | touchAfter | On every request, session's life time are usually extended despite no changes. This value defer the process (to lower database load). Disable `touch()` by setting this to `-1`. | `0` (Touch every time) |
 | autoCommit | Automatically save session and set cookie header | `true` |
@@ -263,7 +263,7 @@ Destroy to current session and remove it from session store.
 if (loggedOut) req.session.destroy();
 ```
 
-#### req.session.commit(res)
+#### req.session.commit()
 
 If `options.autoCommit` is `false`, call this to save session to store and set cookie header.
 

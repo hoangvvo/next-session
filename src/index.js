@@ -33,9 +33,9 @@ async function initialize(req, res, options) {
 
   if (req.sessionId) {
     const sess = await req.sessionStore.get(req.sessionId);
-    if (sess) req.sessionStore.createSession(req, sess);
+    if (sess) req.sessionStore.createSession(req, res, sess);
   }
-  if (!req.session) req.sessionStore.generate(req, options.generateId(), options.cookie);
+  if (!req.session) req.sessionStore.generate(req, res, options.generateId(), options.cookie);
 
   req._session = {
     // FIXME: Possible dataloss
@@ -47,7 +47,7 @@ async function initialize(req, res, options) {
   // autocommit
   if (options.autoCommit) {
     proxyEnd(res, async (done) => {
-      if (req.session) { await req.session.commit(res); }
+      if (req.session) { await req.session.commit(); }
       done();
     });
   }
