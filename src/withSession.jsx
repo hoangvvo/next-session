@@ -1,13 +1,15 @@
-import { applySession, getOptions } from './core';
+import React from 'react';
+import { applySession } from './core';
+
+function getDisplayName(WrappedComponent) {
+  return WrappedComponent.displayName || WrappedComponent.name || 'Component';
+}
 
 function applyHOC(Page, hookName, options) {
   function WithSession(props) {
     return <Page {...props} />;
   }
-  function getDisplayName(WrappedComponent) {
-    return WrappedComponent.displayName || WrappedComponent.name || 'Component';
-  }
-  WithSession.displayName = `WithSession(${getDisplayName(Page)})`;
+  WithSession.displayName = `withSession(${getDisplayName(Page)})`;
   WithSession[hookName] = async (pageCtx) => {
     const ctx = 'Component' in pageCtx ? pageCtx.ctx : pageCtx;
     if (typeof window === 'undefined') {
@@ -16,10 +18,10 @@ function applyHOC(Page, hookName, options) {
     }
     return Page[hookName](ctx);
   };
+  return WithSession;
 }
 
-export default function withSession(handler, opts) {
-  const options = getOptions(opts);
+export default function withSession(handler, options) {
   // Page Components
   if (handler.getServerProps) return applyHOC(handler, 'getServerProps', options);
   if (handler.unstable_getServerProps) return applyHOC(handler, 'getServerProps', options);

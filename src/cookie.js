@@ -1,4 +1,4 @@
-import * as cookie from './cookie';
+import { serialize } from 'cookie';
 
 export default class Cookie {
   constructor(options) {
@@ -34,6 +34,6 @@ export default class Cookie {
 
   //  cookie serialize to use for set header
   serialize(name, val) {
-    return cookie.serialize(name, val, this.cookieOptions);
+    return serialize(name, val, this.cookieOptions);
   }
 }

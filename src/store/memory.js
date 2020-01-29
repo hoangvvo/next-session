@@ -1,4 +1,4 @@
-const Store = require('../store');
+import Store from '../store';
 const MemoryStoreSession = {};
 
 export default class MemoryStore extends Store {

@@ -15,10 +15,10 @@ function proxyEnd(res, fn) {
   };
 }
 
-function stringify(sess) { return JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val)); }
+export function stringify(sess) { return JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val)); }
 
-export async function applySession(req, res, options) {
-  // eslint-disable-next-line no-multi-assign
+export async function applySession(req, res, opts) {
+  const options = getOptions(opts);
   const originalId = req.sessionId = req.headers && req.headers.cookie
     ? parseCookie(req.headers.cookie)[options.name]
     : null;
@@ -50,7 +50,7 @@ export async function applySession(req, res, options) {
   return req.session;
 }
 
-export function getOptions(opts) {
+export function getOptions(opts = {}) {
   return {
     name: opts.name || 'sessionId',
     store: opts.store || new MemoryStore(),

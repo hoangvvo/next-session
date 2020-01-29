@@ -3,7 +3,7 @@ import EventEmitter from 'events';
 import Session from './session';
 import Cookie from './cookie';
 
-export default function Store() {
+function Store() {
   EventEmitter.call(this);
 }
 
@@ -24,3 +24,5 @@ Store.prototype.createSession = function createSession(req, res, sess) {
   req.session = new Session(req, res, thisSess);
   return req.session;
 };
+
+export default Store;
