@@ -1,6 +1,6 @@
 const EventEmitter = require('events');
 const crypto = require('crypto');
-const Store = require('../src/session/store');
+const Store = require('../lib/store');
 
 describe('Store', () => {
   test('should extend EventEmitter', () => {

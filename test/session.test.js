@@ -1,5 +1,5 @@
-const Session = require('../src/session/session');
-const MemoryStore = require('../src/session/memory');
+const Session = require('../lib/session');
+const MemoryStore = require('../lib/store/memory');
 
 describe('Session', () => {
   test('should warn if store does not implement touch', async () => {

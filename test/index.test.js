@@ -1,9 +1,9 @@
 const request = require('supertest');
 const crypto = require('crypto');
 const setUpServer = require('./helper/setUpServer');
-const session = require('../src/index');
-const MemoryStore = require('../src/session/memory');
-const Cookie = require('../src/session/cookie');
+const session = require('../');
+const MemoryStore = require('../lib/store/memory');
+const Cookie = require('../lib/cookie');
 
 const { useSession, withSession, Store } = session;
 
@@ -32,7 +32,6 @@ describe('session', () => {
         this.sessions = 1;
       }
 
-      /* eslint-disable no-unused-expressions */
       get(sid, cb) { cb && cb(null, this.sessions); }
 
       set(sid, sess, cb) { cb && cb(null, this.sessions); }

@@ -1,5 +1,5 @@
 const { createServer } = require('http');
-const { withSession } = require('../../src/index');
+const { withSession } = require('../../lib');
 
 module.exports = function setUpServer(handler, nextSessionOpts = {}, beforeHandle) {
   const server = createServer();
