@@ -1,6 +1,6 @@
-function stringify(sess) { return JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val)); }
+import { stringify } from './core';
 
-class Session {
+export default class Session {
   constructor(req, res, sess) {
     Object.defineProperty(this, 'req', { value: req });
     Object.defineProperty(this, 'res', { value: res });
@@ -38,7 +38,7 @@ class Session {
 
     let saved = false;
 
-    if (stringify(this) !== stringify(this.req._session.original)) {
+    if (stringify(this) !== this.req._session.originalStringified) {
       await this.save();
       saved = true;
     }
@@ -50,12 +50,9 @@ class Session {
       );
       if ((minuteSinceTouched >= touchAfter)) await this.touch();
     }
-
     if (
       (saved || rolling || this.req._session.originalId !== this.req.sessionId)
         && this
     ) this.res.setHeader('Set-Cookie', this.cookie.serialize(name, this.req.sessionId));
   }
 }
-
-module.exports = Session;

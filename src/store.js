@@ -1,13 +1,13 @@
-const util = require('util');
-const EventEmitter = require('events');
-const Session = require('./session');
-const Cookie = require('./cookie');
+import { inherits } from 'util';
+import EventEmitter from 'events';
+import Session from './session';
+import Cookie from './cookie';
 
-function Store() {
+export default function Store() {
   EventEmitter.call(this);
 }
 
-util.inherits(Store, EventEmitter);
+inherits(Store, EventEmitter);
 
 Store.prototype.generate = function generate(req, res, genId, cookieOptions) {
   req.sessionId = genId;
@@ -24,5 +24,3 @@ Store.prototype.createSession = function createSession(req, res, sess) {
   req.session = new Session(req, res, thisSess);
   return req.session;
 };
-
-module.exports = Store;

@@ -1,15 +1,16 @@
-const cookie = require('cookie');
-const { parseToMs } = require('./utils');
+import * as cookie from './cookie';
 
-class Cookie {
+export default class Cookie {
   constructor(options) {
     //  Set parameters
-    this.path = options.path || '/';
-    this.maxAge = options.maxAge ? parseToMs(options.maxAge) : null;
-    this.httpOnly = options.httpOnly || true;
-    this.domain = options.domain || null;
-    this.sameSite = options.sameSite || null;
-    this.secure = options.secure || false;
+    Object.assign(this, {
+      path: '/',
+      maxAge: null,
+      httpOnly: true,
+      domain: null,
+      sameSite: null,
+      secure: false,
+    }, options);
     // set expires based on maxAge
     if (this.maxAge) this.expires = new Date(Date.now() + this.maxAge);
   }
@@ -36,5 +37,3 @@ class Cookie {
     return cookie.serialize(name, val, this.cookieOptions);
   }
 }
-
-module.exports = Cookie;
