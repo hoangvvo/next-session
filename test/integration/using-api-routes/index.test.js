@@ -37,17 +37,6 @@ describe('Using API Routes', () => {
     await agent.post('/api').expect('2');
   });
 
-  it('should create and persist session', async () => {
-    let res;
-    res = await agent.post('/api/connect');
-    expect(res.header).toHaveProperty('set-cookie');
-    expect(res.text).toEqual('1');
-    res = await agent.get('/api/connect');
-    expect(res.header).not.toHaveProperty('set-cookie');
-    expect(res.text).toEqual('1');
-    await agent.post('/api/connect').expect('2');
-  });
-
   it('should destroy session and refresh sessionId', async () => {
     let res;
     await agent.post('/api');
