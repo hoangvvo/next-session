@@ -42,7 +42,7 @@ export async function applySession(req, res, opts) {
     storeReady = true;
   });
 
-  if (req.session && !storeReady) return;
+  if (req.session || !storeReady) return;
 
   const originalId = req.sessionId = req.headers && req.headers.cookie
     ? parseCookie(req.headers.cookie)[options.name]
