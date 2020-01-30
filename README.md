@@ -187,7 +187,7 @@ The session store to use for session middleware (see `options` above).
 
 ### Implementation
 
-A compatible session store must extend from `./src/session/store` and include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness.
+A compatible session store must extend from `Store` as in `import { Store } from 'next-session'` and include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness.
 
 All functions must return **Promises** (*callbacks* are not supported).
 
