@@ -3,21 +3,27 @@ import { serialize } from 'cookie';
 export default class Cookie {
   constructor(options) {
     //  Set parameters
-    Object.assign(this, {
-      path: '/',
-      maxAge: null,
-      httpOnly: true,
-      domain: null,
-      sameSite: null,
-      secure: false,
-    }, options);
+    Object.assign(
+      this,
+      {
+        path: '/',
+        maxAge: null,
+        httpOnly: true,
+        domain: null,
+        sameSite: null,
+        secure: false
+      },
+      options
+    );
     // set expires based on maxAge (in seconds)
     if (this.maxAge) this.expires = new Date(Date.now() + this.maxAge * 1000);
   }
 
   //  reset expires to prolong session cookie (typically in every request)
   resetExpires() {
-    if (this.expires && this.maxAge) { this.expires = new Date(Date.now() + this.maxAge * 1000); }
+    if (this.expires && this.maxAge) {
+      this.expires = new Date(Date.now() + this.maxAge * 1000);
+    }
   }
 
   //  cookie options as an object
@@ -28,7 +34,7 @@ export default class Cookie {
       expires: this.expires || null,
       domain: this.domain,
       sameSite: this.sameSite,
-      secure: this.secure,
+      secure: this.secure
     };
   }
 

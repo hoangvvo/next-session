@@ -42,18 +42,21 @@ export default class Session {
     }
     //  Touch: extend session time despite no modification
     if (this.cookie.maxAge && touchAfter >= 0) {
-      const minuteSinceTouched = (
-        this.cookie.maxAge * 1000
-          - (this.cookie.expires - new Date())
-      );
-      if ((minuteSinceTouched >= touchAfter)) {
+      const minuteSinceTouched =
+        this.cookie.maxAge * 1000 - (this.cookie.expires - new Date());
+      if (minuteSinceTouched >= touchAfter) {
         touched = true;
         await this.touch();
       }
     }
     if (
-      ((rolling && touched) || this.req._session.originalId !== this.req.sessionId)
-        && this
-    ) this.res.setHeader('Set-Cookie', this.cookie.serialize(name, this.req.sessionId));
+      ((rolling && touched) ||
+        this.req._session.originalId !== this.req.sessionId) &&
+      this
+    )
+      this.res.setHeader(
+        'Set-Cookie',
+        this.cookie.serialize(name, this.req.sessionId)
+      );
   }
 }

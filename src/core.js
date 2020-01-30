@@ -19,6 +19,18 @@ function proxyEnd(res, fn) {
 
 export function stringify(sess) { return JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val)); }
 
+function getOptions(opts = {}) {
+  return {
+    name: opts.name || 'sessionId',
+    store: opts.store || new MemoryStore(),
+    generateId: opts.genid || opts.generateId || function generateId() { return randomBytes(16).toString('hex'); },
+    rolling: opts.rolling || false,
+    touchAfter: opts.touchAfter ? opts.touchAfter : 0,
+    cookie: opts.cookie || {},
+    autoCommit: typeof opts.autoCommit !== 'undefined' ? opts.autoCommit : true,
+  };
+}
+
 export async function applySession(req, res, opts) {
   const options = getOptions(opts);
 
@@ -61,16 +73,4 @@ export async function applySession(req, res, opts) {
   }
 
   return req.session;
-}
-
-export function getOptions(opts = {}) {
-  return {
-    name: opts.name || 'sessionId',
-    store: opts.store || new MemoryStore(),
-    generateId: opts.genid || opts.generateId || function generateId() { return randomBytes(16).toString('hex'); },
-    rolling: opts.rolling || false,
-    touchAfter: opts.touchAfter ? opts.touchAfter : 0,
-    cookie: opts.cookie || {},
-    autoCommit: typeof opts.autoCommit !== 'undefined' ? opts.autoCommit : true,
-  };
 }

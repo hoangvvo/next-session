@@ -10,7 +10,7 @@ function applyHOC(Page, hookName, options) {
     return <Page {...props} />;
   }
   WithSession.displayName = `withSession(${getDisplayName(Page)})`;
-  WithSession[hookName] = async (pageCtx) => {
+  WithSession[hookName] = async pageCtx => {
     const ctx = 'Component' in pageCtx ? pageCtx.ctx : pageCtx;
     if (typeof window === 'undefined') {
       const { req, res } = ctx;
@@ -23,13 +23,17 @@ function applyHOC(Page, hookName, options) {
 
 export default function withSession(handler, options) {
   // Page Components
-  if (handler.getServerProps) return applyHOC(handler, 'getServerProps', options);
-  if (handler.unstable_getServerProps) return applyHOC(handler, 'unstable_getServerProps', options);
-  if (handler.getInitialProps) return applyHOC(handler, 'getInitialProps', options);
+  if (handler.getServerProps)
+    return applyHOC(handler, 'getServerProps', options);
+  if (handler.unstable_getServerProps)
+    return applyHOC(handler, 'unstable_getServerProps', options);
+  if (handler.getInitialProps)
+    return applyHOC(handler, 'getInitialProps', options);
   // API Routes
-  if (handler.length === 2) return async function WithSession(req, res) {
-    await applySession(req, res, options);
-    return handler(req, res);
-  };
+  if (handler.length === 2)
+    return async function WithSession(req, res) {
+      await applySession(req, res, options);
+      return handler(req, res);
+    };
   return handler;
 }
