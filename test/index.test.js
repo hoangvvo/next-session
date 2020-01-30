@@ -3,7 +3,15 @@ import request from 'supertest';
 import crypto from 'crypto';
 import EventEmitter from 'events';
 import { parse } from 'url';
-import { applySession, Store, MemoryStore, promisifyStore } from '../lib';
+import {
+  applySession,
+  Store,
+  MemoryStore,
+  promisifyStore,
+  withSession,
+  session
+} from '../lib';
+import Session from '../lib/session';
 
 const defaultHandler = (req, res) => {
   if (req.method === 'POST')
@@ -129,6 +137,66 @@ describe('applySession', () => {
   });
 });
 
+describe('withSession', () => {
+  // FIXME: Replaced with integration test
+  test('works with _app', async () => {
+    function Component() {}
+    Component.getInitialProps = context => {
+      const req = context.req || (context.ctx && context.ctx.req);
+      return req.session;
+    };
+    const contextObject = {
+      Component: {},
+      ctx: { req: { headers: { cookie: '' } }, res: {} }
+    };
+    expect(
+      await withSession(Component).getInitialProps(contextObject)
+    ).toBeInstanceOf(Session);
+  });
+
+  test.each([
+    ['getInitialProps'],
+    ['getServerProps'],
+    ['unstable_getServerProps']
+  ])('works with pages#%s', async hook => {
+    function Component() {
+      return <p>ok</p>;
+    }
+    Component[hook] = context => {
+      const req = context.req || (context.ctx && context.ctx.req);
+      return req.session;
+    };
+    const contextObject = { req: { headers: { cookie: '' } }, res: {} };
+    expect(await withSession(Component)[hook](contextObject)).toBeInstanceOf(
+      Session
+    );
+  });
+
+  test('works with API Routes', async () => {
+    const request = {};
+    const response = { end: () => null };
+    // eslint-disable-next-line no-unused-vars
+    function handler(req, res) {
+      return req.session;
+    }
+    expect(await withSession(handler)(request, response)).toBeInstanceOf(
+      Session
+    );
+  });
+});
+
+describe('connect middleware', () => {
+  // FIXME: Replaced with integration test
+  const request = {};
+  const response = { end: () => null };
+  test('works as middleware', async () => {
+    await new Promise(resolve => {
+      session()(request, response, resolve);
+    });
+    expect(request.session).toBeInstanceOf(Session);
+  });
+});
+
 describe('Store', () => {
   test('should extend EventEmitter', () => {
     expect(new Store()).toBeInstanceOf(EventEmitter);
@@ -203,19 +271,37 @@ describe('MemoryStore', () => {
   test('should register different user and show all sessions', async () => {
     const store = new MemoryStore();
     store.sessions = {};
-    const server = setUpServer(async (req, res) => {
-      if (req.url === '/all') {
-        const ss = (await req.sessionStore.all()).map((sess) => JSON.parse(sess).user);
-        res.end(ss.toString());
-      } else {
-        console.log(req.query);
-        req.session.user = req.query.user;
-        res.end();
-      }
-    }, { store }, (req) => req.query = parse(req.url, true).query);
-    await request.agent(server).get('/').query('user=squidward');
-    await request.agent(server).get('/').query('user=spongebob');
-    await request.agent(server).get('/').query('user=patrick');
-    await request.agent(server).get('/all').expect('squidward,spongebob,patrick');
+    const server = setUpServer(
+      async (req, res) => {
+        if (req.url === '/all') {
+          const ss = (await req.sessionStore.all()).map(
+            sess => JSON.parse(sess).user
+          );
+          res.end(ss.toString());
+        } else {
+          console.log(req.query);
+          req.session.user = req.query.user;
+          res.end();
+        }
+      },
+      { store },
+      req => (req.query = parse(req.url, true).query)
+    );
+    await request
+      .agent(server)
+      .get('/')
+      .query('user=squidward');
+    await request
+      .agent(server)
+      .get('/')
+      .query('user=spongebob');
+    await request
+      .agent(server)
+      .get('/')
+      .query('user=patrick');
+    await request
+      .agent(server)
+      .get('/all')
+      .expect('squidward,spongebob,patrick');
   });
 });
