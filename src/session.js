@@ -43,7 +43,7 @@ export default class Session {
     //  Touch: extend session time despite no modification
     if (this.cookie.maxAge && touchAfter >= 0) {
       const minuteSinceTouched = (
-        this.cookie.maxAge
+        this.cookie.maxAge * 1000
           - (this.cookie.expires - new Date())
       );
       if ((minuteSinceTouched >= touchAfter)) {

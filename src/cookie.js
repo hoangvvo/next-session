@@ -11,13 +11,13 @@ export default class Cookie {
       sameSite: null,
       secure: false,
     }, options);
-    // set expires based on maxAge
-    if (this.maxAge) this.expires = new Date(Date.now() + this.maxAge);
+    // set expires based on maxAge (in seconds)
+    if (this.maxAge) this.expires = new Date(Date.now() + this.maxAge * 1000);
   }
 
   //  reset expires to prolong session cookie (typically in every request)
   resetExpires() {
-    if (this.expires && this.maxAge) { this.expires = new Date(Date.now() + this.maxAge); }
+    if (this.expires && this.maxAge) { this.expires = new Date(Date.now() + this.maxAge * 1000); }
   }
 
   //  cookie options as an object
