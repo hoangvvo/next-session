@@ -175,7 +175,7 @@ if (loggedOut) req.session.destroy();
 
 ### req.session.commit()
 
-Save the session and set neccessary headers. Use this if `autoCommit` is set to `false`.
+Save the session and set neccessary headers and return Promise. Use this if `autoCommit` is set to `false`.
 
 ### req.session.id
 
