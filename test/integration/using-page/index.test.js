@@ -1,9 +1,5 @@
 import request from 'supertest';
-import {
-  nextBuild,
-  startApp,
-  extractNextData
-} from '../next-test-utils';
+import { nextBuild, startApp, extractNextData } from '../next-test-utils';
 
 const appDir = __dirname;
 let server;
@@ -36,7 +32,7 @@ describe('Using pages', () => {
     expect(res.header).toHaveProperty('set-cookie');
     expect(res.text).toContain('<p>1</p>');
     res = await agent.get('/');
-    expect(res.header).not.toHaveProperty('set-cookie')
+    expect(res.header).not.toHaveProperty('set-cookie');
     expect(res.text).toContain('<p>1</p>');
     res = await agent.post('/');
     expect(res.text).toContain('<p>2</p>');
@@ -65,12 +61,18 @@ describe('Using pages', () => {
   it('should expire session', async () => {
     expect((await agent.get('/expire')).text).toContain('<p>1</p>');
     expect((await agent.get('/expire')).text).toContain('<p>2</p>');
-    await new Promise((resolve) => { setTimeout(() => resolve(), 1000) });
+    await new Promise(resolve => {
+      setTimeout(() => resolve(), 1000);
+    });
     expect((await agent.get('/expire')).text).toContain('<p>1</p>');
-  })
+  });
 
   it('should allow manually session commit', async () => {
-    expect((await agent.get('/manual-commit')).header).not.toHaveProperty('set-cookie');
-    expect((await agent.post('/manual-commit')).header).toHaveProperty('set-cookie');
+    expect((await agent.get('/manual-commit')).header).not.toHaveProperty(
+      'set-cookie'
+    );
+    expect((await agent.post('/manual-commit')).header).toHaveProperty(
+      'set-cookie'
+    );
   });
 });

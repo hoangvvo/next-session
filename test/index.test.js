@@ -10,7 +10,12 @@ describe('Store', () => {
     const store = new Store();
     const req = {};
     const res = {};
-    let sess = store.generate(req, res, crypto.randomBytes(16).toString('hex'), { maxAge: 100000 });
+    let sess = store.generate(
+      req,
+      res,
+      crypto.randomBytes(16).toString('hex'),
+      { maxAge: 100000 }
+    );
     //  force sess.cookie.expires to be string
     sess = JSON.parse(JSON.stringify(sess));
     store.createSession(req, res, sess);
@@ -28,6 +33,4 @@ describe('Store', () => {
   });
 });
 
-describe('MemoryStore', () => {
-
-})
+describe('MemoryStore', () => {});

@@ -1,8 +1,5 @@
 import request from 'supertest';
-import {
-  nextBuild,
-  startApp,
-} from '../next-test-utils';
+import { nextBuild, startApp } from '../next-test-utils';
 
 const appDir = __dirname;
 let server;
@@ -35,7 +32,7 @@ describe('Using API Routes', () => {
     expect(res.header).toHaveProperty('set-cookie');
     expect(res.text).toEqual('1');
     res = await agent.get('/api');
-    expect(res.header).not.toHaveProperty('set-cookie')
+    expect(res.header).not.toHaveProperty('set-cookie');
     expect(res.text).toEqual('1');
     await agent.post('/api').expect('2');
   });
@@ -46,7 +43,7 @@ describe('Using API Routes', () => {
     expect(res.header).toHaveProperty('set-cookie');
     expect(res.text).toEqual('1');
     res = await agent.get('/api/connect');
-    expect(res.header).not.toHaveProperty('set-cookie')
+    expect(res.header).not.toHaveProperty('set-cookie');
     expect(res.text).toEqual('1');
     await agent.post('/api/connect').expect('2');
   });

@@ -38,16 +38,13 @@ export async function startApp(options) {
 }
 
 export async function stopApp(server) {
-  const app = (server)._app;
+  const app = server._app;
 
   if (app) await app.close();
   await promiseCall(server, 'close');
 }
 
-export function runNextCommand(
-  args,
-  options = {}
-) {
+export function runNextCommand(args, options = {}) {
   const nextDir = path.dirname(require.resolve('next/package'));
   const nextBin = path.join(nextDir, 'dist/bin/next');
   const cwd = nextDir;
@@ -82,7 +79,7 @@ export function runNextCommand(
       });
     });
 
-    instance.on('error', (err) => {
+    instance.on('error', err => {
       err.stdout = stdoutOutput;
       err.stderr = stderrOutput;
       reject(err);
@@ -90,11 +87,7 @@ export function runNextCommand(
   });
 }
 
-export function nextBuild(
-  dir,
-  args = [],
-  opts
-) {
+export function nextBuild(dir, args = [], opts) {
   return runNextCommand(['build', dir, ...args], opts);
 }
 
