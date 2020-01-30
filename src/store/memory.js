@@ -1,11 +1,7 @@
-/* eslint-disable class-methods-use-this */
-
-const Store = require('./store');
-
+import Store from '../store';
 const MemoryStoreSession = {};
 
-class MemoryStore extends Store {
-  // eslint-disable-next-line no-useless-constructor
+export default class MemoryStore extends Store {
   constructor() {
     super();
     this.sessions = MemoryStoreSession;
@@ -20,9 +16,10 @@ class MemoryStore extends Store {
       sess = JSON.parse(sess);
 
       //  converting string Date to Date()
-      expires = typeof sess.cookie.expires === 'string'
-        ? new Date(sess.cookie.expires)
-        : sess.cookie.expires;
+      expires =
+        typeof sess.cookie.expires === 'string'
+          ? new Date(sess.cookie.expires)
+          : sess.cookie.expires;
 
       if (!expires || Date.now() < expires) {
         //  check expires before returning
@@ -41,11 +38,11 @@ class MemoryStore extends Store {
   }
 
   touch(sid, session) {
-    return this.get(sid).then((sess) => {
+    return this.get(sid).then(sess => {
       if (sess) {
         const newSess = {
           ...sess,
-          cookie: session.cookie,
+          cookie: session.cookie
         };
         return this.set(sid, newSess);
       }
@@ -67,5 +64,3 @@ class MemoryStore extends Store {
     return Promise.resolve();
   }
 }
-
-module.exports = MemoryStore;

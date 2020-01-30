@@ -1,101 +1,128 @@
-const request = require('supertest');
-const crypto = require('crypto');
-const setUpServer = require('./helper/setUpServer');
-const session = require('../src/index');
-const MemoryStore = require('../src/session/memory');
-const Cookie = require('../src/session/cookie');
+import { createServer } from 'http';
+import request from 'supertest';
+import crypto from 'crypto';
+import EventEmitter from 'events';
+import { parse } from 'url';
+import {
+  applySession,
+  Store,
+  MemoryStore,
+  promisifyStore,
+  withSession,
+  session
+} from '../lib';
+import Session from '../lib/session';
 
-const { useSession, withSession, Store } = session;
+const defaultHandler = (req, res) => {
+  if (req.method === 'POST')
+    req.session.views = req.session.views ? req.session.views + 1 : 1;
+  if (req.method === 'DELETE') req.session.destroy();
+  res.end(`${(req.session && req.session.views) || 0}`);
+};
 
-//  Core
-
-describe('session', () => {
-  test('should export Session, Store, Cookie, and MemoryStore', () => {
-    expect(typeof session.Session).toStrictEqual('function');
-    expect(typeof session.Store).toStrictEqual('function');
-    expect(typeof session.Cookie).toStrictEqual('function');
-    expect(typeof session.MemoryStore).toStrictEqual('function');
+function setUpServer(handler = defaultHandler, options, prehandler) {
+  const server = createServer(async (req, res) => {
+    if (prehandler) await prehandler(req, res);
+    await applySession(req, res, options);
+    await handler(req, res);
   });
+  return server;
+}
 
+describe('applySession', () => {
   test('should default to MemoryStore', async () => {
-    const req = {}; const res = { end: () => null };
-    await new Promise((resolve) => {
-      session()(req, res, resolve);
-    });
+    const req = {};
+    const res = { end: () => null };
+    await applySession(req, res);
     expect(req.sessionStore).toBeInstanceOf(MemoryStore);
   });
 
-  test('can promisify callback store', async () => {
-    class CbStore extends Store {
-      constructor() {
-        super();
-        this.sessions = 1;
-      }
-
-      /* eslint-disable no-unused-expressions */
-      get(sid, cb) { cb && cb(null, this.sessions); }
-
-      set(sid, sess, cb) { cb && cb(null, this.sessions); }
-
-      destroy(sid, cb) { cb && cb(null, this.sessions); }
-
-      touch(sid, cb) { cb && cb(null, this.sessions); }
-    }
-
-    const req = {}; const res = { end: () => null };
-    await new Promise((resolve) => {
-      session({ store: new CbStore(), storePromisify: true })(req, res, resolve);
-    });
-    // facebook/jest#2549
-    expect(req.sessionStore.get().constructor.name).toStrictEqual('Promise');
-    expect(req.sessionStore.set().constructor.name).toStrictEqual('Promise');
-    expect(req.sessionStore.destroy().constructor.name).toStrictEqual('Promise');
-    expect(req.sessionStore.touch().constructor.name).toStrictEqual('Promise');
-  });
-
-  const defaultHandler = (req, res) => {
-    if (req.method === 'POST') {
-      req.session.johncena = 'invisible';
-    }
-    if (req.method === 'GET') { res.end((req.session && req.session.johncena) || ''); return; }
-    if (req.method === 'DELETE') {
-      req.session.destroy();
-    }
-    res.end();
-  };
-
-  test('should work accordingly to store readiness', async () => {
-    const store = new MemoryStore();
-    const server = setUpServer(defaultHandler, { store });
-    const agent = request.agent(server);
-    await agent.get('/');
-    store.emit('disconnect');
-    await agent.get('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
-    store.emit('connect');
-    await agent.get('/').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
-  });
-
   test('should do nothing if req.session is defined', async () => {
-    const server = setUpServer(defaultHandler, undefined, (req) => req.session = {});
-    await request(server).get('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    const server = setUpServer(defaultHandler, undefined, req => {
+      req.session = {};
+    });
+    await request(server)
+      .get('/')
+      .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
   });
 
-  test('should create session properly and persist sessionId', async () => {
+  test('should create and persist session', async () => {
     const server = setUpServer(defaultHandler);
     const agent = request.agent(server);
-    await agent.post('/').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
-    await agent.get('/').expect('invisible').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
-    //  should not set cookie since session with data is established
+    await agent
+      .post('/')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+    await agent
+      .get('/')
+      .expect('1')
+      .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
   });
 
-  test('should destroy session properly and refresh sessionId', async () => {
+  test('should destroy session and refresh sessionId', async () => {
     const server = setUpServer(defaultHandler);
     const agent = request.agent(server);
-    await agent.post('/').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
-    await agent.get('/').expect('invisible').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    await agent
+      .post('/')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+    await agent
+      .get('/')
+      .expect('1')
+      .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
     await agent.delete('/');
-    await agent.get('/').expect('').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+    await agent
+      .get('/')
+      .expect('0')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
     //  should set cookie since session was destroyed
+  });
+
+  test('should allow manually committing session', async () => {
+    const server = setUpServer(
+      async (req, res) => {
+        req.session.hello = 'world';
+        if (req.method === 'POST') await req.session.commit();
+        res.end((req.session && req.session.hello) || '');
+      },
+      { autoCommit: false }
+    );
+    const agent = request.agent(server);
+    await agent
+      .get('/')
+      .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    await agent
+      .post('/')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+  });
+
+  test('should respect touchAfter', async () => {
+    const server = setUpServer(
+      (req, res) => {
+        req.session.hello = 'world';
+        res.end(`${req.session.cookie.expires.valueOf()}`);
+      },
+      { rolling: true, touchAfter: 5000, cookie: { maxAge: 60 * 60 * 24 } }
+    );
+    const agent = request.agent(server);
+    await agent.post('/');
+    let originalExpires;
+    await agent.get('/').then(res => {
+      originalExpires = res.text;
+    });
+    const res = await agent.get('/');
+    expect(res.text).toStrictEqual(originalExpires);
+    // should not set-cookie despite rolling=true
+    expect(res.header).not.toHaveProperty('set-cookie');
+  });
+
+  test('should expire session', async () => {
+    const server = setUpServer(defaultHandler, { cookie: { maxAge: 1 } });
+    const agent = request.agent(server);
+    await agent.post('/').expect('1');
+    await agent.post('/').expect('2');
+    await new Promise(resolve => {
+      setTimeout(() => resolve(), 1000);
+    });
+    await agent.post('/').expect('1');
   });
 
   test('should handle multiple res.end correctly', async () => {
@@ -104,89 +131,177 @@ describe('session', () => {
       res.end('Hello, world!');
       res.end();
     });
-    const agent = request.agent(server);
-    await agent.get('/').expect('Hello, world!');
-  });
-
-  test('should not touch according to touchAfter', async () => {
-    const server = setUpServer((req, res) => {
-      if (req.method === 'POST') req.session.test = 'test';
-      res.end(`${req.session.cookie.expires.valueOf()}`);
-    }, { touchAfter: '5000', cookie: { maxAge: '1 day' } });
-
-    const agent = request.agent(server);
-    await agent.post('/');
-    let originalExpires;
-    await agent.get('/').then((res) => { originalExpires = res.text; });
-    //  Some miliseconds passed... hopefully
-    await agent.get('/').expect(originalExpires);
-  });
-
-  test('should allow manually committing session', async () => {
-    const server = setUpServer(defaultHandler, { autoCommit: false });
-    await request(server).post('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
-    const server2 = setUpServer(async (req, res) => {
-      req.session.test = 'ok';
-      await req.session.commit(res);
-      res.end();
-    }, { autoCommit: false });
-    await request(server2).post('/').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+    await request(server)
+      .get('/')
+      .expect('Hello, world!');
   });
 });
-
-//  Adapters
 
 describe('withSession', () => {
-  test('should do nothing if no request or response object given', async () => {
-    const req = undefined;
-    const res = undefined;
-    const handler = (req) => req && req.session;
-    expect(await withSession(handler)(req, res)).toStrictEqual(undefined);
-  });
-
-  function component(ctx) {
-    return component.getInitialProps(ctx);
-  }
-  component.getInitialProps = (context) => {
-    const req = context.req || (context.ctx && context.ctx.req);
-    return req.session;
-  };
-
+  // FIXME: Replaced with integration test
   test('works with _app', async () => {
-    const contextObject = { ctx: { req: { headers: { cookie: '' } }, res: {} } };
-    expect(await withSession(component)(contextObject)).toBeInstanceOf(session.Session);
+    function Component() {}
+    Component.getInitialProps = context => {
+      const req = context.req || (context.ctx && context.ctx.req);
+      return req.session;
+    };
+    const contextObject = {
+      Component: {},
+      ctx: { req: { headers: { cookie: '' } }, res: {} }
+    };
+    expect(
+      await withSession(Component).getInitialProps(contextObject)
+    ).toBeInstanceOf(Session);
   });
 
-  test('works with _document and pages', async () => {
+  test.each([
+    ['getInitialProps'],
+    ['getServerProps'],
+    ['unstable_getServerProps']
+  ])('works with pages#%s', async hook => {
+    function Component() {
+      return <p>ok</p>;
+    }
+    Component[hook] = context => {
+      const req = context.req || (context.ctx && context.ctx.req);
+      return req.session;
+    };
     const contextObject = { req: { headers: { cookie: '' } }, res: {} };
-    expect(await withSession(component)(contextObject)).toBeInstanceOf(session.Session);
+    expect(await withSession(Component)[hook](contextObject)).toBeInstanceOf(
+      Session
+    );
+  });
+
+  test('works with API Routes', async () => {
+    const request = {};
+    const response = { end: () => null };
+    // eslint-disable-next-line no-unused-vars
+    function handler(req, res) {
+      return req.session;
+    }
+    expect(await withSession(handler)(request, response)).toBeInstanceOf(
+      Session
+    );
   });
 });
 
-describe('useSession', () => {
-  test('should do nothing if no request or response object given', async () => {
-    const req = undefined;
-    const res = undefined;
-    expect(await useSession(req, res).then(() => req && req.session)).toStrictEqual(undefined);
+describe('connect middleware', () => {
+  // FIXME: Replaced with integration test
+  const request = {};
+  const response = { end: () => null };
+  test('works as middleware', async () => {
+    await new Promise(resolve => {
+      session()(request, response, resolve);
+    });
+    expect(request.session).toBeInstanceOf(Session);
   });
+});
 
-  test('should work', async () => {
-    const req = { headers: { cookie: '' } };
+describe('Store', () => {
+  test('should extend EventEmitter', () => {
+    expect(new Store()).toBeInstanceOf(EventEmitter);
+  });
+  test('should convert String() expires to Date() expires', () => {
+    const store = new Store();
+    const req = {};
     const res = {};
-    await useSession(req, res);
-    expect(req.session).toBeInstanceOf(session.Session);
+    let sess = store.generate(
+      req,
+      res,
+      crypto.randomBytes(16).toString('hex'),
+      { maxAge: 100000 }
+    );
+    //  force sess.cookie.expires to be string
+    sess = JSON.parse(JSON.stringify(sess));
+    store.createSession(req, res, sess);
+    expect(req.session.cookie.expires).toBeInstanceOf(Date);
   });
+  test('should allow store subclasses to use Store.call(this)', () => {
+    // Some express-compatible stores use this pattern like
+    // https://github.com/voxpelli/node-connect-pg-simple/blob/master/index.js
+    function SubStore(options) {
+      options = options || {};
+      Store.call(this, options);
+    }
+    // eslint-disable-next-line no-unused-vars
+    const store = new SubStore();
+  });
+});
 
-  test('should return session values', async () => {
+describe('promisifyStore', () => {
+  test('can promisify callback store', async () => {
+    class CbStore extends Store {
+      constructor() {
+        super();
+        this.sessions = 1;
+      }
+
+      /* eslint-disable no-unused-expressions */
+      get(sid, cb) {
+        cb && cb(null, this.sessions);
+      }
+
+      set(sid, sess, cb) {
+        cb && cb(null, this.sessions);
+      }
+
+      destroy(sid, cb) {
+        cb && cb(null, this.sessions);
+      }
+
+      touch(sid, cb) {
+        cb && cb(null, this.sessions);
+      }
+    }
+
+    const req = {};
+    const res = { end: () => null };
+    applySession(req, res, { store: promisifyStore(new CbStore()) });
+    // facebook/jest#2549
+    expect(req.sessionStore.get().constructor.name).toStrictEqual('Promise');
+    expect(req.sessionStore.set().constructor.name).toStrictEqual('Promise');
+    expect(req.sessionStore.destroy().constructor.name).toStrictEqual(
+      'Promise'
+    );
+    expect(req.sessionStore.touch().constructor.name).toStrictEqual('Promise');
+  });
+});
+
+describe('MemoryStore', () => {
+  test('should register different user and show all sessions', async () => {
     const store = new MemoryStore();
-    const sess = { hello: 'world', foo: 'bar', cookie: new Cookie({}) };
-    store.sessions = { YmVsaWV2ZWlueW91cnNlbGY: JSON.stringify(sess) };
-    const req = { headers: { cookie: 'sessionId=YmVsaWV2ZWlueW91cnNlbGY' } };
-    const res = {};
-    const sessions = await useSession(req, res, { store });
-    //  useSession returns does not contain Cookie
-    delete sess.cookie;
-    const hash = (str) => crypto.createHash('sha1').update(JSON.stringify(str), 'utf8').digest('hex');
-    expect(hash(sessions)).toStrictEqual(hash(sess));
+    store.sessions = {};
+    const server = setUpServer(
+      async (req, res) => {
+        if (req.url === '/all') {
+          const ss = (await req.sessionStore.all()).map(
+            sess => JSON.parse(sess).user
+          );
+          res.end(ss.toString());
+        } else {
+          console.log(req.query);
+          req.session.user = req.query.user;
+          res.end();
+        }
+      },
+      { store },
+      req => (req.query = parse(req.url, true).query)
+    );
+    await request
+      .agent(server)
+      .get('/')
+      .query('user=squidward');
+    await request
+      .agent(server)
+      .get('/')
+      .query('user=spongebob');
+    await request
+      .agent(server)
+      .get('/')
+      .query('user=patrick');
+    await request
+      .agent(server)
+      .get('/all')
+      .expect('squidward,spongebob,patrick');
   });
 });
