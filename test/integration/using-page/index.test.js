@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { nextBuild, startApp, extractNextData } from '../next-test-utils';
+import { nextBuild, startApp } from '../next-test-utils';
 
 const appDir = __dirname;
 let server;
@@ -47,32 +47,5 @@ describe('Using pages', () => {
     res = await agent.get('/');
     expect(res.text).toContain('<p>0</p>');
     expect(res.header).toHaveProperty('set-cookie');
-  });
-
-  it('should respect touchAfter', async () => {
-    await agent.get('/touch-after');
-    const nextData = extractNextData((await agent.get('/touch-after')).text);
-    const originalExpires = nextData.pageProps.expires;
-    const res = await agent.get('/touch-after');
-    expect(res.header).not.toHaveProperty('set-cookie'); // should not set-cookie despite rolling=true
-    expect(res.text).toContain(`<p>${originalExpires}</p>`);
-  });
-
-  it('should expire session', async () => {
-    expect((await agent.get('/expire')).text).toContain('<p>1</p>');
-    expect((await agent.get('/expire')).text).toContain('<p>2</p>');
-    await new Promise(resolve => {
-      setTimeout(() => resolve(), 1000);
-    });
-    expect((await agent.get('/expire')).text).toContain('<p>1</p>');
-  });
-
-  it('should allow manually session commit', async () => {
-    expect((await agent.get('/manual-commit')).header).not.toHaveProperty(
-      'set-cookie'
-    );
-    expect((await agent.post('/manual-commit')).header).toHaveProperty(
-      'set-cookie'
-    );
   });
 });
