@@ -1,6 +1,6 @@
 module.exports = {
   testEnvironment: 'node',
-  collectCoverageFrom: ['lib/**/*'],
+  collectCoverageFrom: ['src/**/*'],
   testMatch: ['**/*.test.js'],
   transform: {
     "^.+\\.jsx?$": "babel-jest"

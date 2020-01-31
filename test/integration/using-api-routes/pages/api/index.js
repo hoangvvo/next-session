@@ -1,4 +1,4 @@
-import { withSession } from '../../../../../lib';
+import { withSession } from '../../../../../src';
 
 function handler(req, res) {
   if (req.method === 'POST')

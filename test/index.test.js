@@ -10,8 +10,8 @@ import {
   promisifyStore,
   withSession,
   session
-} from '../lib';
-import Session from '../lib/session';
+} from '../src';
+import Session from '../src/session';
 
 const defaultHandler = (req, res) => {
   if (req.method === 'POST')
@@ -279,7 +279,6 @@ describe('MemoryStore', () => {
           );
           res.end(ss.toString());
         } else {
-          console.log(req.query);
           req.session.user = req.query.user;
           res.end();
         }
