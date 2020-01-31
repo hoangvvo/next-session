@@ -9,15 +9,22 @@
     "middleware",
     "promise"
   ],
-  "main": "lib/index.js",
+  "module": "src/index.js",
+  "main": "dist/index.js",
+  "exports": {
+    "import": "src/index.js",
+    "require": "dist/index.js"
+  },
+  "sideEffects": false,
   "files": [
-    "lib/"
+    "dist/",
+    "src/"
   ],
   "scripts": {
     "prepublish": "npm run build",
-    "build": "babel src -d lib",
+    "build": "babel src -d dist",
     "lint": "eslint src --ext js --ignore-path .gitignore",
-    "test": "jest --coverage --coverageReporters=text-lcov > coverage.lcov"
+    "test": "jest --coverageReporters=text-lcov > coverage.lcov"
   },
   "repository": {
     "type": "git",

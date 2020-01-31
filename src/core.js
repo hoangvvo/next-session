@@ -2,8 +2,6 @@ import { parse as parseCookie } from 'cookie';
 import { randomBytes } from 'crypto';
 import MemoryStore from './store/memory';
 
-let storeReady = true;
-
 function proxyEnd(res, fn) {
   let ended = false;
   const oldEnd = res.end;
@@ -34,15 +32,7 @@ function getOptions(opts = {}) {
 export async function applySession(req, res, opts) {
   const options = getOptions(opts);
 
-  //  store readiness
-  options.store.on('disconnect', () => {
-    storeReady = false;
-  });
-  options.store.on('connect', () => {
-    storeReady = true;
-  });
-
-  if (req.session || !storeReady) return;
+  if (req.session) return;
 
   const originalId = req.sessionId = req.headers && req.headers.cookie
     ? parseCookie(req.headers.cookie)[options.name]
