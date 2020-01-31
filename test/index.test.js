@@ -12,6 +12,7 @@ import {
   session
 } from '../src';
 import Session from '../src/session';
+import { loadGetInitialProps } from 'next/dist/next-server/lib/utils'
 
 const defaultHandler = (req, res) => {
   if (req.method === 'POST')
@@ -146,14 +147,14 @@ describe('withSession', () => {
     }
     App.getInitialProps = context => {
       const req = context.req || (context.ctx && context.ctx.req);
-      return req.session;
+      return { session: req.session };
     };
     const contextObject = {
       Component: {},
       ctx: { req: { headers: { cookie: '' } }, res: {} }
     };
     expect(
-      await withSession(App).getInitialProps(contextObject)
+      (await loadGetInitialProps(withSession(App),contextObject)).session
     ).toBeInstanceOf(Session);
   });
 
@@ -162,15 +163,16 @@ describe('withSession', () => {
     ['getServerProps'],
     ['unstable_getServerProps']
   ])('works with pages#%s', async hook => {
-    function Component() {
+    // TODO: Make use of loadGetInitialProps
+    function Page() {
       return <div></div>;
     }
-    Component[hook] = context => {
+    Page[hook] = context => {
       const req = context.req || (context.ctx && context.ctx.req);
       return req.session;
     };
     const contextObject = { req: { headers: { cookie: '' } }, res: {} };
-    expect(await withSession(Component)[hook](contextObject)).toBeInstanceOf(
+    expect(await withSession(Page)[hook](contextObject)).toBeInstanceOf(
       Session
     );
   });

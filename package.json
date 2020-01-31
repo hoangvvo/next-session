@@ -24,7 +24,7 @@
     "prepublish": "npm run build",
     "build": "babel src -d dist",
     "lint": "eslint src --ext js --ignore-path .gitignore",
-    "test": "jest --coverage --coverageReporters=text-lcov > coverage.lcov"
+    "test": "jest --coverageReporters=text-lcov > coverage.lcov"
   },
   "repository": {
     "type": "git",
