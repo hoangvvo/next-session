@@ -17,8 +17,6 @@ export default class Session {
     if (typeof this.req.sessionStore.touch === 'function') {
       return this.req.sessionStore.touch(this.id, this);
     }
-    //  eslint-disable-next-line no-console
-    console.warn('store does not implement touch()');
     return Promise.resolve();
   }
 
