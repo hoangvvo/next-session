@@ -19,7 +19,7 @@ beforeAll(async () => {
   server = await startApp(app);
 });
 
-afterAll(() => server.close());
+afterAll(() => server && server.close());
 
 describe('Using pages', () => {
   beforeEach(() => {
