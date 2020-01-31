@@ -64,7 +64,7 @@ typings/
 .next
 
 # babel build
-lib/
+dist/
 
 # package-lock
 package-lock.json
