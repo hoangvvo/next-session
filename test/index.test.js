@@ -141,7 +141,7 @@ describe('withSession', () => {
     );
   });
 
-  test('works with _app', async () => {
+  test('works with _app#getInitialProps', async () => {
     function App() {
       return <div></div>;
     }
@@ -149,35 +149,31 @@ describe('withSession', () => {
       const req = context.req || (context.ctx && context.ctx.req);
       return { session: req.session };
     };
-    const contextObject = {
+    const ctx = {
       Component: {},
       ctx: { req: { headers: { cookie: '' } }, res: {} }
     };
     expect(
-      (await loadGetInitialProps(withSession(App),contextObject)).session
+      (await loadGetInitialProps(withSession(App),ctx)).session
     ).toBeInstanceOf(Session);
   });
 
-  test.each([
-    ['getInitialProps'],
-    ['getServerProps'],
-    ['unstable_getServerProps']
-  ])('works with pages#%s', async hook => {
+  test('works with pages#getInitialProps', async () => {
     // TODO: Make use of loadGetInitialProps
     function Page() {
       return <div></div>;
     }
-    Page[hook] = context => {
+    Page.getInitialProps = context => {
       const req = context.req || (context.ctx && context.ctx.req);
       return req.session;
     };
-    const contextObject = { req: { headers: { cookie: '' } }, res: {} };
-    expect(await withSession(Page)[hook](contextObject)).toBeInstanceOf(
-      Session
-    );
+    const ctx = { req: { headers: { cookie: '' } }, res: {} };
+    expect(
+      await withSession(Page).getInitialProps(ctx)
+    ).toBeInstanceOf(Session);
   });
 
-  test('return original component if no ssr', async () => {
+  test('return no-op if no ssr', async () => {
     function App() {
       return <div></div>;
     }
