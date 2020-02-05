@@ -27,7 +27,7 @@ yarn add next-session
 
 - `withSession` to be used as higher order component or API Routes wrapper.
 - `session` to be used as a Connect/Express middleware.
-- `applySession`, used by both `withSession` and `session`, to manually initialize `next-session` by providing `req` and `res`.
+- `applySession`, to manually initialize `next-session` by providing `req` and `res`.
 
 ### `{ withSession }`
 
@@ -61,18 +61,18 @@ function Page({ views }) {
 Page.getInitialProps = ({ req }) => {
   let views;
   if (typeof window === 'undefined') {
-    // IMPORTANT: session is only available server-side.
+    // req.session is only available on server-side.
     req.session.views = req.session.views ? req.session.views + 1 : 1;
     views = req.session.views;
   }
-  // Uh oh, on client-side routing, req.session is not available.
+  // On client-side routing, req.session is not available.
   return { views };
 };
 
 export default withSession(Page, { ...options });
 ```
 
-The use case is limited due to *server only* constraint. For example, one being to get `currentUser` once after authentication redirection (and ideally set it to React Context for later).
+The use case is limited due to *server only* constraint. Yet, one use case is to get `currentUser` once after authentication redirection (and ideally set it to React Context for later).
 
 For usage in both server and client-side, consider using `{ applySession }` in `getServerProps`.
 
@@ -90,7 +90,7 @@ One way to use this in Next.js is through [next-connect](https://github.com/hoan
 
 ### `{ applySession }`
 
-`applySession` is the internal function used by both `withSession` and `session`. It returns a *promise* when session is set up in `req.session`.
+`applySession` is the internal function used by both `withSession` and `session` to handle `req` and `res`. It returns a *promise* when session is set up in `req.session`.
 
 ```javascript
 import { applySession } from "next-session";
