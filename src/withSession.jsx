@@ -29,11 +29,6 @@ export default function withSession(handler, options) {
       await applySession(req, res, options);
       return handler(req, res);
     };
-  // Page Components
-  if (handler.getServerProps)
-    return applyHOC(handler, "getServerProps", options);
-  if (handler.unstable_getServerProps)
-    return applyHOC(handler, "unstable_getServerProps", options);
   if (handler.getInitialProps)
     return applyHOC(handler, "getInitialProps", options);
   return applyHOC(handler, null, options);
