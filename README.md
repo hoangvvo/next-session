@@ -47,9 +47,9 @@ function handler(req, res) {
 export default withSession(handler, { ...options });
 ```
 
-#### Pages
+#### Pages (SSR only)
 
-You can use `next-session` with either `getServerProps` (recommended) or `getInitialProps`.
+You can use `next-session` in `getInitialProps`. **This will work on [server only](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#context-object) (first render)**.
 
 ```javascript
 function Page({ views }) {
@@ -57,16 +57,7 @@ function Page({ views }) {
     <div>In this session, you have visited this website {views} time(s).</div>
   );
 }
-/* EITHER */
-export async function getServerProps({ req }) {
-  // https://github.com/zeit/next.js/issues/9524
-  req.session.views = req.session.views ? req.session.views + 1 : 1;
-  views = req.session.views;
-  return {
-    props: { views: req.session.views }
-  };
-}
-/* OR */
+
 Page.getInitialProps = ({ req }) => {
   let views;
   if (typeof window === 'undefined') {
@@ -74,11 +65,16 @@ Page.getInitialProps = ({ req }) => {
     req.session.views = req.session.views ? req.session.views + 1 : 1;
     views = req.session.views;
   }
+  // Uh oh, on client-side routing, req.session is not available.
   return { views };
 };
 
 export default withSession(Page, { ...options });
 ```
+
+The use case is limited due to *server only* constraint. For example, one being to get `currentUser` once after authentication redirection (and ideally set it to React Context for later).
+
+For usage in both server and client-side, consider using `{ applySession }` in `getServerProps`.
 
 ### `{ session }`
 
@@ -94,7 +90,7 @@ One way to use this in Next.js is through [next-connect](https://github.com/hoan
 
 ### `{ applySession }`
 
-`applySession` is the internal function used by both `withSession` and `session`.
+`applySession` is the internal function used by both `withSession` and `session`. It returns a *promise* when session is set up in `req.session`.
 
 ```javascript
 import { applySession } from "next-session";
@@ -108,29 +104,32 @@ await applySession(req, res);
 ```javascript
 export default async function handler(req, res) {
   await applySession(req, res, { ...options });
-  /* ... */
+  res.send(
+    `In this session, you have visited this website ${req.session.views} time(s).`
+  );
 }
 ```
 
 #### Pages
 
+If you want session to always be available in pages, `getServerProps` is recommended over `getInitialProps` because it works on both server-side and client-side.
+
 ```javascript
 export default function Page(props) {
-  /* ... */
+  return (
+    <div>In this session, you have visited this website {views} time(s).</div>
+  );
 }
-/* EITHER */
+
 export async function getServerProps({ req, res }) {
   await applySession(req, res);
-  /* ... */
-}
-/* OR */
-Page.getInitialProps = async ({ req }) => {
-  let views;
-  if (typeof window === "undefined") {
-    await applySession(req, res);
-    /* ... */
+  req.session.views = req.session.views ? req.session.views + 1 : 1;
+  return {
+    props: {
+      views: req.session.views
+    }
   }
-};
+}
 ```
 
 ## API
