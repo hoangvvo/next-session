@@ -54,7 +54,6 @@ export function runNextCommand(
   const env = { ...process.env, ...options.env, NODE_ENV: '' };
 
   return new Promise((resolve, reject) => {
-    console.log(`Running command "next ${args.join(' ')}"`);
     const instance = spawn('node', [nextBin, ...args], {
       cwd,
       env,
