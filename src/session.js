@@ -34,6 +34,7 @@ export default class Session {
   async commit() {
     const { name, rolling, touchAfter } = this.req._sessOpts;
     let touched = false;
+    let saved = false;
 
     const shouldSave = () =>
       stringify(this) !== this.req._sessStr;
@@ -49,10 +50,10 @@ export default class Session {
     };
 
     if (shouldSave()) {
+      saved = true;
       await this.save();
     }
-    //  Touch: extend session time despite no modification
-    if (shouldTouch()) {
+    if (!saved && shouldTouch()) {
       touched = true;
       await this.touch();
     }
