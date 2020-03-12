@@ -206,9 +206,9 @@ The unique id that associates to the current session.
 
 The session store to use for session middleware (see `options` above).
 
-### Implementation
+### Compatibility with Express/Connect stores
 
-A compatible session store must include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions must return **Promises** (*callbacks* are not supported). This means many Express/Connect stores are not supported as it. To use them, wrap them with `promisifyStore`:
+Express/Connect stores are not supported as it. To use them, wrap them with `promisifyStore`:
 
 ```javascript
 import { promisifyStore, withSession } from "next-session";
@@ -220,6 +220,24 @@ const options = {
 // ...
 withSession(handler, options);
 ```
+
+Some stores may requires `MemoryStore` and `Store` from `next-session`. For example:
+
+```javascript
+// If a store has a pattern like this:
+const MongoStore = require('connect-mongo')(session);
+
+// Import Store and MemoryStore from next-session and use them like so:
+import { Store, MemoryStore, promisifyStore } from "next-session";
+const MongoStore = require('connect-mongo')({ Store, MemoryStore });
+const options = {
+  store: promisifyStore(new MongoStore(options))
+}
+```
+
+### Implementation
+
+A compatible session store must include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions must return **Promises** (*callbacks* are not supported or must be promisified like above).
 
 The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness. (only works with `{ session }`, Connect middleware version)
 

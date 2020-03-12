@@ -10,8 +10,8 @@
 **:boom: Breaking changes**
 
 - `maxAge` is now in second and no longer parses date string (remove f487b1c).
-- `useSession` is replaced with `withSession`
-- `connect` middleware is now a named import:
+- `useSession` is replaced with `applySession`
+- `connect middleware` is now a named import:
 
 ```javascript
 //  BEFORE
