@@ -17,17 +17,26 @@ function proxyEnd(res, fn) {
   };
 }
 
-export function stringify(sess) { return JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val)); }
+export function stringify(sess) {
+  return JSON.stringify(sess, (key, val) =>
+    key === 'cookie' ? undefined : val
+  );
+}
 
 function getOptions(opts = {}) {
   return {
     name: opts.name || 'sessionId',
     store: opts.store || new MemoryStore(),
-    generateId: opts.genid || opts.generateId || function generateId() { return randomBytes(16).toString('hex'); },
+    generateId:
+      opts.genid ||
+      opts.generateId ||
+      function generateId() {
+        return randomBytes(16).toString('hex');
+      },
     rolling: opts.rolling || false,
     touchAfter: opts.touchAfter ? opts.touchAfter : 0,
     cookie: opts.cookie || {},
-    autoCommit: typeof opts.autoCommit !== 'undefined' ? opts.autoCommit : true,
+    autoCommit: typeof opts.autoCommit !== 'undefined' ? opts.autoCommit : true
   };
 }
 
@@ -36,9 +45,11 @@ export async function applySession(req, res, opts) {
 
   if (req.session) return;
 
-  const originalId = req.sessionId = req.headers && req.headers.cookie
-    ? parseCookie(req.headers.cookie)[options.name]
-    : null;
+  req._sessId = req.sessionId =
+    req.headers && req.headers.cookie
+      ? parseCookie(req.headers.cookie)[options.name]
+      : null;
+  req._sessOpts = options;
 
   req.sessionStore = options.store;
 
@@ -56,18 +67,14 @@ export async function applySession(req, res, opts) {
     req.session.cookie = new Cookie(options.cookie);
   }
 
-  // eslint-disable-next-line no-underscore-dangle
-  req._session = {
-    // FIXME: Possible dataloss
-    originalStringified: stringify(req.session),
-    originalId,
-    options,
-  };
+  req._sessStr = stringify(req.session);
 
   // autocommit
   if (options.autoCommit) {
-    proxyEnd(res, async (done) => {
-      if (req.session) { await req.session.commit(); }
+    proxyEnd(res, async done => {
+      if (req.session) {
+        await req.session.commit();
+      }
       done();
     });
   }
