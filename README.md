@@ -142,7 +142,7 @@ Regardless of the above approaches, to avoid bugs, you want to reuse the same `o
 
 | options | description | default |
 |---------|-------------|---------|
-| name | The name of the cookie to be read from the request and set to the response. | `sessionId` |
+| name | The name of the cookie to be read from the request and set to the response. | `sid` |
 | store | The session store instance to be used. | `MemoryStore` |
 | genid | The function that generates a string for a new session ID. | `crypto.randomBytes(16).toString('hex')` |
 | touchAfter | Only touch (extend session lifetime despite no modification) after an amount of time to decrease database load. Setting the value to `-1` will disable `touch()`. | `0` (Touch every time) |
