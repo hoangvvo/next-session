@@ -1,6 +1,5 @@
 import { createServer } from 'http';
 import request from 'supertest';
-import crypto from 'crypto';
 import EventEmitter from 'events';
 import { parse } from 'url';
 import {
@@ -9,8 +8,9 @@ import {
   MemoryStore,
   promisifyStore,
   withSession,
-  session
+  session,
 } from '../src';
+import Cookie from '../src/cookie'
 import Session from '../src/session';
 import { loadGetInitialProps } from 'next/dist/next-server/lib/utils'
 
@@ -212,19 +212,13 @@ describe('Store', () => {
     expect(new Store()).toBeInstanceOf(EventEmitter);
   });
   test('should convert String() expires to Date() expires', () => {
-    const store = new Store();
-    const req = {};
-    const res = {};
-    let sess = store.generate(
-      req,
-      res,
-      crypto.randomBytes(16).toString('hex'),
-      { maxAge: 100000 }
-    );
+    let sess = {
+      cookie: new Cookie({ maxAge: 100000 })
+    }
     //  force sess.cookie.expires to be string
     sess = JSON.parse(JSON.stringify(sess));
-    store.createSession(req, res, sess);
-    expect(req.session.cookie.expires).toBeInstanceOf(Date);
+    const cookie = new Cookie(sess.cookie);
+    expect(cookie.expires).toBeInstanceOf(Date);
   });
   test('should allow store subclasses to use Store.call(this)', () => {
     // Some express-compatible stores use this pattern like

@@ -15,8 +15,9 @@ export default class Cookie {
       },
       options
     );
+    if (typeof this.expires === 'string') this.expires = new Date(this.expires);
     // set expires based on maxAge (in seconds)
-    if (this.maxAge) this.expires = new Date(Date.now() + this.maxAge * 1000);
+    if (!this.expires && this.maxAge) this.expires = new Date(Date.now() + this.maxAge * 1000);
   }
 
   //  reset expires to prolong session cookie (typically in every request)

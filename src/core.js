@@ -1,6 +1,8 @@
 import { parse as parseCookie } from 'cookie';
 import { randomBytes } from 'crypto';
 import MemoryStore from './store/memory';
+import Session from './session';
+import Cookie from './cookie';
 
 function proxyEnd(res, fn) {
   let ended = false;
@@ -42,9 +44,17 @@ export async function applySession(req, res, opts) {
 
   if (req.sessionId) {
     const sess = await req.sessionStore.get(req.sessionId);
-    if (sess) req.sessionStore.createSession(req, res, sess);
+    if (sess) {
+      req.session = new Session(req, res, sess);
+      req.session.cookie = new Cookie(sess.cookie);
+    }
   }
-  if (!req.session) req.sessionStore.generate(req, res, options.generateId(), options.cookie);
+
+  if (!req.session) {
+    req.sessionId = options.generateId();
+    req.session = new Session(req, res);
+    req.session.cookie = new Cookie(options.cookie);
+  }
 
   // eslint-disable-next-line no-underscore-dangle
   req._session = {

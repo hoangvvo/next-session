@@ -5,23 +5,6 @@ function getDisplayName(WrappedComponent) {
   return WrappedComponent.displayName || WrappedComponent.name || "Component";
 }
 
-function applyHOC(Page, hookName, options) {
-  function WithSession(props) {
-    return <Page {...props} />;
-  }
-  WithSession.displayName = `withSession(${getDisplayName(Page)})`;
-  if (hookName)
-    WithSession[hookName] = async pageCtx => {
-      const ctx = "Component" in pageCtx ? pageCtx.ctx : pageCtx;
-      if (typeof window === "undefined") {
-        const { req, res } = ctx;
-        await applySession(req, res, options);
-      }
-      return Page[hookName](ctx);
-    };
-  return WithSession;
-}
-
 export default function withSession(handler, options) {
   // API Routes
   if (handler.length > 1)
@@ -29,7 +12,22 @@ export default function withSession(handler, options) {
       await applySession(req, res, options);
       return handler(req, res);
     };
-  if (handler.getInitialProps)
-    return applyHOC(handler, "getInitialProps", options);
-  return applyHOC(handler, null, options);
+
+  // Pages
+  const Page = handler;
+  function WithSession(props) {
+    return <Page {...props} />;
+  }
+  WithSession.displayName = `withSession(${getDisplayName(Page)})`;
+  if (Page.getInitialProps) {
+    WithSession.getInitialProps = async pageCtx => {
+      const ctx = "Component" in pageCtx ? pageCtx.ctx : pageCtx;
+      if (typeof window === "undefined") {
+        const { req, res } = ctx;
+        await applySession(req, res, options);
+      }
+      return Page.getInitialProps(ctx);
+    };
+  }
+  return WithSession;
 }
