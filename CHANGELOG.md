@@ -1,5 +1,41 @@
 # Changelog
 
+## 3.0.0
+
+- Usage in Pages: Better integration with React.js and Next.js (#63) (Using HOC pattern)
+- Use nanoid for default session ID generation (#85) (Reduce 100kb of build size)
+- Store no longer has to extend `nextSession.Store` (#83)
+- Update documentation
+
+**:boom: Breaking changes**
+
+- `maxAge` is now in second and no longer parses date string (remove f487b1c).
+- `useSession` is replaced with `withSession`
+- `connect` middleware is now a named import:
+
+```javascript
+//  BEFORE
+  import session from 'next-session';
+  //  AFTER
+  import { session } from 'next-session';
+```
+
+- `options.storePromisify` is removed. You must [promisify](https://github.com/hoangvvo/next-session#implementation) the store that uses callbacks using `promisifyStore`:
+
+```javascript
+// BEFORE
+const options = {
+  storePromisify: true,
+  store: new SessionStore({ ...storeOptions })
+}
+
+// AFTER
+import { promisifyStore } from 'next-session';
+const options = {
+  store: promisifyStore(new SessionStore({ ...storeOptions }))
+};
+```
+
 ## 2.2.0
 
 ### Minor

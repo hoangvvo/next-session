@@ -12,13 +12,14 @@ I welcome all contributions from the community. There are many ways to contribut
 - :children_crossing: Submit bug reports and feature requests.
 - :pencil: Improve documentation and writing examples.
 
-However, please avoid using the issue tracker for support questions. You can receive help on my [Spectrum community](https://spectrum.chat/luvbitstudio).
+However, please avoid using the issue tracker for support questions.
 
 ## How to contribute
 
 ### Bug reports
 
 If you are submitting a :bug: bug report, please:
+
 - Use a clear and descriptive title. Describe the behavior you observed and the expected behavior.
 - Describe the exact steps which reproduce the problem. A minimal reproduction repo is greatly appreciated.
 - Include Node version, OS, or other information that may be helpful in the troubleshooting.
