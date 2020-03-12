@@ -16,7 +16,7 @@ export default function withSession(handler, options) {
   // Pages
   const Page = handler;
   function WithSession(props) {
-    return <Page {...props} />;
+    return React.createElement(Page, props);
   }
   WithSession.displayName = `withSession(${getDisplayName(Page)})`;
   if (Page.getInitialProps) {

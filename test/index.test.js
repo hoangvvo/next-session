@@ -1,3 +1,4 @@
+import React from 'react';
 import { createServer } from 'http';
 import request from 'supertest';
 import EventEmitter from 'events';
@@ -143,7 +144,7 @@ describe('withSession', () => {
 
   test('works with _app#getInitialProps', async () => {
     function App() {
-      return <div></div>;
+      return React.createElement();
     }
     App.getInitialProps = context => {
       const req = context.req || (context.ctx && context.ctx.req);
@@ -161,7 +162,7 @@ describe('withSession', () => {
   test('works with pages#getInitialProps', async () => {
     // TODO: Make use of loadGetInitialProps
     function Page() {
-      return <div></div>;
+      return React.createElement();
     }
     Page.getInitialProps = context => {
       const req = context.req || (context.ctx && context.ctx.req);
@@ -175,7 +176,7 @@ describe('withSession', () => {
 
   test('return no-op if no ssr', async () => {
     function App() {
-      return <div></div>;
+      return React.createElement();
     }
     expect(withSession(App).getInitialProps).toBeUndefined();
   });

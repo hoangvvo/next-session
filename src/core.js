@@ -25,7 +25,7 @@ export function stringify(sess) {
 
 function getOptions(opts = {}) {
   return {
-    name: opts.name || 'sessionId',
+    name: opts.name || 'sid',
     store: opts.store || new MemoryStore(),
     generateId:
       opts.genid ||
