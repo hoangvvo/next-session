@@ -46,7 +46,7 @@ function handler(req, res) {
     `In this session, you have visited this website ${req.session.views} time(s).`
   );
 }
-export default withSession(handler, { ...options });
+export default withSession(handler, opts);
 ```
 
 #### Pages (SSR only)
@@ -71,7 +71,7 @@ Page.getInitialProps = ({ req }) => {
   return { views };
 };
 
-export default withSession(Page, { ...options });
+export default withSession(Page, opts);
 ```
 
 The use case is limited due to *server only* constraint. Yet, one use case is to get `currentUser` upon landing on the site (and ideally set it to React Context for later).
@@ -97,7 +97,7 @@ One way to use this in Next.js is through [next-connect](https://github.com/hoan
 ```javascript
 import { applySession } from "next-session";
 /* ... */
-await applySession(req, res, { ...options });
+await applySession(req, res, opts);
 // do whatever you need with req and res after this
 ```
 
@@ -105,7 +105,7 @@ await applySession(req, res, { ...options });
 
 ```javascript
 export default async function handler(req, res) {
-  await applySession(req, res, { ...options });
+  await applySession(req, res, opts);
   res.send(
     `In this session, you have visited this website ${req.session.views} time(s).`
   );
@@ -124,7 +124,7 @@ export default function Page(props) {
 }
 
 export async function getServerProps({ req, res }) {
-  await applySession(req, res, { ...options });
+  await applySession(req, res, opts);
   req.session.views = req.session.views ? req.session.views + 1 : 1;
   return {
     props: {
@@ -138,7 +138,25 @@ export async function getServerProps({ req, res }) {
 
 ### options
 
-Regardless of the above approaches, to avoid bugs, you want to reuse the same `options` to in every route. `next-session` accepts the properties below.
+Regardless of the above approaches, to avoid bugs, you want to reuse the same `options` to in every route. For example:
+
+```javascript
+// Define the option only once
+// lib/session.js
+export const option = { ...someOptions };
+
+// Always import it at other places
+// pages/index.js
+import { option } from '../lib/session';
+/* ... */
+export withSession(Page, options);
+// pages/api/index.js
+import { option } from '../../lib/session';
+export default withSession(handler, option);
+
+```
+
+`next-session` accepts the properties below.
 
 | options | description | default |
 |---------|-------------|---------|
