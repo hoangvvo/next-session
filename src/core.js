@@ -1,5 +1,5 @@
 import { parse as parseCookie } from 'cookie';
-import { randomBytes } from 'crypto';
+import nanoid from 'nanoid';
 import MemoryStore from './store/memory';
 import Session from './session';
 import Cookie from './cookie';
@@ -29,10 +29,7 @@ function getOptions(opts = {}) {
     store: opts.store || new MemoryStore(),
     generateId:
       opts.genid ||
-      opts.generateId ||
-      function generateId() {
-        return randomBytes(16).toString('hex');
-      },
+      opts.generateId || nanoid,
     rolling: opts.rolling || false,
     touchAfter: opts.touchAfter ? opts.touchAfter : 0,
     cookie: opts.cookie || {},
