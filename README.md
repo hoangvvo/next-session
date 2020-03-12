@@ -31,6 +31,8 @@ yarn add next-session
 
 ### `{ withSession }`
 
+Named import `withSession` from `next-session`.
+
 ```javascript
 import { withSession } from 'next-session';
 ```
@@ -72,7 +74,7 @@ Page.getInitialProps = ({ req }) => {
 export default withSession(Page, { ...options });
 ```
 
-The use case is limited due to *server only* constraint. Yet, one use case is to get `currentUser` once after authentication redirection (and ideally set it to React Context for later).
+The use case is limited due to *server only* constraint. Yet, one use case is to get `currentUser` upon landing on the site (and ideally set it to React Context for later).
 
 For usage in both server and client-side, consider using `{ applySession }` in `getServerProps`.
 
@@ -90,12 +92,12 @@ One way to use this in Next.js is through [next-connect](https://github.com/hoan
 
 ### `{ applySession }`
 
-`applySession` is the internal function used by both `withSession` and `session` to handle `req` and `res`. It returns a *promise* when session is set up in `req.session`.
+`applySession` is the internal function used by both `withSession` and `session` to handle session in `req` and `res`. It returns a *promise* when session is set up in `req.session`.
 
 ```javascript
 import { applySession } from "next-session";
 /* ... */
-await applySession(req, res);
+await applySession(req, res, { ...options });
 // do whatever you need with req and res after this
 ```
 
@@ -112,7 +114,7 @@ export default async function handler(req, res) {
 
 #### Pages
 
-If you want session to always be available in pages, `getServerProps` is recommended over `getInitialProps` because it works on both server-side and client-side.
+If you want session to always be available in pages, `getServerProps` is recommended over `getInitialProps` because getServerProps is fully server-side, so `Session` is always available.
 
 ```javascript
 export default function Page(props) {
@@ -122,7 +124,7 @@ export default function Page(props) {
 }
 
 export async function getServerProps({ req, res }) {
-  await applySession(req, res);
+  await applySession(req, res, { ...options });
   req.session.views = req.session.views ? req.session.views + 1 : 1;
   return {
     props: {
@@ -186,11 +188,7 @@ The session store to use for session middleware (see `options` above).
 
 ### Implementation
 
-A compatible session store must extend from `Store` as in `import { Store } from 'next-session'` and include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness.
-
-All functions must return **Promises** (*callbacks* are not supported).
-
-This means many Express/Connect stores are not supported as it. To use them, wrap them with `promisifyStore`:
+A compatible session store must include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions must return **Promises** (*callbacks* are not supported). This means many Express/Connect stores are not supported as it. To use them, wrap them with `promisifyStore`:
 
 ```javascript
 import { promisifyStore, withSession } from "next-session";
@@ -202,6 +200,8 @@ const options = {
 // ...
 withSession(handler, options);
 ```
+
+The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness. (only works with `{ session }`, Connect middleware version)
 
 ## Contributing
 

@@ -32,26 +32,32 @@ export default class Session {
   }
 
   async commit() {
-    const { name, rolling, touchAfter } = this.req._session.options;
+    const { name, rolling, touchAfter } = this.req._sessOpts;
     let touched = false;
+    let saved = false;
 
-    if (stringify(this) !== this.req._session.originalStringified) {
+    const shouldSave = () =>
+      stringify(this) !== this.req._sessStr;
+    const shouldTouch = () => {
+      if (!this.cookie.maxAge && touchAfter === 0) return false;
+      const elapsed =
+        this.cookie.maxAge * 1000 - (this.cookie.expires - new Date());
+      return elapsed >= touchAfter;
+    };
+    const shouldSetHeader = () => {
+      if (rolling && touched) return true;
+      return this.req._sessId !== this.req.sessionId;
+    };
+
+    if (shouldSave()) {
+      saved = true;
       await this.save();
     }
-    //  Touch: extend session time despite no modification
-    if (this.cookie.maxAge && touchAfter >= 0) {
-      const minuteSinceTouched =
-        this.cookie.maxAge * 1000 - (this.cookie.expires - new Date());
-      if (minuteSinceTouched >= touchAfter) {
-        touched = true;
-        await this.touch();
-      }
+    if (!saved && shouldTouch()) {
+      touched = true;
+      await this.touch();
     }
-    if (
-      ((rolling && touched) ||
-        this.req._session.originalId !== this.req.sessionId) &&
-      this
-    )
+    if (shouldSetHeader())
       this.res.setHeader(
         'Set-Cookie',
         this.cookie.serialize(name, this.req.sessionId)
