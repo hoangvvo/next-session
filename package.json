@@ -9,17 +9,8 @@
     "middleware",
     "promise"
   ],
-  "module": "src/index.js",
   "main": "dist/index.js",
-  "exports": {
-    "import": "src/index.js",
-    "require": "dist/index.js"
-  },
-  "sideEffects": false,
-  "files": [
-    "dist/",
-    "src/"
-  ],
+  "files": ["dist/"],
   "scripts": {
     "prepublish": "npm run build",
     "build": "babel src -d dist",
@@ -40,7 +31,6 @@
     "@babel/cli": "^7.8.3",
     "@babel/core": "^7.8.3",
     "@babel/preset-env": "^7.8.3",
-    "@babel/preset-react": "^7.8.3",
     "babel-jest": "^25.1.0",
     "cross-spawn": "^7.0.1",
     "eslint": "^6.8.0",
