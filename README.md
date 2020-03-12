@@ -188,11 +188,7 @@ The session store to use for session middleware (see `options` above).
 
 ### Implementation
 
-A compatible session store must extend from `Store` as in `import { Store } from 'next-session'` and include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness.
-
-All functions must return **Promises** (*callbacks* are not supported).
-
-This means many Express/Connect stores are not supported as it. To use them, wrap them with `promisifyStore`:
+A compatible session store must include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions must return **Promises** (*callbacks* are not supported). This means many Express/Connect stores are not supported as it. To use them, wrap them with `promisifyStore`:
 
 ```javascript
 import { promisifyStore, withSession } from "next-session";
@@ -204,6 +200,8 @@ const options = {
 // ...
 withSession(handler, options);
 ```
+
+The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness. (only works with `{ session }`, Connect middleware version)
 
 ## Contributing
 
