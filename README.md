@@ -25,9 +25,23 @@ yarn add next-session
 
 `next-session` has several named exports:
 
-- `withSession` to be used as higher order component or API Routes wrapper.
 - `session` to be used as a Connect/Express middleware.
+- `withSession` to be used as higher order component or API Routes wrapper.
 - `applySession`, to manually initialize `next-session` by providing `req` and `res`.
+
+Use **one of them** to work with `next-session`.
+
+### `{ session }`
+
+This is `next-session` as a Connect middleware. Thus, **you can also use it in Express.js**.
+
+```javascript
+import { session } from 'next-session';
+
+app.use(session({ ...options }));
+```
+
+One way to use this in Next.js is through [next-connect](https://github.com/hoangvvo/next-connect).
 
 ### `{ withSession }`
 
@@ -49,9 +63,11 @@ function handler(req, res) {
 export default withSession(handler, opts);
 ```
 
-#### Pages (SSR only)
+#### Pages (getInitialProps)
 
-You can use `next-session` in `getInitialProps`. **This will work on [server only](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#context-object) (first render)**.
+**Note: This usage is not recommended. `next@>9.3.0` recommends [using `getServerSideProps` instead of `getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#recommended-use-getstaticprops-or-getserversideprops-instead).**
+
+You can use `next-session` in [`getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps). **This will work on [server only](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#context-object) (first render)**.
 
 ```javascript
 function Page({ views }) {
@@ -67,28 +83,14 @@ Page.getInitialProps = ({ req }) => {
     req.session.views = req.session.views ? req.session.views + 1 : 1;
     views = req.session.views;
   }
-  // On client-side routing, req.session is not available.
+  // WARNING: On client-side routing, neither req nor req.session is available.
   return { views };
 };
 
 export default withSession(Page, opts);
 ```
 
-The use case is limited due to *server only* constraint. Yet, one use case is to get `currentUser` upon landing on the site (and ideally set it to React Context for later).
-
-For usage in both server and client-side, consider using `{ applySession }` in `getServerProps`.
-
-### `{ session }`
-
-This is `next-session` as a Connect middleware. Thus, you can also use it in Express.js.
-
-```javascript
-import { session } from 'next-session';
-
-app.use(session({ ...options }));
-```
-
-One way to use this in Next.js is through [next-connect](https://github.com/hoangvvo/next-connect).
+If you want session to always be available, consider using `{ applySession }` in `getServerSideProps`.
 
 ### `{ applySession }`
 
@@ -112,9 +114,9 @@ export default async function handler(req, res) {
 }
 ```
 
-#### Pages
+#### Pages (getServerSideProps)
 
-If you want session to always be available in pages, `getServerProps` is recommended over `getInitialProps` because getServerProps is fully server-side, so `Session` is always available.
+You can use `next-session` in [`getServerSideProps`](https://nextjs.org/docs/basic-features/data-fetching#getserversideprops-server-side-rendering).
 
 ```javascript
 export default function Page(props) {
@@ -123,7 +125,7 @@ export default function Page(props) {
   );
 }
 
-export async function getServerProps({ req, res }) {
+export async function getServerSideProps({ req, res }) {
   await applySession(req, res, opts);
   req.session.views = req.session.views ? req.session.views + 1 : 1;
   return {
