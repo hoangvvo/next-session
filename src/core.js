@@ -55,11 +55,9 @@ export async function applySession(req, res, opts) {
 
   // autocommit
   if (options.autoCommit) {
-    let ended = false;
     const oldEnd = res.end;
     res.end = async function resEndProxy(...args) {
-      if (ended) return;
-      ended = true;
+      if (res.finished || res.writableEnded) return;
       if (req.session) await req.session.commit();
       oldEnd.apply(this, args);
     };

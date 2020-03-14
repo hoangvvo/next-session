@@ -58,7 +58,7 @@ export default class Session {
       await this.touch();
     }
     if (shouldSetCookie()) {
-      if (this.res.headersSent || this.res.writableEnded) return;
+      if (this.res.headersSent) return;
       this.res.setHeader(
         'Set-Cookie',
         this.cookie.serialize(name, this.req.sessionId)
