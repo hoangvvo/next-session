@@ -60,12 +60,12 @@ function handler(req, res) {
     `In this session, you have visited this website ${req.session.views} time(s).`
   );
 }
-export default withSession(handler, opts);
+export default withSession(handler, options);
 ```
 
 #### Pages (getInitialProps)
 
-**Note: This usage is not recommended. `next@>9.3.0` recommends [using `getServerSideProps` instead of `getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#recommended-use-getstaticprops-or-getserversideprops-instead).**
+*Note: This usage is not recommended. `next@>9.3.0` recommends [using `getServerSideProps` instead of `getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#recommended-use-getstaticprops-or-getserversideprops-instead).*
 
 You can use `next-session` in [`getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps). **This will work on [server only](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#context-object) (first render)**.
 
@@ -87,7 +87,7 @@ Page.getInitialProps = ({ req }) => {
   return { views };
 };
 
-export default withSession(Page, opts);
+export default withSession(Page, options);
 ```
 
 If you want session to always be available, consider using `{ applySession }` in `getServerSideProps`.
@@ -99,7 +99,7 @@ If you want session to always be available, consider using `{ applySession }` in
 ```javascript
 import { applySession } from "next-session";
 /* ... */
-await applySession(req, res, opts);
+await applySession(req, res, options);
 // do whatever you need with req and res after this
 ```
 
@@ -107,7 +107,8 @@ await applySession(req, res, opts);
 
 ```javascript
 export default async function handler(req, res) {
-  await applySession(req, res, opts);
+  await applySession(req, res, options);
+  req.session.views = req.session.views ? req.session.views + 1 : 1;
   res.send(
     `In this session, you have visited this website ${req.session.views} time(s).`
   );
@@ -119,14 +120,14 @@ export default async function handler(req, res) {
 You can use `next-session` in [`getServerSideProps`](https://nextjs.org/docs/basic-features/data-fetching#getserversideprops-server-side-rendering).
 
 ```javascript
-export default function Page(props) {
+export default function Page({views}) {
   return (
     <div>In this session, you have visited this website {views} time(s).</div>
   );
 }
 
 export async function getServerSideProps({ req, res }) {
-  await applySession(req, res, opts);
+  await applySession(req, res, options);
   req.session.views = req.session.views ? req.session.views + 1 : 1;
   return {
     props: {
@@ -145,16 +146,17 @@ Regardless of the above approaches, to avoid bugs, you want to reuse the same `o
 ```javascript
 // Define the option only once
 // lib/session.js
-export const option = { ...someOptions };
+export const options = { ...someOptions };
 
 // Always import it at other places
 // pages/index.js
-import { option } from '../lib/session';
+import { options } from '../lib/session';
 /* ... */
-export withSession(Page, options);
+export default withSession(Page, options);
 // pages/api/index.js
-import { option } from '../../lib/session';
-export default withSession(handler, option);
+import { options } from '../../lib/session';
+/* ... */
+export default withSession(handler, options);
 
 ```
 
@@ -212,10 +214,10 @@ Express/Connect stores are not supported as it. To use them, wrap them with `pro
 
 ```javascript
 import { promisifyStore, withSession } from "next-session";
-import ExpressSessionStore from "some-callback-store";
+import SessionStore from "some-callback-store";
 const options = {
   // ...
-  store: promisifyStore(new ExpressSessionStore({ ...storeOptions }))
+  store: promisifyStore(new SessionStore({ ...storeOptions }))
 };
 // ...
 withSession(handler, options);
@@ -224,10 +226,10 @@ withSession(handler, options);
 Some stores may requires `MemoryStore` and `Store` from `next-session`. For example:
 
 ```javascript
-// If a store has a pattern like this:
+// If a store has a pattern like this...
 const MongoStore = require('connect-mongo')(session);
 
-// Import Store and MemoryStore from next-session and use them like so:
+// ...import Store and MemoryStore from next-session and use them like so:
 import { Store, MemoryStore, promisifyStore } from "next-session";
 const MongoStore = require('connect-mongo')({ Store, MemoryStore });
 const options = {

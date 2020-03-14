@@ -44,7 +44,7 @@ export default class Session {
         this.cookie.maxAge * 1000 - (this.cookie.expires - new Date());
       return elapsed >= touchAfter;
     };
-    const shouldSetHeader = () => {
+    const shouldSetCookie = () => {
       if (rolling && touched) return true;
       return this.req._sessId !== this.req.sessionId;
     };
@@ -57,10 +57,12 @@ export default class Session {
       touched = true;
       await this.touch();
     }
-    if (shouldSetHeader())
+    if (shouldSetCookie()) {
+      if (this.res.headersSent) return;
       this.res.setHeader(
         'Set-Cookie',
         this.cookie.serialize(name, this.req.sessionId)
       );
+    }
   }
 }

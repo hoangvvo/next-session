@@ -4,19 +4,6 @@ import MemoryStore from './store/memory';
 import Session from './session';
 import Cookie from './cookie';
 
-function proxyEnd(res, fn) {
-  let ended = false;
-  const oldEnd = res.end;
-  res.end = function resEndProxy(...args) {
-    const self = this;
-    if (res.headersSent || res.finished || ended) return;
-    ended = true;
-    fn(() => {
-      oldEnd.apply(self, args);
-    });
-  };
-}
-
 export function stringify(sess) {
   return JSON.stringify(sess, (key, val) =>
     key === 'cookie' ? undefined : val
@@ -68,12 +55,12 @@ export async function applySession(req, res, opts) {
 
   // autocommit
   if (options.autoCommit) {
-    proxyEnd(res, async done => {
-      if (req.session) {
-        await req.session.commit();
-      }
-      done();
-    });
+    const oldEnd = res.end;
+    res.end = async function resEndProxy(...args) {
+      if (res.finished || res.writableEnded) return;
+      if (req.session) await req.session.commit();
+      oldEnd.apply(this, args);
+    };
   }
 
   return req.session;
