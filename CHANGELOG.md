@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.1
+
+- [Security] Bump acorn from 6.3.0 to 6.4.1 (#86)
+- Fix server hanging on redirect (#88)
+
 ## 3.0.0
 
 - Usage in Pages: Better integration with React.js and Next.js (#63) (Using HOC pattern)
