@@ -59,9 +59,13 @@ export default class Session {
     }
     if (shouldSetCookie()) {
       if (this.res.headersSent) return;
+      const sessionId =
+        typeof this.req._sessOpts.encode === 'function'
+          ? this.req._sessOpts.encode(this.req.sessionId)
+          : this.req.sessionId
       this.res.setHeader(
         'Set-Cookie',
-        this.cookie.serialize(name, this.req.sessionId)
+        this.cookie.serialize(name, sessionId)
       );
     }
   }

@@ -167,6 +167,8 @@ export default withSession(handler, options);
 | name | The name of the cookie to be read from the request and set to the response. | `sid` |
 | store | The session store instance to be used. | `MemoryStore` |
 | genid | The function that generates a string for a new session ID. | [`nanoid`](https://github.com/ai/nanoid) |
+| encodeId | Transforms generated session id before setting cookie. Useful for things like signing. |
+| decodeId | Transforms session id back while getting from cookie |
 | touchAfter | Only touch (extend session lifetime despite no modification) after an amount of time to decrease database load. Setting the value to `-1` will disable `touch()`. | `0` (Touch every time) |
 | rolling | Extends the life time of the cookie in the browser if the session is touched. This respects touchAfter. | `false` |
 | autoCommit | Automatically commit session. Disable this if you want to manually `session.commit()` | `true` |
