@@ -61,7 +61,7 @@ export default class Session {
       if (this.res.headersSent) return;
       const sessionId =
         typeof this.req._sessOpts.encode === 'function'
-          ? this.req._sessOpts.encode(this.req.sessionId)
+          ? await this.req._sessOpts.encode(this.req.sessionId)
           : this.req.sessionId
       this.res.setHeader(
         'Set-Cookie',

@@ -35,9 +35,9 @@ export async function applySession(req, res, opts) {
     req.headers && req.headers.cookie
       ? parseCookie(req.headers.cookie)[options.name]
       : null;
-  req._sessId = 
+  req._sessId =
     req.sessionId = rawSessionId && typeof options.decode === 'function'
-      ? options.decode(rawSessionId)
+      ? await options.decode(rawSessionId)
       : rawSessionId;
   req._sessOpts = options;
 
