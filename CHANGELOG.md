@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.0
+
+- Add encode/decode options (#114)
+
+Huge thanks to @ealtunyay and @andreisena for helping!
+
 ## 3.0.1
 
 - [Security] Bump acorn from 6.3.0 to 6.4.1 (#86)
@@ -189,13 +195,3 @@ When installing from `npm`, release **0.0.1** does not work since **node** does 
 Moving source code to `/src`. (f5cd9fe)
 Add and config Babel 7 to transpile from `/src` to `/lib` using `@babel/preset-env`. (fd2012e)
 Add a detailed example on how to use `next-session` in README.md: 1f112dc. (1f112dc)
-
-## 0.0.1
-
-**This release is broken**
-
-- Add core functionalities: set, get, and destroy sessions.
-- Add the ability for custom ID generating function.
-- Add Cookie attribute options including Secure, httpOnly, Path, Domain, SameSite, Max-Age. (No Expires yet)
-- Add the ability to implement custom Session store.
-- Session store: Add Memory Store (Not for production environment).
