@@ -167,6 +167,8 @@ export default withSession(handler, options);
 | name | The name of the cookie to be read from the request and set to the response. | `sid` |
 | store | The session store instance to be used. | `MemoryStore` |
 | genid | The function that generates a string for a new session ID. | [`nanoid`](https://github.com/ai/nanoid) |
+| encode | Transforms session ID before setting cookie. It takes the raw session ID and returns the decoded/decrypted session ID. | undefined |
+| decode | Transforms session ID back while getting from cookie. It should return the encoded/encrypted session ID | undefined |
 | touchAfter | Only touch (extend session lifetime despite no modification) after an amount of time to decrease database load. Setting the value to `-1` will disable `touch()`. | `0` (Touch every time) |
 | rolling | Extends the life time of the cookie in the browser if the session is touched. This respects touchAfter. | `false` |
 | autoCommit | Automatically commit session. Disable this if you want to manually `session.commit()` | `true` |
@@ -176,6 +178,22 @@ export default withSession(handler, options);
 | cookie.domain | Specifies the value for the **Domain** `Set-Cookie` attribute. | unset |
 | cookie.sameSite | Specifies the value for the **SameSite** `Set-Cookie` attribute. | unset |
 | cookie.maxAge | **(in seconds)** Specifies the value for the **Max-Age** `Set-Cookie` attribute. | unset (Browser session) |
+
+#### encode/decode
+
+You may supply a custom pair of function that *encode/decode* or *encrypt/decrypt* the cookie on every request.
+
+```javascript
+// `express-session` signing strategy
+const signature = require('cookie-signature');
+const secret = 'keyboard cat';
+session({
+  encode: (raw) => signature.unsign(raw.slice(2), secret),
+  decode: (sid) => (sid ? 's:' + signature.sign(sid, secret) : null),
+});
+
+// async function is also supported
+```
 
 ### req.session
 

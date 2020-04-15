@@ -17,6 +17,8 @@ function getOptions(opts = {}) {
     generateId:
       opts.genid ||
       opts.generateId || nanoid,
+    encode: opts.encode,
+    decode: opts.decode,
     rolling: opts.rolling || false,
     touchAfter: opts.touchAfter ? opts.touchAfter : 0,
     cookie: opts.cookie || {},
@@ -29,10 +31,14 @@ export async function applySession(req, res, opts) {
 
   if (req.session) return;
 
-  req._sessId = req.sessionId =
+  const rawSessionId =
     req.headers && req.headers.cookie
       ? parseCookie(req.headers.cookie)[options.name]
       : null;
+  req._sessId =
+    req.sessionId = rawSessionId && typeof options.decode === 'function'
+      ? await options.decode(rawSessionId)
+      : rawSessionId;
   req._sessOpts = options;
 
   req.sessionStore = options.store;
