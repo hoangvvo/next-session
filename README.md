@@ -189,7 +189,7 @@ const signature = require('cookie-signature');
 const secret = 'keyboard cat';
 session({
   encode: (raw) => signature.unsign(raw.slice(2), secret),
-  decode: (sid) => (sessId ? 's:' + signature.sign(sid, secret) : null),
+  decode: (sid) => (sid ? 's:' + signature.sign(sid, secret) : null),
 });
 
 // async function is also supported
