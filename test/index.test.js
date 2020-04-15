@@ -11,9 +11,11 @@ import {
   withSession,
   session,
 } from '../src';
-import Cookie from '../src/cookie'
+import Cookie from '../src/cookie';
 import Session from '../src/session';
-import { loadGetInitialProps } from 'next/dist/next-server/lib/utils'
+import { loadGetInitialProps } from 'next/dist/next-server/lib/utils';
+const signature = require('cookie-signature');
+const { parse: parseCookie } = require('cookie')
 
 const defaultHandler = (req, res) => {
   if (req.method === 'POST')
@@ -40,7 +42,7 @@ describe('applySession', () => {
   });
 
   test('should do nothing if req.session is defined', async () => {
-    const server = setUpServer(defaultHandler, undefined, req => {
+    const server = setUpServer(defaultHandler, undefined, (req) => {
       req.session = {};
     });
     await request(server)
@@ -107,7 +109,7 @@ describe('applySession', () => {
     const agent = request.agent(server);
     await agent.post('/');
     let originalExpires;
-    await agent.get('/').then(res => {
+    await agent.get('/').then((res) => {
       originalExpires = res.text;
     });
     const res = await agent.get('/');
@@ -122,9 +124,41 @@ describe('applySession', () => {
       res.end('Hello, world!');
       res.end();
     });
-    await request(server)
-      .get('/')
-      .expect('Hello, world!');
+    await request(server).get('/').expect('Hello, world!');
+  });
+
+  test('should allow encode and decode sessionId', async () => {
+    const secret = 'keyboard cat';
+    const badSecret = 'nyan cat';
+    var store = new MemoryStore();
+
+    const decodeFn = (key) => (raw) => signature.unsign(raw.slice(2), key);
+    const encodeFn = (key) => (sessId) => sessId && `s:${signature.sign(sessId, key)}`
+    const server = setUpServer(
+      async (req, res) => {
+        if (req.method === 'POST') req.session.hello = 'world';
+        res.end(req.session.hello);
+      },
+      {
+        store,
+        decode: decodeFn(secret),
+        encode: encodeFn(secret)
+      }
+    );
+    const server2 = setUpServer(
+      (req, res) => res.end(String(req.session.hello)),
+      {
+        store,
+        decode: decodeFn(badSecret),
+        encode: encodeFn(badSecret)
+      }
+    )
+    let sessId = '';
+    await request(server).post('/').expect('world').expect(({ header }) => {
+      sessId = parseCookie(header['set-cookie'][0]).sid;
+    })
+    // Return undefined due to mismatched secret
+    await request(server2).get('/').set('Cookie', `sid=${sessId}`).expect('undefined');
   });
 });
 
@@ -146,16 +180,16 @@ describe('withSession', () => {
     function App() {
       return React.createElement();
     }
-    App.getInitialProps = context => {
+    App.getInitialProps = (context) => {
       const req = context.req || (context.ctx && context.ctx.req);
       return { session: req.session };
     };
     const ctx = {
       Component: {},
-      ctx: { req: { headers: { cookie: '' } }, res: {} }
+      ctx: { req: { headers: { cookie: '' } }, res: {} },
     };
     expect(
-      (await loadGetInitialProps(withSession(App),ctx)).session
+      (await loadGetInitialProps(withSession(App), ctx)).session
     ).toBeInstanceOf(Session);
   });
 
@@ -164,14 +198,14 @@ describe('withSession', () => {
     function Page() {
       return React.createElement();
     }
-    Page.getInitialProps = context => {
+    Page.getInitialProps = (context) => {
       const req = context.req || (context.ctx && context.ctx.req);
       return req.session;
     };
     const ctx = { req: { headers: { cookie: '' } }, res: {} };
-    expect(
-      await withSession(Page).getInitialProps(ctx)
-    ).toBeInstanceOf(Session);
+    expect(await withSession(Page).getInitialProps(ctx)).toBeInstanceOf(
+      Session
+    );
   });
 
   test('return no-op if no ssr', async () => {
@@ -187,7 +221,7 @@ describe('connect middleware', () => {
   test('works as middleware', async () => {
     const request = {};
     const response = { end: () => null };
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
       session()(request, response, resolve);
     });
     expect(request.session).toBeInstanceOf(Session);
@@ -196,16 +230,20 @@ describe('connect middleware', () => {
   test('respects storeReady', async () => {
     const store = new MemoryStore();
     const server = setUpServer(defaultHandler, false, async (req, res) => {
-      await new Promise(resolve => {
+      await new Promise((resolve) => {
         session({ store })(req, res, resolve);
       });
     });
     await request(server).get('/');
     store.emit('disconnect');
-    await request(server).get('/').then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    await request(server)
+      .get('/')
+      .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
     store.emit('connect');
-    await request(server).get('/').then(({ header }) => expect(header).toHaveProperty('set-cookie'));
-  })
+    await request(server)
+      .get('/')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+  });
 });
 
 describe('Store', () => {
@@ -214,8 +252,8 @@ describe('Store', () => {
   });
   test('should convert String() expires to Date() expires', () => {
     let sess = {
-      cookie: new Cookie({ maxAge: 100000 })
-    }
+      cookie: new Cookie({ maxAge: 100000 }),
+    };
     //  force sess.cookie.expires to be string
     sess = JSON.parse(JSON.stringify(sess));
     const cookie = new Cookie(sess.cookie);
@@ -280,7 +318,7 @@ describe('MemoryStore', () => {
       async (req, res) => {
         if (req.url === '/all') {
           const ss = (await req.sessionStore.all()).map(
-            sess => JSON.parse(sess).user
+            (sess) => JSON.parse(sess).user
           );
           res.end(ss.toString());
         } else {
@@ -289,20 +327,12 @@ describe('MemoryStore', () => {
         }
       },
       { store },
-      req => (req.query = parse(req.url, true).query)
+      (req) => (req.query = parse(req.url, true).query)
     );
-    await request(server)
-      .get('/')
-      .query('user=squidward');
-    await request(server)
-      .get('/')
-      .query('user=spongebob');
-    await request(server)
-      .get('/')
-      .query('user=patrick');
-    await request(server)
-      .get('/all')
-      .expect('squidward,spongebob,patrick');
+    await request(server).get('/').query('user=squidward');
+    await request(server).get('/').query('user=spongebob');
+    await request(server).get('/').query('user=patrick');
+    await request(server).get('/all').expect('squidward,spongebob,patrick');
   });
 
   test('should expire session', async () => {
