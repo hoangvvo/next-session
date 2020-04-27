@@ -1,5 +1,5 @@
 import { parse as parseCookie } from 'cookie';
-import nanoid from 'nanoid';
+import { nanoid } from 'nanoid';
 import MemoryStore from './store/memory';
 import Session from './session';
 import Cookie from './cookie';
