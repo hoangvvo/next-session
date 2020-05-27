@@ -1,16 +1,29 @@
 // Adapted from https://github.com/lfades/next-with-apollo/blob/master/integration/next-test-utils.ts
 // Switch out node-fetch since it cannot save cookie
-
 import path from 'path';
 import http from 'http';
 import spawn from 'cross-spawn';
 import nextServer from 'next';
 
-function promiseCall(obj, method, ...args) {
+/**
+ * These utils are very similar to the ones used by Next.js in their tests
+ */
+
+type FirstArgument<T> = T extends (arg: infer U) => any ? U : any;
+
+type NextServerOptions = FirstArgument<typeof nextServer>;
+
+type NextCommandOptions = {
+  env?: any;
+  stderr?: boolean;
+  stdout?: boolean;
+};
+
+function promiseCall(obj: any, method: string, ...args: any) {
   return new Promise((resolve, reject) => {
     const newArgs = [
       ...args,
-      function(err, res) {
+      function(err: Error, res: any) {
         if (err) return reject(err);
         resolve(res);
       }
@@ -22,7 +35,7 @@ function promiseCall(obj, method, ...args) {
 
 export { nextServer };
 
-export async function startApp(options) {
+export async function startApp(options: NextServerOptions) {
   const app = nextServer(options);
 
   await app.prepare();
@@ -30,23 +43,23 @@ export async function startApp(options) {
   const handler = app.getRequestHandler();
   const server = http.createServer(handler);
 
-  server.__app = app;
+  (server as any).__app = app;
 
   await promiseCall(server, 'listen');
 
   return server;
 }
 
-export async function stopApp(server) {
-  const app = (server)._app;
+export async function stopApp(server: http.Server) {
+  const app = (server as any)._app;
 
   if (app) await app.close();
   await promiseCall(server, 'close');
 }
 
 export function runNextCommand(
-  args,
-  options = {}
+  args: string[],
+  options: NextCommandOptions = {}
 ) {
   const nextDir = path.dirname(require.resolve('next/package'));
   const nextBin = path.join(nextDir, 'dist/bin/next');
@@ -54,6 +67,7 @@ export function runNextCommand(
   const env = { ...process.env, ...options.env, NODE_ENV: '' };
 
   return new Promise((resolve, reject) => {
+    console.log(`Running command "next ${args.join(' ')}"`);
     const instance = spawn('node', [nextBin, ...args], {
       cwd,
       env,
@@ -62,14 +76,14 @@ export function runNextCommand(
 
     let stderrOutput = '';
     if (options.stderr) {
-      instance.stderr.on('data', function(chunk) {
+      instance.stderr!.on('data', function(chunk) {
         stderrOutput += chunk;
       });
     }
 
     let stdoutOutput = '';
     if (options.stdout) {
-      instance.stdout.on('data', function(chunk) {
+      instance.stdout!.on('data', function(chunk) {
         stdoutOutput += chunk;
       });
     }
@@ -81,7 +95,7 @@ export function runNextCommand(
       });
     });
 
-    instance.on('error', (err) => {
+    instance.on('error', (err: any) => {
       err.stdout = stdoutOutput;
       err.stderr = stderrOutput;
       reject(err);
@@ -90,16 +104,16 @@ export function runNextCommand(
 }
 
 export function nextBuild(
-  dir,
-  args = [],
-  opts = {}
+  dir: string,
+  args: string[] = [],
+  opts?: NextCommandOptions
 ) {
   return runNextCommand(['build', dir, ...args], opts);
 }
 
-export function extractNextData(html) {
-  const R = /<script id="__NEXT_DATA__" type="application\/json">([^<]*)<\/script>/gm;
-  const [, json] = R.exec(html);
+export function extractNextData(html: string) {
+  const R = /<script id=\"__NEXT_DATA__\" type=\"application\/json\">([^<]*)<\/script>/gm;
+  const [, json]: any = R.exec(html);
   const { props } = JSON.parse(json);
 
   return props;

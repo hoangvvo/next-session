@@ -1,25 +1,24 @@
-import request from 'supertest';
+import request, { SuperTest, Test } from 'supertest';
 import {
   nextBuild,
   startApp
 } from '../next-test-utils';
+import { Server } from 'http';
 
 const appDir = __dirname;
-let server;
-let app;
-let agent;
+let server: Server;
+let agent: SuperTest<Test>;
 
 // eslint-disable-next-line no-undef
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 1000 * 30;
 
 beforeAll(async () => {
   await nextBuild(appDir);
-  app = {
+  server = await startApp({
     dir: appDir,
     dev: false,
     quiet: true
-  };
-  server = await startApp(app);
+  });
 });
 
 afterAll(() => server.close());

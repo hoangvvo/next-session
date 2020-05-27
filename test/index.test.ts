@@ -19,11 +19,8 @@ import Session from '../src/session';
 import { ServerResponse } from 'http';
 import { IncomingMessage } from 'http';
 import { NextPage, NextApiHandler } from 'next';
-import { AppContext } from 'next/app';
 const signature = require('cookie-signature');
 const { parse: parseCookie } = require('cookie')
-
-
 
 const defaultHandler = (req: IncomingMessage, res: ServerResponse) => {
   if (req.method === 'POST')
