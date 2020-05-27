@@ -1,23 +1,25 @@
 import { serialize } from 'cookie';
+import { CookieOptions } from './types';
 
 export default class Cookie {
-  constructor(options) {
+  path: string;
+  maxAge?: number;
+  httpOnly: boolean;
+  domain: string | undefined;
+  sameSite?: boolean | "lax" | "strict" | "none";
+  secure: boolean;
+  expires?: Date;
+  constructor(options: CookieOptions & { expires?: string | Date | null }) {
     //  Set parameters
-    Object.assign(
-      this,
-      {
-        path: '/',
-        maxAge: null,
-        httpOnly: true,
-        domain: null,
-        sameSite: null,
-        secure: false
-      },
-      options
-    );
-    if (typeof this.expires === 'string') this.expires = new Date(this.expires);
+    this.path = options.path || '/';
+    this.maxAge = options.maxAge;
+    this.httpOnly = options.httpOnly || true;
+    this.domain = options.domain || undefined;
+    this.sameSite = options.sameSite;
+    this.secure = options.secure || false;
     // set expires based on maxAge (in seconds)
-    if (!this.expires && this.maxAge) this.expires = new Date(Date.now() + this.maxAge * 1000);
+    if (options.expires) this.expires = typeof options.expires === 'string' ? new Date(options.expires) : options.expires;
+    else if (this.maxAge) this.expires = new Date(Date.now() + this.maxAge * 1000);
   }
 
   //  reset expires to prolong session cookie (typically in every request)
@@ -32,7 +34,7 @@ export default class Cookie {
     return {
       path: this.path,
       httpOnly: this.httpOnly,
-      expires: this.expires || null,
+      expires: this.expires,
       domain: this.domain,
       sameSite: this.sameSite,
       secure: this.secure
@@ -40,7 +42,7 @@ export default class Cookie {
   }
 
   //  cookie serialize to use for set header
-  serialize(name, val) {
+  serialize(name: string, val: string) {
     return serialize(name, val, this.cookieOptions);
   }
 }

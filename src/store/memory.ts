@@ -1,29 +1,22 @@
-import Store from '../store';
+import { Store } from '../types';
+import Session from '../session';
 const MemoryStoreSession = {};
 
-export default class MemoryStore extends Store {
+export default class MemoryStore implements Store {
+  sessions: Record<string, string>;
   constructor() {
-    super();
     this.sessions = MemoryStoreSession;
   }
 
-  get(sid) {
+  get(sid: string) {
     const self = this;
 
-    let expires;
     let sess = this.sessions[sid];
     if (sess) {
-      sess = JSON.parse(sess);
-
-      //  converting string Date to Date()
-      expires =
-        typeof sess.cookie.expires === 'string'
-          ? new Date(sess.cookie.expires)
-          : sess.cookie.expires;
-
-      if (!expires || Date.now() < expires) {
+      const session = JSON.parse(sess, (key, value) => key === 'expires' ? new Date(value) : value);
+      if (!session.expires || Date.now() < session.expires) {
         //  check expires before returning
-        return Promise.resolve(sess);
+        return Promise.resolve(session);
       }
 
       self.destroy(sid);
@@ -32,12 +25,12 @@ export default class MemoryStore extends Store {
     return Promise.resolve(null);
   }
 
-  set(sid, sess) {
+  set(sid: string, sess: Session) {
     this.sessions[sid] = JSON.stringify(sess);
     return Promise.resolve();
   }
 
-  touch(sid, session) {
+  touch(sid: string, session: Session) {
     return this.get(sid).then(sess => {
       if (sess) {
         const newSess = {
@@ -59,7 +52,7 @@ export default class MemoryStore extends Store {
     return Promise.resolve(arr);
   }
 
-  destroy(sid) {
+  destroy(sid: string) {
     delete this.sessions[sid];
     return Promise.resolve();
   }

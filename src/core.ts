@@ -2,20 +2,19 @@ import { parse as parseCookie } from 'cookie';
 import { nanoid } from 'nanoid';
 import MemoryStore from './store/memory';
 import Session from './session';
-import Cookie from './cookie';
-import { Options } from './types.ts'
+import { Options, Request, Response, SessionOptions } from './types'
 
-export function stringify(sess) {
+export function stringify(sess: Session) {
   return JSON.stringify(sess, (key, val) =>
     key === 'cookie' ? undefined : val
   );
 }
 
-function getOptions(opts: Options = {}) {
+function getOptions(opts: Options = {}): SessionOptions {
   return {
     name: opts.name || 'sid',
     store: opts.store || new MemoryStore(),
-    genId:
+    genid:
       opts.genid || nanoid,
     encode: opts.encode,
     decode: opts.decode,
@@ -26,7 +25,7 @@ function getOptions(opts: Options = {}) {
   };
 }
 
-export async function applySession(req, res, opts) {
+export async function applySession(req: Request, res: Response, opts?: Options): Promise<void> {
   const options = getOptions(opts);
 
   if (req.session) return;
@@ -45,16 +44,12 @@ export async function applySession(req, res, opts) {
 
   if (req.sessionId) {
     const sess = await req.sessionStore.get(req.sessionId);
-    if (sess) {
-      req.session = new Session(req, res, sess);
-      req.session.cookie = new Cookie(sess.cookie);
-    }
+    if (sess) req.session = new Session(req, res, sess);
   }
 
   if (!req.session) {
-    req.sessionId = options.genId();
+    req.sessionId = options.genid();
     req.session = new Session(req, res);
-    req.session.cookie = new Cookie(options.cookie);
   }
 
   req._sessStr = stringify(req.session);
@@ -62,12 +57,10 @@ export async function applySession(req, res, opts) {
   // autocommit
   if (options.autoCommit) {
     const oldEnd = res.end;
-    res.end = async function resEndProxy(...args) {
+    res.end = async function resEndProxy(...args: any) {
       if (res.finished || res.writableEnded) return;
       if (req.session) await req.session.commit();
       oldEnd.apply(this, args);
     };
   }
-
-  return req.session;
 }

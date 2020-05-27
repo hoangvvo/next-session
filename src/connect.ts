@@ -1,10 +1,11 @@
 import { applySession } from './core';
+import { Options, Response, Request } from './types';
 
 let storeReady = true;
 
-export default function session(opts) {
+export default function session(opts: Options) {
   //  store readiness
-  if (opts && opts.store) {
+  if (opts?.store?.on) {
     opts.store.on('disconnect', () => {
       storeReady = false;
     });
@@ -12,11 +13,11 @@ export default function session(opts) {
       storeReady = true;
     });
   }
-  return (req, res, next) => {
+  return (req: Request, res: Response, next: (err?: any) => void) => {
     if (!storeReady) {
       next();
       return;
     }
-    applySession(req, res, opts).then(() => next());
+    applySession(req, res, opts).then(next);
   };
 }

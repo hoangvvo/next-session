@@ -1,12 +1,18 @@
 import { stringify } from './core';
+import { Request, Response } from './types';
+import Cookie from './cookie';
 
 export default class Session {
-  constructor(req, res, sess) {
-    Object.defineProperty(this, 'req', { value: req });
-    Object.defineProperty(this, 'res', { value: res });
-    Object.defineProperty(this, 'id', { value: req.sessionId });
-    if (typeof sess === 'object') {
+  id: string;
+  cookie: Cookie;
+  [key: string]: any;
+  constructor(private readonly req: Request, private readonly res: Response, sess?: Session) {
+    this.id = req.sessionId as string;
+    if (sess) {
       Object.assign(this, sess);
+      this.cookie = new Cookie(sess.cookie);
+    } else {
+      this.cookie = new Cookie(req._sessOpts.cookie);
     }
   }
 
@@ -39,9 +45,9 @@ export default class Session {
     const shouldSave = () =>
       stringify(this) !== this.req._sessStr;
     const shouldTouch = () => {
-      if (!this.cookie.maxAge && touchAfter === 0) return false;
+      if (!this.cookie.maxAge || !this.cookie.expires || touchAfter === 0) return false;
       const elapsed =
-        this.cookie.maxAge * 1000 - (this.cookie.expires - new Date());
+        this.cookie.maxAge * 1000 - (this.cookie.expires.getTime() - Date.now());
       return elapsed >= touchAfter;
     };
     const shouldSetCookie = () => {
@@ -61,8 +67,8 @@ export default class Session {
       if (this.res.headersSent) return;
       const sessionId =
         typeof this.req._sessOpts.encode === 'function'
-          ? await this.req._sessOpts.encode(this.req.sessionId)
-          : this.req.sessionId
+          ? await this.req._sessOpts.encode(this.req.sessionId as string)
+          : this.req.sessionId as string
       this.res.setHeader(
         'Set-Cookie',
         this.cookie.serialize(name, sessionId)
