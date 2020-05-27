@@ -3,7 +3,7 @@ import { Options, Response, Request } from './types';
 
 let storeReady = true;
 
-export default function session(opts: Options) {
+export default function session(opts?: Options) {
   //  store readiness
   if (opts?.store?.on) {
     opts.store.on('disconnect', () => {
