@@ -1,13 +1,15 @@
-import request, { SuperTest, Test } from 'supertest';
+import request from 'supertest'
 import {
   nextBuild,
-  startApp
+  startApp,
+  stopApp
 } from '../next-test-utils';
 import { Server } from 'http';
 
 const appDir = __dirname;
 let server: Server;
-let agent: SuperTest<Test>;
+let agent: request.SuperTest<request.Test>;
+let base: string;
 
 // eslint-disable-next-line no-undef
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 1000 * 30;
@@ -19,13 +21,16 @@ beforeAll(async () => {
     dev: false,
     quiet: true
   });
+  // @ts-ignore
+  const appPort = server.address().port;
+  base = `http://localhost:${appPort}`
 });
 
-afterAll(() => server.close());
+afterAll(() => stopApp(server))
 
 describe('Using pages (getServerSideProps)', () => {
   beforeEach(() => {
-    agent = request.agent(server);
+    agent = request.agent(base);
   });
 
   it('applySession should create, persist, and remove session', async () => {

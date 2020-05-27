@@ -1,5 +1,5 @@
 import React from 'react';
-import { applySession } from '../../../../src';
+import { applySession } from '../../../../dist';
 import { NextPage } from 'next';
 
 const Page: NextPage<{views: number}> = ({ views }) => <p>{views}</p>

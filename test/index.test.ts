@@ -12,7 +12,6 @@ import {
   withSession,
   session,
   Options,
-  StoreInterface,
 } from '../src';
 import Cookie from '../src/cookie';
 import Session from '../src/session';

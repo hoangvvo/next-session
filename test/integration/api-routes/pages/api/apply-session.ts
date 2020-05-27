@@ -1,4 +1,4 @@
-import { applySession, Session } from '../../../../../src';
+import { applySession, Session } from '../../../../../dist';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {

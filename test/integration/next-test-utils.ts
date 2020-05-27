@@ -36,6 +36,7 @@ function promiseCall(obj: any, method: string, ...args: any) {
 export { nextServer };
 
 export async function startApp(options: NextServerOptions) {
+  options.quiet = false;
   const app = nextServer(options);
 
   await app.prepare();
@@ -51,7 +52,7 @@ export async function startApp(options: NextServerOptions) {
 }
 
 export async function stopApp(server: http.Server) {
-  const app = (server as any)._app;
+  const app = (server as any).__app;
 
   if (app) await app.close();
   await promiseCall(server, 'close');
