@@ -1,9 +1,8 @@
 import React from 'react';
 import { withSession } from '../../../../src';
+import { NextPage } from 'next';
 
-function Page({ views }) {
-  return (<p>{views}</p>);
-}
+const Page: NextPage<{views: number}> = ({ views }) => <p>{views}</p>
 
 Page.getInitialProps = ({ req }) => {
   if (req.method === 'GET') req.session.views = req.session.views ? (req.session.views + 1) : 1;
