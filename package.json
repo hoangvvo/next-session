@@ -15,9 +15,9 @@
   ],
   "scripts": {
     "prepublish": "npm run build",
-    "build": "babel src -d dist",
+    "build": "tsc --outDir dist",
     "lint": "eslint src --ext js --ignore-path .gitignore",
-    "test": "npm run build && jest --coverageReporters=text-lcov > coverage.lcov"
+    "test": "yarn build && jest --coverageReporters=text-lcov > coverage.lcov"
   },
   "repository": {
     "type": "git",
@@ -30,10 +30,7 @@
   },
   "homepage": "https://github.com/hoangvvo/next-session#readme",
   "devDependencies": {
-    "@babel/cli": "^7.8.3",
-    "@babel/core": "^7.8.3",
-    "@babel/preset-env": "^7.8.3",
-    "babel-jest": "^25.1.0",
+    "@types/node": "^14.0.5",
     "cookie-signature": "^1.1.0",
     "cross-spawn": "^7.0.1",
     "eslint": "^6.8.0",
@@ -42,7 +39,8 @@
     "next": "^9.3.0",
     "react": "^16.13.0",
     "react-dom": "^16.13.0",
-    "supertest": "^4.0.2"
+    "supertest": "^4.0.2",
+    "typescript": "^3.9.3"
   },
   "peerDependencies": {
     "next": "^9.0.0",

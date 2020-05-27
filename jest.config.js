@@ -3,8 +3,5 @@ module.exports = {
   collectCoverage: true,
   collectCoverageFrom: ['src/**/*'],
   testMatch: ['**/*.test.js'],
-  transform: {
-    "^.+\\.jsx?$": "babel-jest"
-  },
   bail: true,
 };

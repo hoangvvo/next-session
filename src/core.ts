@@ -3,6 +3,7 @@ import { nanoid } from 'nanoid';
 import MemoryStore from './store/memory';
 import Session from './session';
 import Cookie from './cookie';
+import { Options } from './types.ts'
 
 export function stringify(sess) {
   return JSON.stringify(sess, (key, val) =>
@@ -10,13 +11,12 @@ export function stringify(sess) {
   );
 }
 
-function getOptions(opts = {}) {
+function getOptions(opts: Options = {}) {
   return {
     name: opts.name || 'sid',
     store: opts.store || new MemoryStore(),
-    generateId:
-      opts.genid ||
-      opts.generateId || nanoid,
+    genId:
+      opts.genid || nanoid,
     encode: opts.encode,
     decode: opts.decode,
     rolling: opts.rolling || false,
@@ -52,7 +52,7 @@ export async function applySession(req, res, opts) {
   }
 
   if (!req.session) {
-    req.sessionId = options.generateId();
+    req.sessionId = options.genId();
     req.session = new Session(req, res);
     req.session.cookie = new Cookie(options.cookie);
   }
