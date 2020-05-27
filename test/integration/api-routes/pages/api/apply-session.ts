@@ -1,4 +1,4 @@
-import { applySession } from '../../../../../';
+import { applySession } from '../../../../../dist';
 
 async function handler(req, res) {
   await applySession(req, res, { name: 'apply-session' });
