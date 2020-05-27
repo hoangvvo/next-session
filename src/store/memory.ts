@@ -1,12 +1,13 @@
 import { StoreInterface } from '../types';
 import Session from '../session';
 import { EventEmitter } from 'events';
+const MemoryStoreSession = {};
 
 export default class MemoryStore extends EventEmitter implements StoreInterface {
   sessions: Record<string, string>;
   constructor() {
     super();
-    this.sessions = {};
+    this.sessions = MemoryStoreSession;
   }
 
   get(sid: string) {
