@@ -28,14 +28,12 @@ export default function withSession(handler: NextApiHandler | NextPage, options?
   }
   WithSession.displayName = `withSession(${getDisplayName(Page)})`;
   if (Page.getInitialProps) {
-    WithSession.getInitialProps = async (pageCtx: AppContext | NextPageContext) => {
-      const ctx = "Component" in pageCtx ? pageCtx.ctx : pageCtx;
+    WithSession.getInitialProps = async (pageCtx: NextPageContext) => {
       // @ts-ignore
       if (typeof window === "undefined") {
-        const { req, res } = ctx;
-        await applySession(req as IncomingMessage, res as ServerResponse, options);
+        await applySession(pageCtx.req as IncomingMessage, pageCtx.res as ServerResponse, options);
       }
-      return (Page.getInitialProps as NonNullable<NextComponentType['getInitialProps']>)(ctx);
+      return (Page.getInitialProps as NonNullable<NextComponentType['getInitialProps']>)(pageCtx);
     };
   }
   return WithSession;

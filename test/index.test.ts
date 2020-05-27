@@ -182,21 +182,6 @@ describe('withSession', () => {
     );
   });
 
-  test('works with _app#getInitialProps', async () => {
-    const App: NextPage = () => {
-      return React.createElement('div');
-    }
-    App.getInitialProps = (context: any) => {
-      return (context.ctx.req as IncomingMessage).session;
-    };
-    const ctx = {
-      Component: {},
-      ctx: { req: { headers: { cookie: '' } }, res: {} },
-    };
-    // @ts-ignore
-    expect(await (withSession(App) as NextPage).getInitialProps(ctx)).toBeInstanceOf(Session);
-  });
-
   test('works with pages#getInitialProps', async () => {
     const Page: NextPage = () => {
       return React.createElement('div');
@@ -251,7 +236,8 @@ describe('connect middleware', () => {
 
 describe('Store', () => {
   test('should extend EventEmitter', () => {
-    expect(Store()).toBeInstanceOf(EventEmitter);
+    // @ts-ignore
+    expect(new Store()).toBeInstanceOf(EventEmitter);
   });
   test('should convert String() expires to Date() expires', () => {
     let sess = {
