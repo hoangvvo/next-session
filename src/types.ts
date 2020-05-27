@@ -38,12 +38,15 @@ export type SessionOptions = Pick<Required<Options>, 'name' | 'store' | 'genid' 
   decode?: (encryptedSid: string) => string;
 };
 
-export type Request = (IncomingMessage | NextApiRequest) & {
-  sessionId?: string | null;
-  _sessId?: string | null;
-  session?: Session;
+export type Request = (IncomingMessage | NextApiRequest) & { [key: string]: any }
+
+export type RequestWithSession = Request & {
+  sessionId: string;
+  _sessId: string;
+  session: Session;
   _sessOpts: SessionOptions;
   _sessStr: string;
   sessionStore: Store;
 };
+
 export type Response = ServerResponse | NextApiResponse;

@@ -2,7 +2,7 @@ import { parse as parseCookie } from 'cookie';
 import { nanoid } from 'nanoid';
 import MemoryStore from './store/memory';
 import Session from './session';
-import { Options, Request, Response, SessionOptions } from './types'
+import { Options, Request, Response, SessionOptions, RequestWithSession } from './types'
 
 export function stringify(sess: Session) {
   return JSON.stringify(sess, (key, val) =>
@@ -44,12 +44,12 @@ export async function applySession(req: Request, res: Response, opts?: Options):
 
   if (req.sessionId) {
     const sess = await req.sessionStore.get(req.sessionId);
-    if (sess) req.session = new Session(req, res, sess);
+    if (sess) req.session = new Session(req as RequestWithSession, res, sess);
   }
 
   if (!req.session) {
     req.sessionId = options.genid();
-    req.session = new Session(req, res);
+    req.session = new Session(req as RequestWithSession, res);
   }
 
   req._sessStr = stringify(req.session);

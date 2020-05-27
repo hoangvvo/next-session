@@ -1,13 +1,13 @@
 import { stringify } from './core';
-import { Request, Response } from './types';
+import { Response, RequestWithSession } from './types';
 import Cookie from './cookie';
 
 export default class Session {
   id: string;
   cookie: Cookie;
   [key: string]: any;
-  constructor(private readonly req: Request, private readonly res: Response, sess?: Session) {
-    this.id = req.sessionId as string;
+  constructor(private readonly req: RequestWithSession, private readonly res: Response, sess?: Session) {
+    this.id = req.sessionId;
     if (sess) {
       Object.assign(this, sess);
       this.cookie = new Cookie(sess.cookie);
@@ -52,7 +52,7 @@ export default class Session {
     };
     const shouldSetCookie = () => {
       if (rolling && touched) return true;
-      return this.req._sessId !== this.req.sessionId;
+      return this.req._sessId !== this.id;
     };
 
     if (shouldSave()) {
@@ -67,8 +67,8 @@ export default class Session {
       if (this.res.headersSent) return;
       const sessionId =
         typeof this.req._sessOpts.encode === 'function'
-          ? await this.req._sessOpts.encode(this.req.sessionId as string)
-          : this.req.sessionId as string
+          ? await this.req._sessOpts.encode(this.id)
+          : this.id
       this.res.setHeader(
         'Set-Cookie',
         this.cookie.serialize(name, sessionId)

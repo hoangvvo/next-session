@@ -1,9 +1,10 @@
 
 {
   "compilerOptions": {
-    "lib": ["ES2018", "DOM"],
+    "lib": ["dom"],
     "module": "commonjs",
-    "target": "ES2018",
+    "target": "es5",
+    "jsx": "react",
     "strict": true,
     "declaration": true,
     "esModuleInterop": true

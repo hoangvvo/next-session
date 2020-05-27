@@ -1,11 +1,11 @@
-import { ComponentType, createElement } from "react";
-import { NextPage, NextPageContext, NextApiHandler, NextApiRequest, NextApiResponse } from 'next';
+import { createElement } from "react";
+import { NextPage, NextPageContext, NextApiHandler, NextApiRequest, NextApiResponse, NextComponentType } from 'next';
 import { AppContext } from 'next/app';
 import { applySession } from "./core";
-import { Request, Options } from "./types";
-import { ServerResponse } from "http";
+import { Options } from "./types";
+import { ServerResponse, IncomingMessage } from "http";
 
-function getDisplayName(WrappedComponent: ComponentType<any>) {
+function getDisplayName(WrappedComponent: NextComponentType<any>) {
   return WrappedComponent.displayName || WrappedComponent.name || "Component";
 }
 
@@ -17,14 +17,13 @@ export default function withSession(handler: NextApiHandler | NextPage, options:
   // API Routes
   if (isNextApiHandler(handler))
     return async function WithSession(req: NextApiRequest, res: NextApiResponse) {
-      await applySession(req as Request, res, options);
+      await applySession(req, res, options);
       return handler(req, res);
     };
 
   // Pages
   const Page = handler;
-  function WithSession(props: NextPage) {
-    // @ts-ignore
+  function WithSession(props: any) {
     return createElement(Page, props);
   }
   WithSession.displayName = `withSession(${getDisplayName(Page)})`;
@@ -34,10 +33,9 @@ export default function withSession(handler: NextApiHandler | NextPage, options:
       // @ts-ignore
       if (typeof window === "undefined") {
         const { req, res } = ctx;
-        await applySession(req as Request, res as ServerResponse, options);
+        await applySession(req as IncomingMessage, res as ServerResponse, options);
       }
-      // @ts-ignore
-      return Page.getInitialProps(ctx);
+      return (Page.getInitialProps as NonNullable<NextComponentType['getInitialProps']>)(ctx);
     };
   }
   return WithSession;
