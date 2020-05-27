@@ -1,13 +1,12 @@
 import { StoreInterface } from '../types';
 import Session from '../session';
 import { EventEmitter } from 'events';
-const MemoryStoreSession = {};
 
 export default class MemoryStore extends EventEmitter implements StoreInterface {
   sessions: Record<string, string>;
   constructor() {
     super();
-    this.sessions = MemoryStoreSession;
+    this.sessions = {};
   }
 
   get(sid: string) {
@@ -15,8 +14,9 @@ export default class MemoryStore extends EventEmitter implements StoreInterface 
 
     let sess = this.sessions[sid];
     if (sess) {
-      const session = JSON.parse(sess, (key, value) => key === 'expires' ? new Date(value) : value);
-      if (!session.expires || Date.now() < session.expires) {
+      const session = JSON.parse(sess);
+
+      if (!session.cookie.expires || Date.now() < new Date(session.cookie.expires).getTime()) {
         //  check expires before returning
         return Promise.resolve(session);
       }

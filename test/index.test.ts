@@ -326,7 +326,7 @@ describe('MemoryStore', () => {
   });
 
   test('should expire session', async () => {
-    let sessionStore: StoreInterface;
+    const sessionStore = new MemoryStore();
     let sessionId: string;
     let sessionInstance;
     const server = setUpServer(
@@ -334,12 +334,11 @@ describe('MemoryStore', () => {
         if (req.method === 'POST') {
           req.session.views = req.session.views ? req.session.views + 1 : 1;
           sessionInstance = req.session;
-          sessionStore = req.sessionStore;
           sessionId = req.sessionId;
         }
         res.end(`${(req.session && req.session.views) || 0}`);
       },
-      { cookie: { maxAge: 5 } }
+      { cookie: { maxAge: 5 }, store: sessionStore }
     );
     const agent = request.agent(server);
     await agent.post('/');
