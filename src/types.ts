@@ -3,7 +3,7 @@ import Session from "./session";
 import { EventEmitter } from "events";
 import { NextApiRequest, NextApiResponse } from "next";
 
-export abstract class Store {
+export abstract class StoreInterface {
   abstract get: (sid: string) => Promise<Session | null>;
   abstract set: (sid: string, sess: Session) => Promise<void>
   abstract destroy: (sid: string) => Promise<void>
@@ -23,7 +23,7 @@ export interface CookieOptions {
 
 export interface Options {
   name?: string;
-  store?: Store;
+  store?: StoreInterface;
   genid?: () => string;
   encode?: (rawSid: string) => string;
   decode?: (encryptedSid: string) => string;
@@ -46,7 +46,7 @@ export type RequestWithSession = Request & {
   session: Session;
   _sessOpts: SessionOptions;
   _sessStr: string;
-  sessionStore: Store;
+  sessionStore: StoreInterface;
 };
 
 export type Response = ServerResponse | NextApiResponse;

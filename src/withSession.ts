@@ -13,7 +13,7 @@ function isNextApiHandler(handler: NextApiHandler | NextPage): handler is NextAp
   return handler.length > 1;
 }
 
-export default function withSession(handler: NextApiHandler | NextPage, options?: Options) {
+export default function withSession(handler: NextApiHandler | NextPage, options?: Options): NextApiHandler | NextPage {
   // API Routes
   if (isNextApiHandler(handler))
     return async function WithSession(req: NextApiRequest, res: NextApiResponse) {

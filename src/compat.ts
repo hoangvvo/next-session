@@ -1,6 +1,6 @@
 import { promisify } from 'util';
 import Session from './session';
-import { Store } from './types';
+import { StoreInterface } from './types';
 
 interface CallbackStore {
   get: (sid: string, callback: (err: any, session?: Session | null) => void) => void;
@@ -10,10 +10,10 @@ interface CallbackStore {
   [key: string]: any;
 }
 
-export function promisifyStore(store: CallbackStore): Store {
+export function promisifyStore(store: CallbackStore): StoreInterface {
   store.get = promisify(store.get);
   store.set = promisify(store.set);
   store.destroy = promisify(store.destroy);
   if (typeof store.touch === 'function') store.touch = promisify(store.touch);
-  return store as Store;
+  return store as StoreInterface;
 }
