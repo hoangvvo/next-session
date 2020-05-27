@@ -2,12 +2,19 @@ import { stringify } from './core';
 import { Response, RequestWithSession } from './types';
 import Cookie from './cookie';
 
-export default class Session {
+declare interface Session {
   id: string;
+  req: RequestWithSession;
+  res: Response
+}
+
+class Session {
   cookie: Cookie;
   [key: string]: any;
-  constructor(private readonly req: RequestWithSession, private readonly res: Response, sess?: Session) {
-    this.id = req.sessionId;
+  constructor(req: RequestWithSession, res: Response, sess?: Session) {
+    Object.defineProperty(this, 'id', { value: req.sessionId });
+    Object.defineProperty(this, 'req', { value: req });
+    Object.defineProperty(this, 'res', { value: res });
     if (sess) {
       Object.assign(this, sess);
       this.cookie = new Cookie(sess.cookie);
@@ -76,3 +83,5 @@ export default class Session {
     }
   }
 }
+
+export default Session;
