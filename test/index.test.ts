@@ -1,3 +1,4 @@
+/// <reference path="./customRequest.d.ts" />
 import React from 'react';
 import { createServer, RequestListener } from 'http';
 import request from 'supertest';
@@ -10,9 +11,8 @@ import {
   promisifyStore,
   withSession,
   session,
-  Request,
-  Response,
   Options,
+  StoreInterface,
 } from '../src';
 import Cookie from '../src/cookie';
 import Session from '../src/session';
@@ -29,7 +29,7 @@ const defaultHandler = (req: IncomingMessage, res: ServerResponse) => {
   res.end(`${(req.session && req.session.views) || 0}`);
 };
 
-function setUpServer(handler: RequestListener = defaultHandler, options?: boolean | Options, prehandler?: (req: Request, res?: Response) => any) {
+function setUpServer(handler: RequestListener = defaultHandler, options?: boolean | Options, prehandler?: (req: IncomingMessage, res: ServerResponse) => any) {
   const server = createServer(async (req, res) => {
     if (prehandler) await prehandler(req, res);
     if (options !== false) await applySession(req, res, options as Options);
@@ -47,7 +47,7 @@ describe('applySession', () => {
   });
 
   test('should do nothing if req.session is defined', async () => {
-    const server = setUpServer(defaultHandler, undefined, (req) => {
+    const server = setUpServer(defaultHandler, undefined, (req, res) => {
       // @ts-ignore
       req.session = {};
     });
@@ -108,7 +108,7 @@ describe('applySession', () => {
     const server = setUpServer(
       (req, res) => {
         req.session.hello = 'world';
-        res.end(`${req.session.cookie.expires.valueOf()}`);
+        res.end(`${req.session.cookie.expires?.valueOf()}`);
       },
       { rolling: true, touchAfter: 5000, cookie: { maxAge: 60 * 60 * 24 } }
     );
@@ -138,8 +138,8 @@ describe('applySession', () => {
     const badSecret = 'nyan cat';
     var store = new MemoryStore();
 
-    const decodeFn = (key) => (raw) => signature.unsign(raw.slice(2), key);
-    const encodeFn = (key) => (sessId) => sessId && `s:${signature.sign(sessId, key)}`
+    const decodeFn = (key: string) => (raw: string) => signature.unsign(raw.slice(2), key);
+    const encodeFn = (key: string) => (sessId: string) => sessId && `s:${signature.sign(sessId, key)}`
     const server = setUpServer(
       async (req, res) => {
         if (req.method === 'POST') req.session.hello = 'world';
@@ -174,7 +174,7 @@ describe('withSession', () => {
     const request: any = {};
     const response: any = { end: () => null };
     // eslint-disable-next-line no-unused-vars
-    function handler(req, res) {
+    function handler(req: any, res: any) {
       return req.session;
     }
     expect(await (withSession(handler) as NextApiHandler)(request, response)).toBeInstanceOf(
@@ -187,7 +187,7 @@ describe('withSession', () => {
       return React.createElement('div');
     }
     App.getInitialProps = (context: any) => {
-      return context.ctx.req.session;
+      return (context.ctx.req as IncomingMessage).session;
     };
     const ctx = {
       Component: {},
@@ -202,9 +202,10 @@ describe('withSession', () => {
       return React.createElement('div');
     }
     Page.getInitialProps = (context) => {
-      return context.req.session;
+      return (context.req as IncomingMessage).session;
     };
     const ctx = { req: { headers: { cookie: '' } }, res: {} };
+    // @ts-ignore
     expect(await (withSession(Page) as NextPage).getInitialProps(ctx as any)).toBeInstanceOf(
       Session
     );
@@ -250,7 +251,7 @@ describe('connect middleware', () => {
 
 describe('Store', () => {
   test('should extend EventEmitter', () => {
-    expect(new Store()).toBeInstanceOf(EventEmitter);
+    expect(Store()).toBeInstanceOf(EventEmitter);
   });
   test('should convert String() expires to Date() expires', () => {
     let sess = {
@@ -264,10 +265,12 @@ describe('Store', () => {
   test('should allow store subclasses to use Store.call(this)', () => {
     // Some express-compatible stores use this pattern like
     // https://github.com/voxpelli/node-connect-pg-simple/blob/master/index.js
-    function SubStore(options = {}) {
-      Store.call(this, options);
+    function SubStore() {
+      // @ts-ignore
+      Store.call(this);
     }
     // eslint-disable-next-line no-unused-vars
+    // @ts-ignore
     const store = new SubStore();
   });
 });
@@ -275,31 +278,32 @@ describe('Store', () => {
 describe('promisifyStore', () => {
   test('can promisify callback store', async () => {
     class CbStore {
-      sessions: number;
+      sessions: any;
       constructor() {
-        this.sessions = 1;
+        this.sessions = {};
       }
 
       /* eslint-disable no-unused-expressions */
-      get(sid, cb) {
+      get(sid: string, cb: (err: any, session?: Session | null) => void) {
         cb && cb(null, this.sessions);
       }
 
-      set(sid, sess, cb) {
+      set(sid: string, sess: Session, cb: (err: any, session?: Session | null) => void) {
         cb && cb(null, this.sessions);
       }
 
-      destroy(sid, cb) {
+      destroy(sid: string, cb: (err: any, session?: Session | null) => void) {
         cb && cb(null, this.sessions);
       }
 
-      touch(sid, cb) {
+      touch(sid: string, cb: (err: any, session?: Session | null) => void) {
         cb && cb(null, this.sessions);
       }
     }
 
     const req: any = {};
     const res: any = { end: () => null };
+    // @ts-ignore
     applySession(req, res, { store: promisifyStore(new CbStore()) });
     // facebook/jest#2549
     expect(req.sessionStore.get().constructor.name).toStrictEqual('Promise');
@@ -319,11 +323,11 @@ describe('MemoryStore', () => {
       async (req, res) => {
         if (req.url === '/all') {
           const ss = (await req.sessionStore.all()).map(
-            (sess) => JSON.parse(sess).user
+            (sess: string) => JSON.parse(sess).user
           );
           res.end(ss.toString());
         } else {
-          req.session.user = parse(req.url, true).query.user;
+          req.session.user = parse(req.url as string, true).query.user;
           res.end();
         }
       },
@@ -336,8 +340,8 @@ describe('MemoryStore', () => {
   });
 
   test('should expire session', async () => {
-    let sessionStore;
-    let sessionId;
+    let sessionStore: StoreInterface;
+    let sessionId: string;
     let sessionInstance;
     const server = setUpServer(
       (req, res) => {
@@ -359,9 +363,11 @@ describe('MemoryStore', () => {
     global.Date.now = jest.fn(() => futureTime);
     await agent.get('/').expect('0');
     //  Check in the store
+    // @ts-ignore
     expect(await sessionStore.get(sessionId)).toBeNull();
     //  Touch will return undefind
     expect(
+      // @ts-ignore
       await sessionStore.touch(sessionId, sessionInstance)
     ).toBeUndefined();
     // @ts-ignore
