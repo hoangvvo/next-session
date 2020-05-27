@@ -1,6 +1,7 @@
-import { applySession } from '../../../../../dist';
+import { applySession } from '../../../../../src';
+import { NextApiRequest, NextApiResponse } from 'next';
 
-async function handler(req, res) {
+async function handler(req: NextApiRequest & { session: any }, res: NextApiResponse) {
   await applySession(req, res, { name: 'apply-session' });
   if (req.method === 'GET') req.session.views = req.session.views ? (req.session.views + 1) : 1;
   if (req.method === 'DELETE') req.session.destroy();

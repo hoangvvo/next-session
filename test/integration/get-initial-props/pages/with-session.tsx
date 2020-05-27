@@ -1,5 +1,5 @@
 import React from 'react';
-import { withSession } from '../../../../dist';
+import { withSession } from '../../../../src';
 
 function Page({ views }) {
   return (<p>{views}</p>);

@@ -1,4 +1,4 @@
-import { withSession } from '../../../../../dist';
+import { withSession } from '../../../../../src';
 
 async function handler(req, res) {
   if (req.method === 'GET') req.session.views = req.session.views ? (req.session.views + 1) : 1;

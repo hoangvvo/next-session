@@ -92,7 +92,7 @@ export function runNextCommand(
 export function nextBuild(
   dir,
   args = [],
-  opts
+  opts = {}
 ) {
   return runNextCommand(['build', dir, ...args], opts);
 }
