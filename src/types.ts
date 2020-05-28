@@ -1,3 +1,4 @@
+/// <reference path="./extendedRequest.d.ts" />
 import { IncomingMessage, ServerResponse } from 'http';
 import Session from './session';
 import { EventEmitter } from 'events';
@@ -47,17 +48,6 @@ export type SessionOptions = Pick<
   decode?: (encryptedSid: string) => string;
 };
 
-export type Request = (IncomingMessage | NextApiRequest) & {
-  [key: string]: any;
-};
-
-export type RequestWithSession = Request & {
-  sessionId?: string | null;
-  _sessId?: string | null;
-  session: Session;
-  _sessOpts: SessionOptions;
-  _sessStr: string;
-  sessionStore: StoreInterface;
-};
+export type Request = IncomingMessage | NextApiRequest;
 
 export type Response = ServerResponse | NextApiResponse;

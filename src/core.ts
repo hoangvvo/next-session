@@ -7,7 +7,6 @@ import {
   Request,
   Response,
   SessionOptions,
-  RequestWithSession,
 } from './types';
 
 export function stringify(sess: Session) {
@@ -53,12 +52,12 @@ export async function applySession(
 
   if (req.sessionId) {
     const sess = await req.sessionStore.get(req.sessionId);
-    if (sess) req.session = new Session(req as RequestWithSession, res, sess);
+    if (sess) req.session = new Session(req, res, sess);
   }
 
   if (!req.session) {
     req.sessionId = options.genid();
-    req.session = new Session(req as RequestWithSession, res);
+    req.session = new Session(req, res);
   }
 
   req._sessStr = stringify(req.session);

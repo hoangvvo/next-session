@@ -1,4 +1,4 @@
-/// <reference path="./customRequest.d.ts" />
+/// <reference path="../src/extendedRequest.d.ts" />
 import React from 'react';
 import { createServer, RequestListener } from 'http';
 import request from 'supertest';
@@ -326,13 +326,14 @@ describe('MemoryStore', () => {
 
   test('should expire session', async () => {
     const sessionStore = new MemoryStore();
-    let sessionId: string;
+    let sessionId: string | undefined;
     let sessionInstance;
     const server = setUpServer(
       (req, res) => {
         if (req.method === 'POST') {
           req.session.views = req.session.views ? req.session.views + 1 : 1;
           sessionInstance = req.session;
+          // @ts-ignore
           sessionId = req.sessionId;
         }
         res.end(`${(req.session && req.session.views) || 0}`);

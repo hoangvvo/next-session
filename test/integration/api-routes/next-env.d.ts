@@ -1,3 +1,3 @@
 /// <reference types="next" />
 /// <reference types="next/types/global" />
-/// <reference path="../../customRequest.d.ts" />
+/// <reference path="../../../src/extendedRequest.d.ts" />
