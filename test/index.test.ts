@@ -279,6 +279,8 @@ describe('promisifyStore', () => {
 
     const req: any = {};
     const res: any = { end: () => null };
+    // We have some discrepancies in session.cookie.sameSite, one specifies 'lax', 'strict' while other is string
+    // @ts-ignore
     applySession(req, res, { store: promisifyStore(new CbStore()) });
     // facebook/jest#2549
     expect(req.sessionStore.get().constructor.name).toStrictEqual('Promise');
