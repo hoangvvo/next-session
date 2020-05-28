@@ -1,8 +1,8 @@
 import { promisify } from 'util';
 import { StoreInterface } from './types';
-import * as session from 'express-session';
+import { Store as ExpressStore }from 'express-session';
 
-export function promisifyStore(store: Pick<session.Store, 'get' | 'destroy' | 'set'> & Partial<session.Store>): StoreInterface {
+export function promisifyStore(store: Pick<ExpressStore, 'get' | 'destroy' | 'set'> & Partial<ExpressStore>): StoreInterface {
   store.get = promisify(store.get);
   store.set = promisify(store.set);
   store.destroy = promisify(store.destroy);
