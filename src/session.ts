@@ -51,7 +51,7 @@ class Session {
 
     const shouldSave = () => stringify(this) !== this.req._sessStr;
     const shouldTouch = () => {
-      if (!this.cookie.maxAge || !this.cookie.expires || touchAfter === 0)
+      if (!this.cookie.maxAge || !this.cookie.expires || touchAfter === -1)
         return false;
       const elapsed =
         this.cookie.maxAge * 1000 -
