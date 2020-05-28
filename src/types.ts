@@ -23,7 +23,6 @@ export abstract class StoreInterface {
   abstract set: (sid: string, sess: SessionData) => Promise<void>;
   abstract destroy: (sid: string) => Promise<void>;
   abstract touch?: (sid: string, sess: SessionData) => Promise<void>;
-  on?: EventEmitter['on'];
   [key: string]: any;
 }
 
