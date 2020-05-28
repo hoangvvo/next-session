@@ -65,7 +65,7 @@ export default withSession(handler, options);
 
 #### Pages (getInitialProps)
 
-*Note: This usage is not recommended. `next@>9.3.0` recommends [using `getServerSideProps` instead of `getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#recommended-use-getstaticprops-or-getserversideprops-instead).*
+*Note: This usage is not recommended. `next@>9.3.0` recommends [using `getServerSideProps` instead of `getInitialProps`].*
 
 You can use `next-session` in [`getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps). **This will work on [server only](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#context-object) (first render)**.
 
