@@ -26,7 +26,7 @@ yarn add next-session
 `next-session` has several named exports:
 
 - `session` to be used as a Connect/Express middleware.
-- `withSession` to be used as higher order component or API Routes wrapper.
+- `withSession` to be used as HOC in Page Components or API Routes wrapper.
 - `applySession`, to manually initialize `next-session` by providing `req` and `res`.
 
 Use **one of them** to work with `next-session`.
