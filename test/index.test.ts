@@ -135,7 +135,7 @@ describe('applySession', () => {
   test('should allow encode and decode sessionId', async () => {
     const secret = 'keyboard cat';
     const badSecret = 'nyan cat';
-    var store = new MemoryStore();
+    const store = new MemoryStore();
 
     const decodeFn = (key: string) => (raw: string) => signature.unsign(raw.slice(2), key);
     const encodeFn = (key: string) => (sessId: string) => sessId && `s:${signature.sign(sessId, key)}`

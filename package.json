@@ -16,7 +16,7 @@
   "scripts": {
     "prepublish": "npm run build",
     "build": "tsc --outDir dist",
-    "lint": "eslint src --ext js --ignore-path .gitignore",
+    "lint": "eslint src --ext ts --ignore-path .gitignore",
     "test": "yarn build && jest --coverageReporters=text-lcov > coverage.lcov"
   },
   "repository": {

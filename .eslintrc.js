@@ -7,12 +7,16 @@ module.exports = {
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
-    "prettier/@typescript-eslint",
     "plugin:react/recommended"
   ],
   "globals": {
     "Atomics": "readonly",
     "SharedArrayBuffer": "readonly"
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
   },
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
@@ -28,6 +32,7 @@ module.exports = {
   ],
   "rules": {
     "react/prop-types": "off",
-    "react/react-in-jsx-scope": "off"
+    "react/react-in-jsx-scope": "off",
+    "no-unused-vars": "off"
   }
 };

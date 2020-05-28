@@ -13,7 +13,7 @@ export default class MemoryStore extends EventEmitter implements StoreInterface 
   get(sid: string) {
     const self = this;
 
-    let sess = this.sessions[sid];
+    const sess = this.sessions[sid];
     if (sess) {
       const session = JSON.parse(sess);
 
