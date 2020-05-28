@@ -4,4 +4,5 @@ module.exports = {
   collectCoverage: true,
   collectCoverageFrom: ['src/**/*'],
   testMatch: ['**/*.test.ts'],
+  bail: true
 };

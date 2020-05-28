@@ -7,13 +7,13 @@ interface CallbackStore {
     sid: string,
     callback: (err: any, session?: Session | null) => void
   ) => void;
-  set: (sid: string, session: Session, callback?: (err?: any) => void) => void;
+  set: (sid: string, session: Session, callback: (err?: any) => void) => void;
   touch?: (
     sid: string,
     session: Session,
-    callback?: (err?: any) => void
+    callback: (err?: any) => void
   ) => void;
-  destroy: (sid: string, callback?: (err?: any) => void) => void;
+  destroy: (sid: string, callback: (err?: any) => void) => void;
   [key: string]: any;
 }
 

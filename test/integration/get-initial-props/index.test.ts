@@ -5,6 +5,7 @@ import {
   stopApp
 } from '../next-test-utils';
 import { Server } from 'http'
+import { AddressInfo } from 'net';
 
 const appDir = __dirname;
 let server: Server;
@@ -21,8 +22,7 @@ beforeAll(async () => {
     dev: false,
     quiet: true
   });
-  // @ts-ignore
-  const appPort = server.address().port;
+  const appPort = (server.address() as AddressInfo).port;
   base = `http://localhost:${appPort}`
 });
 

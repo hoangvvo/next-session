@@ -17,7 +17,7 @@ import Cookie from '../src/cookie';
 import Session from '../src/session';
 import { ServerResponse } from 'http';
 import { IncomingMessage } from 'http';
-import { NextPage, NextApiHandler } from 'next';
+import { NextPage, NextApiHandler, NextComponentType } from 'next';
 const signature = require('cookie-signature');
 const { parse: parseCookie } = require('cookie')
 
@@ -47,8 +47,7 @@ describe('applySession', () => {
 
   test('should do nothing if req.session is defined', async () => {
     const server = setUpServer(defaultHandler, undefined, (req, res) => {
-      // @ts-ignore
-      req.session = {};
+      req.session = {} as any;
     });
     await request(server)
       .get('/')
@@ -189,8 +188,9 @@ describe('withSession', () => {
       return (context.req as IncomingMessage).session;
     };
     const ctx = { req: { headers: { cookie: '' } }, res: {} };
-    // @ts-ignore
-    expect(await (withSession(Page) as NextPage).getInitialProps(ctx as any)).toBeInstanceOf(
+    expect(await ((withSession(Page) as NextPage).getInitialProps as NonNullable<
+    NextComponentType['getInitialProps']
+  >)(ctx as any)).toBeInstanceOf(
       Session
     );
   });
@@ -269,7 +269,7 @@ describe('promisifyStore', () => {
       }
 
       /* eslint-disable no-unused-expressions */
-      get(sid: string, cb: (err: any, session?: Session | null) => void) {
+      get(sid: string, cb: (err?: any, session?: Session | null) => void) {
         cb && cb(null, this.sessions);
       }
 
@@ -281,14 +281,13 @@ describe('promisifyStore', () => {
         cb && cb(null, this.sessions);
       }
 
-      touch(sid: string, cb: (err: any, session?: Session | null) => void) {
+      touch(sid: string, sess: Session, cb: (err: any, session?: Session | null) => void) {
         cb && cb(null, this.sessions);
       }
     }
 
     const req: any = {};
     const res: any = { end: () => null };
-    // @ts-ignore
     applySession(req, res, { store: promisifyStore(new CbStore()) });
     // facebook/jest#2549
     expect(req.sessionStore.get().constructor.name).toStrictEqual('Promise');
@@ -326,14 +325,13 @@ describe('MemoryStore', () => {
 
   test('should expire session', async () => {
     const sessionStore = new MemoryStore();
-    let sessionId: string | undefined;
-    let sessionInstance;
+    let sessionId: string | undefined | null;
+    let sessionInstance: Session;
     const server = setUpServer(
       (req, res) => {
         if (req.method === 'POST') {
           req.session.views = req.session.views ? req.session.views + 1 : 1;
           sessionInstance = req.session;
-          // @ts-ignore
           sessionId = req.sessionId;
         }
         res.end(`${(req.session && req.session.views) || 0}`);
@@ -348,12 +346,11 @@ describe('MemoryStore', () => {
     global.Date.now = jest.fn(() => futureTime);
     await agent.get('/').expect('0');
     //  Check in the store
-    // @ts-ignore
-    expect(await sessionStore.get(sessionId)).toBeNull();
+    expect(await sessionStore.get(sessionId as string)).toBeNull();
     //  Touch will return undefind
     expect(
       // @ts-ignore
-      await sessionStore.touch(sessionId, sessionInstance)
+      await sessionStore.touch(sessionId as string, sessionInstance)
     ).toBeUndefined();
     // @ts-ignore
     global.Date.now.mockReset();
