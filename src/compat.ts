@@ -3,9 +3,16 @@ import Session from './session';
 import { StoreInterface } from './types';
 
 interface CallbackStore {
-  get: (sid: string, callback: (err: any, session?: Session | null) => void) => void;
+  get: (
+    sid: string,
+    callback: (err: any, session?: Session | null) => void
+  ) => void;
   set: (sid: string, session: Session, callback?: (err?: any) => void) => void;
-  touch?: (sid: string, session: Session, callback?: (err?: any) => void) => void;
+  touch?: (
+    sid: string,
+    session: Session,
+    callback?: (err?: any) => void
+  ) => void;
   destroy: (sid: string, callback?: (err?: any) => void) => void;
   [key: string]: any;
 }

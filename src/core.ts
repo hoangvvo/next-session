@@ -2,7 +2,13 @@ import { parse as parseCookie } from 'cookie';
 import { nanoid } from 'nanoid';
 import MemoryStore from './store/memory';
 import Session from './session';
-import { Options, Request, Response, SessionOptions, RequestWithSession } from './types'
+import {
+  Options,
+  Request,
+  Response,
+  SessionOptions,
+  RequestWithSession,
+} from './types';
 
 export function stringify(sess: Session) {
   return JSON.stringify(sess, (key, val) =>
@@ -14,18 +20,21 @@ function getOptions(opts: Options = {}): SessionOptions {
   return {
     name: opts.name || 'sid',
     store: opts.store || new MemoryStore(),
-    genid:
-      opts.genid || nanoid,
+    genid: opts.genid || nanoid,
     encode: opts.encode,
     decode: opts.decode,
     rolling: opts.rolling || false,
     touchAfter: opts.touchAfter ? opts.touchAfter : 0,
     cookie: opts.cookie || {},
-    autoCommit: typeof opts.autoCommit !== 'undefined' ? opts.autoCommit : true
+    autoCommit: typeof opts.autoCommit !== 'undefined' ? opts.autoCommit : true,
   };
 }
 
-export async function applySession(req: Request, res: Response, opts?: Options): Promise<void> {
+export async function applySession(
+  req: Request,
+  res: Response,
+  opts?: Options
+): Promise<void> {
   const options = getOptions(opts);
 
   if (req.session) return;
@@ -34,8 +43,8 @@ export async function applySession(req: Request, res: Response, opts?: Options):
     req.headers && req.headers.cookie
       ? parseCookie(req.headers.cookie)[options.name]
       : null;
-  req._sessId =
-    req.sessionId = rawSessionId && typeof options.decode === 'function'
+  req._sessId = req.sessionId =
+    rawSessionId && typeof options.decode === 'function'
       ? await options.decode(rawSessionId)
       : rawSessionId;
   req._sessOpts = options;

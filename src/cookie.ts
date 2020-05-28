@@ -6,7 +6,7 @@ export default class Cookie {
   maxAge?: number;
   httpOnly: boolean;
   domain: string | undefined;
-  sameSite?: boolean | "lax" | "strict" | "none";
+  sameSite?: boolean | 'lax' | 'strict' | 'none';
   secure: boolean;
   expires?: Date;
   constructor(options: CookieOptions & { expires?: string | Date | null }) {
@@ -18,8 +18,13 @@ export default class Cookie {
     this.sameSite = options.sameSite;
     this.secure = options.secure || false;
     // set expires based on maxAge (in seconds)
-    if (options.expires) this.expires = typeof options.expires === 'string' ? new Date(options.expires) : options.expires;
-    else if (this.maxAge) this.expires = new Date(Date.now() + this.maxAge * 1000);
+    if (options.expires)
+      this.expires =
+        typeof options.expires === 'string'
+          ? new Date(options.expires)
+          : options.expires;
+    else if (this.maxAge)
+      this.expires = new Date(Date.now() + this.maxAge * 1000);
   }
 
   //  reset expires to prolong session cookie (typically in every request)
@@ -37,7 +42,7 @@ export default class Cookie {
       expires: this.expires,
       domain: this.domain,
       sameSite: this.sameSite,
-      secure: this.secure
+      secure: this.secure,
     };
   }
 

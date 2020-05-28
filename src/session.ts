@@ -5,7 +5,7 @@ import Cookie from './cookie';
 declare interface Session {
   id: string;
   req: RequestWithSession;
-  res: Response
+  res: Response;
 }
 
 class Session {
@@ -49,12 +49,13 @@ class Session {
     let touched = false;
     let saved = false;
 
-    const shouldSave = () =>
-      stringify(this) !== this.req._sessStr;
+    const shouldSave = () => stringify(this) !== this.req._sessStr;
     const shouldTouch = () => {
-      if (!this.cookie.maxAge || !this.cookie.expires || touchAfter === 0) return false;
+      if (!this.cookie.maxAge || !this.cookie.expires || touchAfter === 0)
+        return false;
       const elapsed =
-        this.cookie.maxAge * 1000 - (this.cookie.expires.getTime() - Date.now());
+        this.cookie.maxAge * 1000 -
+        (this.cookie.expires.getTime() - Date.now());
       return elapsed >= touchAfter;
     };
     const shouldSetCookie = () => {
@@ -75,11 +76,8 @@ class Session {
       const sessionId =
         typeof this.req._sessOpts.encode === 'function'
           ? await this.req._sessOpts.encode(this.id)
-          : this.id
-      this.res.setHeader(
-        'Set-Cookie',
-        this.cookie.serialize(name, sessionId)
-      );
+          : this.id;
+      this.res.setHeader('Set-Cookie', this.cookie.serialize(name, sessionId));
     }
   }
 }

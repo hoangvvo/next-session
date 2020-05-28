@@ -4,5 +4,5 @@ export { applySession } from './core';
 export { default as MemoryStore } from './store/memory';
 export { default as Store } from './store';
 export { promisifyStore } from './compat';
-export { default as Session } from './session'
-export * from './types'
+export { default as Session } from './session';
+export * from './types';
