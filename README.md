@@ -25,35 +25,51 @@ yarn add next-session
 
 `next-session` has several named exports:
 
-- `session` to be used as a Connect/Express middleware.
+- `session` to be used as a Connect/Express middleware. (Use [next-connect](https://github.com/hoangvvo/next-connect) if used in Next.js)
 - `withSession` to be used as HOC in Page Components or API Routes wrapper (and several others).
 - `applySession`, to manually initialize `next-session` by providing `req` and `res`.
 
 Use **one of them** to work with `next-session`. Can also be used in other frameworks in the same manner as long as they have `(req, res)` handler signature.
 
-### `{ session }`
+**Warning** The default session store, `MemoryStore`, should not be used in production since it does not persist nor work in Serverless.
 
-This is `next-session` as a Connect middleware. Thus, **you can also use it in Express.js**.
+### API Routes
+
+Usage in API Routes may result in `API resolved without sending a response`. This can be solved by either adding:
+
+```js
+export const config = {
+  api: {
+    externalResolver: true,
+  },
+}
+```
+
+...or setting `options.autoCommit` to `false` and do `await session.commit()` (See [this](https://github.com/hoangvvo/next-session#reqsessioncommit)).
+
+#### `{ session }`
 
 ```javascript
 import { session } from 'next-session';
+import nextConnect from 'next-connect';
 
-app.use(session({ ...options }));
+const handler = nextConnect()
+  .use(session({ ...options }))
+  .all(() => {
+    req.session.views = req.session.views ? req.session.views + 1 : 1;
+    res.send(
+      `In this session, you have visited this website ${req.session.views} time(s).`
+    );
+  })
+
+export default handler;
 ```
 
-One way to use this in Next.js is through [next-connect](https://github.com/hoangvvo/next-connect).
-
-### `{ withSession }`
-
-Named import `withSession` from `next-session`.
+#### `{ withSession }`
 
 ```javascript
 import { withSession } from 'next-session';
-```
 
-#### API Routes
-
-```javascript
 function handler(req, res) {
   req.session.views = req.session.views ? req.session.views + 1 : 1;
   res.send(
@@ -63,13 +79,32 @@ function handler(req, res) {
 export default withSession(handler, options);
 ```
 
-#### Pages (getInitialProps)
-
-*Note: This usage is not recommended. `next@>9.3.0` recommends [using `getServerSideProps` instead of `getInitialProps`].*
-
-You can use `next-session` in [`getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps). **This will work on [server only](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#context-object) (first render)**.
+#### `{ applySession }`
 
 ```javascript
+import { applySession } from 'next-session';
+
+export default async function handler(req, res) {
+  await applySession(req, res, options);
+  req.session.views = req.session.views ? req.session.views + 1 : 1;
+  res.send(
+    `In this session, you have visited this website ${req.session.views} time(s).`
+  );
+}
+```
+
+### Pages
+
+`next-session` does not work in [Custom App](https://nextjs.org/docs/advanced-features/custom-app) since it leads to deoptimization.
+
+#### `{ withSession }` ([`getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps))
+
+*Note: This usage is not recommended. `next@>9.3.0` recommends using `getServerSideProps` instead of `getInitialProps`.*
+**This will work on [server only](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#context-object) (first render)**.
+
+```javascript
+import { withSession } from 'next-session';
+
 function Page({ views }) {
   return (
     <div>In this session, you have visited this website {views} time(s).</div>
@@ -92,34 +127,11 @@ export default withSession(Page, options);
 
 If you want session to always be available, consider using `{ applySession }` in `getServerSideProps`.
 
-### `{ applySession }`
-
-`applySession` is the internal function used by both `withSession` and `session` to handle session in `req` and `res`. It returns a *promise* when session is set up in `req.session`.
+#### `{ applySession }` ([`getServerSideProps`](https://nextjs.org/docs/basic-features/data-fetching#getserversideprops-server-side-rendering))
 
 ```javascript
-import { applySession } from "next-session";
-/* ... */
-await applySession(req, res, options);
-// do whatever you need with req and res after this
-```
+import { applySession } from 'next-session';
 
-#### API Routes
-
-```javascript
-export default async function handler(req, res) {
-  await applySession(req, res, options);
-  req.session.views = req.session.views ? req.session.views + 1 : 1;
-  res.send(
-    `In this session, you have visited this website ${req.session.views} time(s).`
-  );
-}
-```
-
-#### Pages (getServerSideProps)
-
-You can use `next-session` in [`getServerSideProps`](https://nextjs.org/docs/basic-features/data-fetching#getserversideprops-server-side-rendering).
-
-```javascript
 export default function Page({views}) {
   return (
     <div>In this session, you have visited this website {views} time(s).</div>
@@ -137,26 +149,24 @@ export async function getServerSideProps({ req, res }) {
 }
 ```
 
-## API
-
-### options
+## Options
 
 Regardless of the above approaches, to avoid bugs, you want to reuse the same `options` to in every route. For example:
 
 ```javascript
 // Define the option only once
-// lib/session.js
+// foo/bar/session.js
 export const options = { ...someOptions };
 
 // Always import it at other places
 // pages/index.js
-import { options } from '../lib/session';
+import { options } from 'foo/bar/session';
 /* ... */
 export default withSession(Page, options);
 // pages/api/index.js
-import { options } from '../../lib/session';
+import { options } from 'foo/bar/session';
 /* ... */
-export default withSession(handler, options);
+await applySession(req, res, options);
 ```
 
 `next-session` accepts the properties below.
@@ -178,7 +188,7 @@ export default withSession(handler, options);
 | cookie.sameSite | Specifies the value for the **SameSite** `Set-Cookie` attribute. | unset |
 | cookie.maxAge | **(in seconds)** Specifies the value for the **Max-Age** `Set-Cookie` attribute. | unset (Browser session) |
 
-#### encode/decode
+### encode/decode
 
 You may supply a custom pair of function that *encode/decode* or *encrypt/decrypt* the cookie on every request.
 
@@ -193,6 +203,8 @@ session({
 
 // async function is also supported
 ```
+
+## API
 
 ### req.session
 
@@ -215,7 +227,13 @@ if (loggedOut) req.session.destroy();
 
 ### req.session.commit()
 
-Save the session and set neccessary headers and return Promise. Use this if `autoCommit` is set to `false`.
+Save the session and set neccessary headers and return Promise. Use this if `autoCommit` is set to `false`. It must be called before sending response.
+
+```javascript
+req.session.hello = 'world';
+await req.session.commit();
+// calling res.end or finishing the resolver after the above
+```
 
 ### req.session.id
 
@@ -225,11 +243,9 @@ The unique id that associates to the current session.
 
 The session store to use for session middleware (see `options` above).
 
-**Warning** The default session store, `MemoryStore`, should not be used in production since it does not persist nor work in Serverless.
-
 ### Compatibility with Express/Connect stores
 
-Express/Connect stores are not supported as it. To use them, wrap them with `promisifyStore`:
+[Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores) are not supported as it but will be by wrapping them with `promisifyStore`:
 
 ```javascript
 import { promisifyStore, withSession } from "next-session";
@@ -260,7 +276,7 @@ TypeScript may be incompatible in this case, see [this](https://github.com/hoang
 
 ### Implementation
 
-A compatible session store must include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions must return **Promises** (*callbacks* are not supported or must be promisified like above).
+A compatible session store must include three functions: `set(sid, session)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions must return **Promises** (*callbacks* are not supported or must be promisified like above).
 
 The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness. (only works with `{ session }`)
 
