@@ -1,4 +1,4 @@
-import { StoreInterface } from '../types';
+import { StoreInterface, SessionData } from '../types';
 import Session from '../session';
 import { EventEmitter } from 'events';
 const MemoryStoreSession = {};
@@ -11,7 +11,7 @@ export default class MemoryStore extends EventEmitter
     this.sessions = MemoryStoreSession;
   }
 
-  get(sid: string) {
+  get(sid: string): Promise<SessionData | null> {
     const self = this;
 
     const sess = this.sessions[sid];
@@ -24,7 +24,7 @@ export default class MemoryStore extends EventEmitter
         Date.now() < session.cookie.expires.getTime()
       ) {
         //  check expires before returning
-        return Promise.resolve(session);
+        return Promise.resolve(session as SessionData);
       }
 
       self.destroy(sid);
@@ -33,12 +33,12 @@ export default class MemoryStore extends EventEmitter
     return Promise.resolve(null);
   }
 
-  set(sid: string, sess: Session) {
+  set(sid: string, sess: SessionData) {
     this.sessions[sid] = JSON.stringify(sess);
     return Promise.resolve();
   }
 
-  touch(sid: string, session: Session) {
+  touch(sid: string, session: SessionData) {
     return this.get(sid).then((sess) => {
       if (sess) {
         const newSess = {

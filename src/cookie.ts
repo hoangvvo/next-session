@@ -1,18 +1,13 @@
 import { serialize } from 'cookie';
-import { CookieOptions } from './types';
+import { CookieOptions, SessionCookieData } from './types';
 
-export default class Cookie {
-  path: string;
-  maxAge?: number;
-  httpOnly: boolean;
-  domain: string | undefined;
-  sameSite?: boolean | 'lax' | 'strict' | 'none';
-  secure: boolean;
-  expires?: Date;
-  constructor(options: CookieOptions & { expires?: Date | null }) {
+declare interface Cookie extends SessionCookieData {}
+
+class Cookie {
+  constructor(options: (CookieOptions | SessionCookieData) & { expires?: Date | null }) {
     //  Set parameters
     this.path = options.path || '/';
-    this.maxAge = options.maxAge;
+    this.maxAge = options.maxAge || null;
     this.httpOnly = options.httpOnly || true;
     this.domain = options.domain || undefined;
     this.sameSite = options.sameSite;
@@ -48,3 +43,5 @@ export default class Cookie {
     return serialize(name, val, this.cookieOptions);
   }
 }
+
+export default Cookie;

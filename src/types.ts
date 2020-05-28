@@ -1,15 +1,28 @@
 /// <reference path="./extendedRequest.d.ts" />
 import { IncomingMessage, ServerResponse } from 'http';
-import Session from './session';
 import { EventEmitter } from 'events';
 import { NextApiRequest, NextApiResponse } from 'next';
 
+export type SessionData = {
+  [key: string]: any;
+  cookie: SessionCookieData;
+}
+
+export interface SessionCookieData {
+  path: string;
+  maxAge: number | null;
+  httpOnly: boolean;
+  domain?: string | undefined;
+  sameSite?: boolean | 'lax' | 'strict' | 'none';
+  secure: boolean;
+  expires?: Date;
+}
+
 export abstract class StoreInterface {
-  abstract get: (sid: string) => Promise<Session | null>;
-  abstract set: (sid: string, sess: Session) => Promise<void>;
+  abstract get: (sid: string) => Promise<SessionData | null>;
+  abstract set: (sid: string, sess: SessionData) => Promise<void>;
   abstract destroy: (sid: string) => Promise<void>;
-  abstract touch?: (sid: string, sess: Session) => Promise<void>;
-  on?: EventEmitter['on'];
+  abstract touch?: (sid: string, sess: SessionData) => Promise<void>;
   [key: string]: any;
 }
 

@@ -12,6 +12,7 @@ import {
   withSession,
   session,
   Options,
+  SessionData,
 } from '../src';
 import Session from '../src/session';
 import { ServerResponse } from 'http';
@@ -259,25 +260,27 @@ describe('promisifyStore', () => {
       }
 
       /* eslint-disable no-unused-expressions */
-      get(sid: string, cb: (err?: any, session?: Session | null) => void) {
+      get(sid: string, cb: (err?: any, session?: SessionData | null) => void) {
         cb && cb(null, this.sessions);
       }
 
-      set(sid: string, sess: Session, cb: (err: any, session?: Session | null) => void) {
+      set(sid: string, sess: SessionData, cb: (err: any, session?: SessionData | null) => void) {
         cb && cb(null, this.sessions);
       }
 
-      destroy(sid: string, cb: (err: any, session?: Session | null) => void) {
+      destroy(sid: string, cb: (err: any, session?: SessionData | null) => void) {
         cb && cb(null, this.sessions);
       }
 
-      touch(sid: string, sess: Session, cb: (err: any, session?: Session | null) => void) {
+      touch(sid: string, sess: SessionData, cb: (err: any, session?: SessionData | null) => void) {
         cb && cb(null, this.sessions);
       }
     }
 
     const req: any = {};
     const res: any = { end: () => null };
+    // We have some discrepancies in session.cookie.sameSite, one specifies 'lax', 'strict' while other is string
+    // @ts-ignore
     applySession(req, res, { store: promisifyStore(new CbStore()) });
     // facebook/jest#2549
     expect(req.sessionStore.get().constructor.name).toStrictEqual('Promise');

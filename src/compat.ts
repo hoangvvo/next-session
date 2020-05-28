@@ -1,23 +1,8 @@
 import { promisify } from 'util';
-import Session from './session';
 import { StoreInterface } from './types';
+import { Store as ExpressStore }from 'express-session';
 
-interface CallbackStore {
-  get: (
-    sid: string,
-    callback: (err: any, session?: Session | null) => void
-  ) => void;
-  set: (sid: string, session: Session, callback: (err?: any) => void) => void;
-  touch?: (
-    sid: string,
-    session: Session,
-    callback: (err?: any) => void
-  ) => void;
-  destroy: (sid: string, callback: (err?: any) => void) => void;
-  [key: string]: any;
-}
-
-export function promisifyStore(store: CallbackStore): StoreInterface {
+export function promisifyStore(store: Pick<ExpressStore, 'get' | 'destroy' | 'set'> & Partial<ExpressStore>): StoreInterface {
   store.get = promisify(store.get);
   store.set = promisify(store.set);
   store.destroy = promisify(store.destroy);
