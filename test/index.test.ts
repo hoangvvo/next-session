@@ -13,7 +13,6 @@ import {
   session,
   Options,
 } from '../src';
-import Cookie from '../src/cookie';
 import Session from '../src/session';
 import { ServerResponse } from 'http';
 import { IncomingMessage } from 'http';
