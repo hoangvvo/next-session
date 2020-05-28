@@ -1,29 +1,30 @@
-import Store from '../store';
+import { StoreInterface } from '../types';
+import Session from '../session';
+import { EventEmitter } from 'events';
 const MemoryStoreSession = {};
 
-export default class MemoryStore extends Store {
+export default class MemoryStore extends EventEmitter
+  implements StoreInterface {
+  sessions: Record<string, string>;
   constructor() {
     super();
     this.sessions = MemoryStoreSession;
   }
 
-  get(sid) {
+  get(sid: string) {
     const self = this;
 
-    let expires;
-    let sess = this.sessions[sid];
+    const sess = this.sessions[sid];
     if (sess) {
-      sess = JSON.parse(sess);
+      const session = JSON.parse(sess);
+      session.cookie.expires = session.cookie.expires ? new Date(session.cookie.expires) : null;
 
-      //  converting string Date to Date()
-      expires =
-        typeof sess.cookie.expires === 'string'
-          ? new Date(sess.cookie.expires)
-          : sess.cookie.expires;
-
-      if (!expires || Date.now() < expires) {
+      if (
+        !session.cookie.expires ||
+        Date.now() < session.cookie.expires.getTime()
+      ) {
         //  check expires before returning
-        return Promise.resolve(sess);
+        return Promise.resolve(session);
       }
 
       self.destroy(sid);
@@ -32,17 +33,17 @@ export default class MemoryStore extends Store {
     return Promise.resolve(null);
   }
 
-  set(sid, sess) {
+  set(sid: string, sess: Session) {
     this.sessions[sid] = JSON.stringify(sess);
     return Promise.resolve();
   }
 
-  touch(sid, session) {
-    return this.get(sid).then(sess => {
+  touch(sid: string, session: Session) {
+    return this.get(sid).then((sess) => {
       if (sess) {
         const newSess = {
           ...sess,
-          cookie: session.cookie
+          cookie: session.cookie,
         };
         return this.set(sid, newSess);
       }
@@ -59,7 +60,7 @@ export default class MemoryStore extends Store {
     return Promise.resolve(arr);
   }
 
-  destroy(sid) {
+  destroy(sid: string) {
     delete this.sessions[sid];
     return Promise.resolve();
   }

@@ -1,32 +1,36 @@
-import request from 'supertest';
+import request from 'supertest'
 import {
   nextBuild,
-  startApp
+  startApp,
+  stopApp,
 } from '../next-test-utils';
+import { Server } from 'http';
+import { AddressInfo } from 'net';
 
 const appDir = __dirname;
-let server;
-let app;
-let agent;
+let server: Server;
+let agent: request.SuperTest<request.Test>;
+let base: string;
 
 // eslint-disable-next-line no-undef
 jasmine.DEFAULT_TIMEOUT_INTERVAL = 1000 * 30;
 
 beforeAll(async () => {
   await nextBuild(appDir);
-  app = {
+  server = await startApp({
     dir: appDir,
     dev: false,
     quiet: true
-  };
-  server = await startApp(app);
+  });
+  const appPort = (server.address() as AddressInfo).port;
+  base = `http://localhost:${appPort}`
 });
 
-afterAll(() => server.close());
+afterAll(() => stopApp(server))
 
 describe('Using API Routes', () => {
   beforeEach(() => {
-    agent = request.agent(server);
+    agent = request.agent(base);
   });
 
   it('withSession should create, persist, and remove session', async () => {

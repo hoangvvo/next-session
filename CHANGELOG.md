@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.0
+
+- Rewrite in TypeScript (#147)
+
 ## 3.1.0
 
 - Add encode/decode options (#114)

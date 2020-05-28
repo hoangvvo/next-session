@@ -1,12 +1,25 @@
 import { stringify } from './core';
+import { Request, Response } from './types';
+import Cookie from './cookie';
 
-export default class Session {
-  constructor(req, res, sess) {
+declare interface Session {
+  id: string;
+  req: Request;
+  res: Response;
+}
+
+class Session {
+  cookie: Cookie;
+  [key: string]: any;
+  constructor(req: Request, res: Response, sess?: Session) {
+    Object.defineProperty(this, 'id', { value: req.sessionId });
     Object.defineProperty(this, 'req', { value: req });
     Object.defineProperty(this, 'res', { value: res });
-    Object.defineProperty(this, 'id', { value: req.sessionId });
-    if (typeof sess === 'object') {
+    if (sess) {
       Object.assign(this, sess);
+      this.cookie = new Cookie(sess.cookie);
+    } else {
+      this.cookie = new Cookie(req._sessOpts.cookie);
     }
   }
 
@@ -36,17 +49,18 @@ export default class Session {
     let touched = false;
     let saved = false;
 
-    const shouldSave = () =>
-      stringify(this) !== this.req._sessStr;
+    const shouldSave = () => stringify(this) !== this.req._sessStr;
     const shouldTouch = () => {
-      if (!this.cookie.maxAge && touchAfter === 0) return false;
+      if (!this.cookie.maxAge || !this.cookie.expires || touchAfter === -1)
+        return false;
       const elapsed =
-        this.cookie.maxAge * 1000 - (this.cookie.expires - new Date());
+        this.cookie.maxAge * 1000 -
+        (this.cookie.expires.getTime() - Date.now());
       return elapsed >= touchAfter;
     };
     const shouldSetCookie = () => {
       if (rolling && touched) return true;
-      return this.req._sessId !== this.req.sessionId;
+      return this.req._sessId !== this.id;
     };
 
     if (shouldSave()) {
@@ -61,12 +75,11 @@ export default class Session {
       if (this.res.headersSent) return;
       const sessionId =
         typeof this.req._sessOpts.encode === 'function'
-          ? await this.req._sessOpts.encode(this.req.sessionId)
-          : this.req.sessionId
-      this.res.setHeader(
-        'Set-Cookie',
-        this.cookie.serialize(name, sessionId)
-      );
+          ? await this.req._sessOpts.encode(this.id)
+          : this.id;
+      this.res.setHeader('Set-Cookie', this.cookie.serialize(name, sessionId));
     }
   }
 }
+
+export default Session;

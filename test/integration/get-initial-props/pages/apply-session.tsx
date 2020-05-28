@@ -1,9 +1,8 @@
 import React from 'react';
-import { applySession } from '../../../../';
+import { applySession } from '../../../../dist';
+import { NextPage } from 'next';
 
-function Page({ views }) {
-  return (<p>{views}</p>);
-}
+const Page: NextPage<{views: number}> = ({ views }) => <p>{views}</p>
 
 Page.getInitialProps = async ({ req, res }) => {
   await applySession(req, res, { name: 'apply-session' });

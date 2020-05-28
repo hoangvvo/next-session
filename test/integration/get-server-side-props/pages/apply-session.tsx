@@ -1,11 +1,10 @@
 import React from 'react';
-import { applySession } from '../../../../';
+import { applySession } from '../../../../dist';
+import { NextPage, GetServerSideProps } from 'next';
 
-function Page({ views }) {
-  return (<p>{views}</p>);
-}
+const Page: NextPage<{views: number}> = ({ views }) => <p>{views}</p>
 
-export async function getServerSideProps({ req, res }) {
+export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
   await applySession(req, res, { name: 'apply-session' });
   if (req.method === 'GET') req.session.views = req.session.views ? (req.session.views + 1) : 1;
   if (req.method === 'DELETE') req.session.destroy();
