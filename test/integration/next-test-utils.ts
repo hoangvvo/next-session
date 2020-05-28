@@ -36,7 +36,6 @@ function promiseCall(obj: any, method: string, ...args: any) {
 export { nextServer };
 
 export async function startApp(options: NextServerOptions) {
-  options.quiet = false;
   const app = nextServer(options);
 
   await app.prepare();
