@@ -238,15 +238,6 @@ describe('Store', () => {
     // @ts-ignore
     expect(new Store()).toBeInstanceOf(EventEmitter);
   });
-  test('should convert String() expires to Date() expires', () => {
-    let sess = {
-      cookie: new Cookie({ maxAge: 100000 }),
-    };
-    //  force sess.cookie.expires to be string
-    sess = JSON.parse(JSON.stringify(sess));
-    const cookie = new Cookie(sess.cookie);
-    expect(cookie.expires).toBeInstanceOf(Date);
-  });
   test('should allow store subclasses to use Store.call(this)', () => {
     // Some express-compatible stores use this pattern like
     // https://github.com/voxpelli/node-connect-pg-simple/blob/master/index.js

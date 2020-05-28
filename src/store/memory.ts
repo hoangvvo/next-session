@@ -17,10 +17,11 @@ export default class MemoryStore extends EventEmitter
     const sess = this.sessions[sid];
     if (sess) {
       const session = JSON.parse(sess);
+      session.cookie.expires = session.cookie.expires ? new Date(session.cookie.expires) : null;
 
       if (
         !session.cookie.expires ||
-        Date.now() < new Date(session.cookie.expires).getTime()
+        Date.now() < session.cookie.expires.getTime()
       ) {
         //  check expires before returning
         return Promise.resolve(session);
