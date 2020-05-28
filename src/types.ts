@@ -41,8 +41,8 @@ export type SessionOptions = Pick<Required<Options>, 'name' | 'store' | 'genid' 
 export type Request = (IncomingMessage | NextApiRequest) & { [key: string]: any }
 
 export type RequestWithSession = Request & {
-  sessionId: string;
-  _sessId: string;
+  sessionId?: string | null;
+  _sessId?: string | null;
   session: Session;
   _sessOpts: SessionOptions;
   _sessStr: string;
