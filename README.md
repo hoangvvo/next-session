@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/hoangvvo/next-session/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/next-session)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](CONTRIBUTING.md)
 
-Simple *promise-based* session middleware for [Next.js](https://github.com/zeit/next.js).
+Simple *promise-based* session middleware for [Next.js](https://github.com/zeit/next.js). Also works in [micro](https://github.com/zeit/micro) or [Node.js HTTP Server](https://nodejs.org/api/http.html), [Express](https://github.com/expressjs/express), and more.
 
 ## Installation
 
@@ -26,10 +26,10 @@ yarn add next-session
 `next-session` has several named exports:
 
 - `session` to be used as a Connect/Express middleware.
-- `withSession` to be used as HOC in Page Components or API Routes wrapper.
+- `withSession` to be used as HOC in Page Components or API Routes wrapper (and several others).
 - `applySession`, to manually initialize `next-session` by providing `req` and `res`.
 
-Use **one of them** to work with `next-session`.
+Use **one of them** to work with `next-session`. Can also be used in other frameworks in the same manner as long as they have `(req, res)` handler signature.
 
 ### `{ session }`
 
@@ -157,7 +157,6 @@ export default withSession(Page, options);
 import { options } from '../../lib/session';
 /* ... */
 export default withSession(handler, options);
-
 ```
 
 `next-session` accepts the properties below.
@@ -226,6 +225,8 @@ The unique id that associates to the current session.
 
 The session store to use for session middleware (see `options` above).
 
+**Warning** The default session store, `MemoryStore`, should not be used in production since it does not persist nor work in Serverless.
+
 ### Compatibility with Express/Connect stores
 
 Express/Connect stores are not supported as it. To use them, wrap them with `promisifyStore`:
@@ -255,11 +256,13 @@ const options = {
 }
 ```
 
+TypeScript may be incompatible in this case, see [this](https://github.com/hoangvvo/next-session/issues/140#issuecomment-635053833).
+
 ### Implementation
 
 A compatible session store must include three functions: `set(sid)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions must return **Promises** (*callbacks* are not supported or must be promisified like above).
 
-The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness. (only works with `{ session }`, Connect middleware version)
+The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness. (only works with `{ session }`)
 
 ## Contributing
 
