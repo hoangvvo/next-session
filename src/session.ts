@@ -1,5 +1,5 @@
 import { stringify } from './core';
-import { Request, Response } from './types';
+import { Request, Response, SessionData } from './types';
 import Cookie from './cookie';
 
 declare interface Session {
@@ -11,7 +11,7 @@ declare interface Session {
 class Session {
   cookie: Cookie;
   [key: string]: any;
-  constructor(req: Request, res: Response, sess?: Session) {
+  constructor(req: Request, res: Response, sess?: SessionData) {
     Object.defineProperty(this, 'id', { value: req.sessionId });
     Object.defineProperty(this, 'req', { value: req });
     Object.defineProperty(this, 'res', { value: res });

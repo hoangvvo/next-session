@@ -12,6 +12,7 @@ import {
   withSession,
   session,
   Options,
+  SessionData,
 } from '../src';
 import Session from '../src/session';
 import { ServerResponse } from 'http';
@@ -259,19 +260,19 @@ describe('promisifyStore', () => {
       }
 
       /* eslint-disable no-unused-expressions */
-      get(sid: string, cb: (err?: any, session?: Session | null) => void) {
+      get(sid: string, cb: (err?: any, session?: SessionData | null) => void) {
         cb && cb(null, this.sessions);
       }
 
-      set(sid: string, sess: Session, cb: (err: any, session?: Session | null) => void) {
+      set(sid: string, sess: SessionData, cb: (err: any, session?: SessionData | null) => void) {
         cb && cb(null, this.sessions);
       }
 
-      destroy(sid: string, cb: (err: any, session?: Session | null) => void) {
+      destroy(sid: string, cb: (err: any, session?: SessionData | null) => void) {
         cb && cb(null, this.sessions);
       }
 
-      touch(sid: string, sess: Session, cb: (err: any, session?: Session | null) => void) {
+      touch(sid: string, sess: SessionData, cb: (err: any, session?: SessionData | null) => void) {
         cb && cb(null, this.sessions);
       }
     }
