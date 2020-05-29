@@ -14,7 +14,7 @@ class Cookie {
     this.secure = options.secure || false;
     // set expires based on maxAge (in seconds)
     if (options.expires)
-      this.expires = typeof options.expires === 'object' ? options.expires : new Date(options.expires);
+      this.expires = typeof options.expires === 'string' ? new Date(options.expires) : options.expires;
     else if (this.maxAge)
       this.expires = new Date(Date.now() + this.maxAge * 1000);
   }

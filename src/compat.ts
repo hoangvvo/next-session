@@ -1,6 +1,16 @@
-import { promisify } from 'util';
-import { StoreInterface } from './types';
+import { promisify, inherits } from 'util';
+import { EventEmitter } from 'events';
 import { Store as ExpressStore }from 'express-session';
+import { StoreInterface } from './types';
+
+function Store() {
+  // @ts-ignore
+  EventEmitter.call(this);
+}
+inherits(Store, EventEmitter);
+// no-op for compat
+
+export { Store };
 
 export function promisifyStore(store: Pick<ExpressStore, 'get' | 'destroy' | 'set'> & Partial<ExpressStore>): StoreInterface {
   store.get = promisify(store.get);
