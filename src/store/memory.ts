@@ -1,5 +1,4 @@
 import { StoreInterface, SessionData } from '../types';
-import Session from '../session';
 import { EventEmitter } from 'events';
 const MemoryStoreSession = {};
 
