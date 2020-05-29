@@ -1,6 +1,5 @@
 /// <reference path="./extendedRequest.d.ts" />
 import { IncomingMessage, ServerResponse } from 'http';
-import { EventEmitter } from 'events';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export type SessionData = {
