@@ -13,8 +13,9 @@ import {
   session,
   Options,
   SessionData,
+  Session
 } from '../src';
-import Session from '../src/session';
+import Cookie from '../src/cookie';
 import { ServerResponse } from 'http';
 import { IncomingMessage } from 'http';
 import { NextPage, NextApiHandler, NextComponentType } from 'next';
@@ -234,6 +235,15 @@ describe('connect middleware', () => {
 });
 
 describe('Store', () => {
+  test('should convert String() expires to Date() expires', () => {
+    let sess = {
+      cookie: new Cookie({ maxAge: 100000 }),
+    };
+    //  force sess.cookie.expires to be string
+    sess = JSON.parse(JSON.stringify(sess));
+    const cookie = new Cookie(sess.cookie);
+    expect(cookie.expires).toBeInstanceOf(Date);
+  });
   test('should extend EventEmitter', () => {
     // @ts-ignore
     expect(new Store()).toBeInstanceOf(EventEmitter);
