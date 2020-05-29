@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.2.2
+
+- Convert String expires to Date (#153)
+
+## 3.2.1
+
+- Improve type compatibility for promisifyStore (#151)
+
 ## 3.2.0
 
 - Rewrite in TypeScript (#147)
