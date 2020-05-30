@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.3
+
+- Add new compatible layer for express-session stores (#157)
+
 ## 3.2.2
 
 - Convert String expires to Date (#153)

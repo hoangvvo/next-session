@@ -248,7 +248,6 @@ The session store to use for session middleware (see `options` above).
 To use [Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores), use `expressSession` and `promisifyStore` from `next-session`.
 
 ```javascript
-// ...import expressSession from next-session and use them like so:
 import { expressSession, promisifyStore } from 'next-session';
 const MongoStore = require('connect-mongo')(expressSession);
 const options = {
