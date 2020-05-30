@@ -258,7 +258,7 @@ const options = {
 withSession(handler, options);
 ```
 
-Some stores may requires `MemoryStore` and `Store` from `next-session`. For example:
+Some stores may requires `session` from `express-session`. For example:
 
 ```javascript
 // If a store has a pattern like this...
