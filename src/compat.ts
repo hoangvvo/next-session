@@ -4,7 +4,7 @@ import { Store as ExpressStore } from 'express-session';
 import { IStore } from './types';
 import MemoryStore from './store/memory';
 
-function Store() {
+export function Store() {
   // @ts-ignore
   EventEmitter.call(this);
 }
