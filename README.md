@@ -264,9 +264,9 @@ Some stores may requires `MemoryStore` and `Store` from `next-session`. For exam
 // If a store has a pattern like this...
 const MongoStore = require('connect-mongo')(session);
 
-// ...import Store and MemoryStore from next-session and use them like so:
-import { Store, MemoryStore, promisifyStore } from "next-session";
-const MongoStore = require('connect-mongo')({ Store, MemoryStore });
+// ...import expressSession from next-session and use them like so:
+import { expressSession, promisifyStore } from "next-session";
+const MongoStore = require('connect-mongo')(expressSession);
 const options = {
   store: promisifyStore(new MongoStore(options))
 }
