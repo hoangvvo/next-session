@@ -1,9 +1,8 @@
-import { StoreInterface, SessionData } from '../types';
+import { IStore, SessionData } from '../types';
 import { EventEmitter } from 'events';
 const MemoryStoreSession = {};
 
-export default class MemoryStore extends EventEmitter
-  implements StoreInterface {
+export default class MemoryStore extends EventEmitter implements IStore {
   sessions: Record<string, string>;
   constructor() {
     super();
@@ -16,7 +15,9 @@ export default class MemoryStore extends EventEmitter
     const sess = this.sessions[sid];
     if (sess) {
       const session = JSON.parse(sess);
-      session.cookie.expires = session.cookie.expires ? new Date(session.cookie.expires) : null;
+      session.cookie.expires = session.cookie.expires
+        ? new Date(session.cookie.expires)
+        : null;
 
       if (
         !session.cookie.expires ||

@@ -2,12 +2,7 @@ import { parse as parseCookie } from 'cookie';
 import { nanoid } from 'nanoid';
 import MemoryStore from './store/memory';
 import Session from './session';
-import {
-  Options,
-  Request,
-  Response,
-  SessionOptions,
-} from './types';
+import { Options, Request, Response, SessionOptions } from './types';
 
 export function stringify(sess: Session) {
   return JSON.stringify(sess, (key, val) =>

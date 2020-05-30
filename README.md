@@ -245,34 +245,16 @@ The session store to use for session middleware (see `options` above).
 
 ### Compatibility with Express/Connect stores
 
-[Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores) are not supported as it but will be by wrapping them with `promisifyStore`:
+To use [Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores), use `expressSession` and `promisifyStore` from `next-session`.
 
 ```javascript
-import { promisifyStore, withSession } from "next-session";
-import SessionStore from "some-callback-store";
-const options = {
-  // ...
-  store: promisifyStore(new SessionStore({ ...storeOptions }))
-};
-// ...
-withSession(handler, options);
-```
-
-Some stores may requires `MemoryStore` and `Store` from `next-session`. For example:
-
-```javascript
-// If a store has a pattern like this...
-const MongoStore = require('connect-mongo')(session);
-
-// ...import Store and MemoryStore from next-session and use them like so:
-import { Store, MemoryStore, promisifyStore } from "next-session";
-const MongoStore = require('connect-mongo')({ Store, MemoryStore });
+// ...import expressSession from next-session and use them like so:
+import { expressSession, promisifyStore } from 'next-session';
+const MongoStore = require('connect-mongo')(expressSession);
 const options = {
   store: promisifyStore(new MongoStore(options))
 }
 ```
-
-TypeScript may be incompatible in this case, see [this](https://github.com/hoangvvo/next-session/issues/140#issuecomment-635053833).
 
 ### Implementation
 

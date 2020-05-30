@@ -4,7 +4,11 @@ import { CookieOptions, SessionCookieData } from './types';
 declare interface Cookie extends SessionCookieData {}
 
 class Cookie {
-  constructor(options: (CookieOptions | SessionCookieData) & { expires?: Date | string | null }) {
+  constructor(
+    options: (CookieOptions | SessionCookieData) & {
+      expires?: Date | string | null;
+    }
+  ) {
     //  Set parameters
     this.path = options.path || '/';
     this.maxAge = options.maxAge || null;
@@ -14,7 +18,10 @@ class Cookie {
     this.secure = options.secure || false;
     // set expires based on maxAge (in seconds)
     if (options.expires)
-      this.expires = typeof options.expires === 'string' ? new Date(options.expires) : options.expires;
+      this.expires =
+        typeof options.expires === 'string'
+          ? new Date(options.expires)
+          : options.expires;
     else if (this.maxAge)
       this.expires = new Date(Date.now() + this.maxAge * 1000);
   }

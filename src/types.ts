@@ -1,11 +1,10 @@
 /// <reference path="./extendedRequest.d.ts" />
 import { IncomingMessage, ServerResponse } from 'http';
-import { NextApiRequest, NextApiResponse } from 'next';
 
 export type SessionData = {
   [key: string]: any;
   cookie: SessionCookieData;
-}
+};
 
 export interface SessionCookieData {
   path: string;
@@ -17,7 +16,7 @@ export interface SessionCookieData {
   expires?: Date;
 }
 
-export abstract class StoreInterface {
+export abstract class IStore {
   abstract get: (sid: string) => Promise<SessionData | null>;
   abstract set: (sid: string, sess: SessionData) => Promise<void>;
   abstract destroy: (sid: string) => Promise<void>;
@@ -36,7 +35,7 @@ export interface CookieOptions {
 
 export interface Options {
   name?: string;
-  store?: StoreInterface;
+  store?: IStore;
   genid?: () => string;
   encode?: (rawSid: string) => string;
   decode?: (encryptedSid: string) => string;
@@ -60,6 +59,6 @@ export type SessionOptions = Pick<
   decode?: (encryptedSid: string) => string;
 };
 
-export type Request = IncomingMessage | NextApiRequest;
+export type Request = IncomingMessage;
 
-export type Response = ServerResponse | NextApiResponse;
+export type Response = ServerResponse;

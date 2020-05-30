@@ -6,15 +6,15 @@ import EventEmitter from 'events';
 import { parse } from 'url';
 import {
   applySession,
-  Store,
-  MemoryStore,
   promisifyStore,
   withSession,
   session,
   Options,
   SessionData,
-  Session
+  expressSession
 } from '../src';
+import MemoryStore from '../src/store/memory';
+import Session from '../src/session';
 import Cookie from '../src/cookie';
 import { ServerResponse } from 'http';
 import { IncomingMessage } from 'http';
@@ -246,14 +246,14 @@ describe('Store', () => {
   });
   test('should extend EventEmitter', () => {
     // @ts-ignore
-    expect(new Store()).toBeInstanceOf(EventEmitter);
+    expect(new expressSession.Store()).toBeInstanceOf(EventEmitter);
   });
   test('should allow store subclasses to use Store.call(this)', () => {
     // Some express-compatible stores use this pattern like
     // https://github.com/voxpelli/node-connect-pg-simple/blob/master/index.js
     function SubStore() {
       // @ts-ignore
-      Store.call(this);
+      expressSession.Store.call(this);
     }
     // eslint-disable-next-line no-unused-vars
     // @ts-ignore
