@@ -6,14 +6,14 @@ import EventEmitter from 'events';
 import { parse } from 'url';
 import {
   applySession,
-  Store,
   MemoryStore,
   promisifyStore,
   withSession,
   session,
   Options,
   SessionData,
-  Session
+  Session,
+  expressSession
 } from '../src';
 import Cookie from '../src/cookie';
 import { ServerResponse } from 'http';
@@ -253,7 +253,7 @@ describe('Store', () => {
     // https://github.com/voxpelli/node-connect-pg-simple/blob/master/index.js
     function SubStore() {
       // @ts-ignore
-      Store.call(this);
+      expressSession.Store.call(this);
     }
     // eslint-disable-next-line no-unused-vars
     // @ts-ignore
