@@ -246,7 +246,7 @@ describe('Store', () => {
   });
   test('should extend EventEmitter', () => {
     // @ts-ignore
-    expect(new Store()).toBeInstanceOf(EventEmitter);
+    expect(new expressSession.Store()).toBeInstanceOf(EventEmitter);
   });
   test('should allow store subclasses to use Store.call(this)', () => {
     // Some express-compatible stores use this pattern like
