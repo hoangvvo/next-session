@@ -1,4 +1,4 @@
-import { promisify, inherits } from 'util';
+import { promisify, callbackify, inherits } from 'util';
 import { EventEmitter } from 'events';
 import { Store as ExpressStore }from 'express-session';
 import { StoreInterface } from './types';
@@ -17,7 +17,15 @@ function expressSession(options?: any): any {
 }
 
 expressSession.Store = Store;
-expressSession.MemoryStore = MemoryStore;
+
+function CallbackMemoryStore() {}
+inherits(CallbackMemoryStore, Store);
+CallbackMemoryStore.prototype.get = callbackify(MemoryStore.prototype.get);
+CallbackMemoryStore.prototype.set = callbackify(MemoryStore.prototype.set);
+CallbackMemoryStore.prototype.destroy = callbackify(MemoryStore.prototype.destroy);
+CallbackMemoryStore.prototype.all = callbackify(MemoryStore.prototype.all);
+
+expressSession.MemoryStore = CallbackMemoryStore;
 
 export { expressSession };
 
