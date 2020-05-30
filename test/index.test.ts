@@ -6,15 +6,15 @@ import EventEmitter from 'events';
 import { parse } from 'url';
 import {
   applySession,
-  MemoryStore,
   promisifyStore,
   withSession,
   session,
   Options,
   SessionData,
-  Session,
   expressSession
 } from '../src';
+import MemoryStore from '../src/store/memory';
+import Session from '../src/session';
 import Cookie from '../src/cookie';
 import { ServerResponse } from 'http';
 import { IncomingMessage } from 'http';

@@ -1,9 +1,9 @@
-import { StoreInterface, SessionData } from '../types';
+import { IStore, SessionData } from '../types';
 import { EventEmitter } from 'events';
 const MemoryStoreSession = {};
 
 export default class MemoryStore extends EventEmitter
-  implements StoreInterface {
+  implements IStore {
   sessions: Record<string, string>;
   constructor() {
     super();

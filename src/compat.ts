@@ -1,9 +1,8 @@
 import { promisify, callbackify, inherits } from 'util';
 import { EventEmitter } from 'events';
 import { Store as ExpressStore }from 'express-session';
-import { StoreInterface } from './types';
-import session from './connect';
-import { MemoryStore } from '.';
+import { IStore } from './types';
+import MemoryStore from './store/memory';
 
 function Store() {
   // @ts-ignore
@@ -12,9 +11,7 @@ function Store() {
 inherits(Store, EventEmitter);
 // no-op for compat
 
-function expressSession(options?: any): any {
-  return session(options);
-}
+function expressSession(options?: any): any {}
 
 expressSession.Store = Store;
 
@@ -29,10 +26,10 @@ expressSession.MemoryStore = CallbackMemoryStore;
 
 export { expressSession };
 
-export function promisifyStore(store: Pick<ExpressStore, 'get' | 'destroy' | 'set'> & Partial<ExpressStore>): StoreInterface {
+export function promisifyStore(store: Pick<ExpressStore, 'get' | 'destroy' | 'set'> & Partial<ExpressStore>): IStore {
   store.get = promisify(store.get);
   store.set = promisify(store.set);
   store.destroy = promisify(store.destroy);
   if (typeof store.touch === 'function') store.touch = promisify(store.touch);
-  return store as StoreInterface;
+  return store as IStore;
 }
