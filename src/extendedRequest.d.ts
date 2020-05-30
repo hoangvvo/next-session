@@ -1,6 +1,6 @@
-import { Session, IStore, SessionOptions } from ".";
+import { Session, IStore, SessionOptions } from '.';
 
-declare module "http" {
+declare module 'http' {
   export interface IncomingMessage {
     sessionId?: string | null;
     _sessId?: string | null;

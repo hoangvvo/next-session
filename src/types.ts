@@ -5,7 +5,7 @@ import { NextApiRequest, NextApiResponse } from 'next';
 export type SessionData = {
   [key: string]: any;
   cookie: SessionCookieData;
-}
+};
 
 export interface SessionCookieData {
   path: string;
