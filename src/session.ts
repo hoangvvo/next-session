@@ -30,19 +30,18 @@ class Session {
       req: { value: req },
       res: { value: res },
       _opts: { value: options },
+      isNew: { value: false, writable: true }
     });
-    let isNew = false;
     if (sess) {
       Object.assign(this, sess);
       this.cookie = new Cookie(sess.cookie);
     } else {
-      isNew = true;
+      this.isNew = true;
       // Create new session
       this.cookie = new Cookie(this._opts.cookie);
       req.sessionId = options.genid();
     }
     Object.defineProperties(this, {
-      isNew: { value: isNew },
       id: { value: req.sessionId },
       _sessStr: { value: stringify(this) },
     });
@@ -65,6 +64,7 @@ class Session {
   }
 
   destroy() {
+    this.isNew = true;
     delete this.req.session;
     return this._opts.store.destroy(this.id);
   }
