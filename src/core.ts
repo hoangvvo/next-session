@@ -50,8 +50,6 @@ export async function applySession(
     req.session = new Session(req, res, null, options);
   }
 
-  req.sessionId = req.session.id;
-
   // autocommit
   if (options.autoCommit) {
     const oldEnd = res.end;

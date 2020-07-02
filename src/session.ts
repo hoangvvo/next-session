@@ -68,10 +68,7 @@ class Session {
         (this.cookie.expires.getTime() - Date.now());
       return elapsed >= touchAfter;
     };
-    const shouldSetCookie = () => {
-      if (rolling && touched) return true;
-      return this.req._sessId !== this.id;
-    };
+    const shouldSetCookie = () => (rolling && touched) || this.req._sessId !== this.id
 
     if (shouldSave()) {
       saved = true;
