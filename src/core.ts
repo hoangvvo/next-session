@@ -4,12 +4,6 @@ import MemoryStore from './store/memory';
 import Session from './session';
 import { Options, Request, Response, SessionOptions } from './types';
 
-export function stringify(sess: Session) {
-  return JSON.stringify(sess, (key, val) =>
-    key === 'cookie' ? undefined : val
-  );
-}
-
 function getOptions(opts: Options = {}): SessionOptions {
   return {
     name: opts.name || 'sid',
@@ -24,6 +18,12 @@ function getOptions(opts: Options = {}): SessionOptions {
   };
 }
 
+function stringify(sess: Session) {
+  return JSON.stringify(sess, (key, val) =>
+    key === 'cookie' ? undefined : val
+  );
+}
+
 export async function applySession(
   req: Request,
   res: Response,
@@ -33,14 +33,17 @@ export async function applySession(
 
   if (req.session) return;
 
-  const rawSessionId =
-    req.headers && req.headers.cookie
+  req.sessionId =
+    req.headers?.cookie
       ? parseCookie(req.headers.cookie)[options.name]
       : null;
-  req._sessId = req.sessionId =
-    rawSessionId && typeof options.decode === 'function'
-      ? await options.decode(rawSessionId)
-      : rawSessionId;
+
+  if (req.sessionId && typeof options.decode === 'function') {
+    req.sessionId = await options.decode(req.sessionId)
+  }
+
+  req._sessId = req.sessionId;
+
   req._sessOpts = options;
 
   req.sessionStore = options.store;

@@ -1,6 +1,11 @@
-import { stringify } from './core';
 import { Request, Response, SessionData } from './types';
 import Cookie from './cookie';
+
+function stringify(sess: Session) {
+  return JSON.stringify(sess, (key, val) =>
+    key === 'cookie' ? undefined : val
+  );
+}
 
 declare interface Session {
   id: string;
