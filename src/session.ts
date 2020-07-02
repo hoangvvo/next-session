@@ -19,7 +19,7 @@ declare interface Session {
 
 class Session {
   cookie: Cookie;
-  //[key: string]: any;
+  [key: string]: any;
   constructor(
     req: Request,
     res: Response,
