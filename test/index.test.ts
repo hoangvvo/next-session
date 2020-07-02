@@ -177,6 +177,16 @@ describe('applySession', () => {
       .set('Cookie', `sid=${sessId}`)
       .expect('undefined');
   });
+  test('should define session.isNew that determines if session is new', async () => {
+    const server = setUpServer((req, res) => {
+      const isNew = req.session.isNew;
+      req.session.foo = 'bar';
+      res.end(String(isNew));
+    });
+    const agent = request.agent(server);
+    await agent.get('/').expect('true');
+    await agent.get('/').expect('false');
+  })
 });
 
 describe('withSession', () => {
