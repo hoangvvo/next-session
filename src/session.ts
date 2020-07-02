@@ -21,9 +21,11 @@ class Session {
   cookie: Cookie;
   //[key: string]: any;
   constructor(req: Request, res: Response, sess: SessionData | null, options: SessionOptions) {
-    Object.defineProperty(this, 'req', { value: req });
-    Object.defineProperty(this, 'res', { value: res });
-    Object.defineProperty(this, '_opts', { value: options });
+    Object.defineProperties(this, {
+      req: { value: req },
+      res: { value: res },
+      _opts: { value: options }
+    })
     let isNew = false;
     if (sess) {
       Object.assign(this, sess);
@@ -34,9 +36,11 @@ class Session {
       this.cookie = new Cookie(this._opts.cookie);
       req.sessionId = options.genid();
     }
-    Object.defineProperty(this, 'isNew', {value: isNew })
-    Object.defineProperty(this, 'id', { value: req.sessionId });
-    Object.defineProperty(this, '_sessStr', { value: stringify(this) })
+    Object.defineProperties(this, {
+      isNew: { value: isNew },
+      id: { value: req.sessionId },
+      _sessStr: { value: stringify(this) }
+    })
   }
 
   //  touch the session
