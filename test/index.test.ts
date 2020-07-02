@@ -9,10 +9,10 @@ import {
   promisifyStore,
   withSession,
   session,
-  Options,
   SessionData,
   expressSession,
 } from '../src';
+import { Options } from '../src/types';
 import MemoryStore from '../src/store/memory';
 import Session from '../src/session';
 import Cookie from '../src/cookie';
