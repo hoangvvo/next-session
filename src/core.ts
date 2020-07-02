@@ -27,7 +27,7 @@ export async function applySession(
 
   if (req.session) return;
 
-  req.sessionId = req.headers?.cookie
+  req.sessionId = req.headers && req.headers.cookie
     ? parseCookie(req.headers.cookie)[options.name]
     : null;
 

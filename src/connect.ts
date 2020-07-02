@@ -5,7 +5,7 @@ let storeReady = true;
 
 export default function session(opts?: Options) {
   //  store readiness
-  if (opts?.store?.on) {
+  if (opts && opts.store && opts.store.on) {
     opts.store.on('disconnect', () => {
       storeReady = false;
     });
