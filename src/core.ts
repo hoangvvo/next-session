@@ -36,8 +36,6 @@ export async function applySession(
     req.sessionId = await options.decode(req.sessionId)
   }
 
-  req._sessId = req.sessionId;
-
   req.sessionStore = options.store;
 
   req.session = new Session(req, res, req.sessionId ? await req.sessionStore.get(req.sessionId) : null , options)

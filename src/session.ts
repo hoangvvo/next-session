@@ -14,6 +14,7 @@ declare interface Session {
   res: Response;
   _opts: SessionOptions;
   _sessStr: string;
+  isNew: boolean;
 }
 
 class Session {
@@ -23,14 +24,17 @@ class Session {
     Object.defineProperty(this, 'req', { value: req });
     Object.defineProperty(this, 'res', { value: res });
     Object.defineProperty(this, '_opts', { value: options });
+    let isNew = false;
     if (sess) {
       Object.assign(this, sess);
       this.cookie = new Cookie(sess.cookie);
     } else {
+      isNew = true;
       // Create new session
       this.cookie = new Cookie(this._opts.cookie);
       req.sessionId = options.genid();
     }
+    Object.defineProperty(this, 'isNew', {value: isNew })
     Object.defineProperty(this, 'id', { value: req.sessionId });
     Object.defineProperty(this, '_sessStr', { value: stringify(this) })
   }
@@ -70,7 +74,7 @@ class Session {
         (this.cookie.expires.getTime() - Date.now());
       return elapsed >= touchAfter;
     };
-    const shouldSetCookie = () => (rolling && touched) || this.req._sessId !== this.id
+    const shouldSetCookie = () => (rolling && touched) || this.isNew;
 
     if (shouldSave()) {
       saved = true;
