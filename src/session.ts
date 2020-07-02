@@ -1,5 +1,6 @@
 import { Request, Response, SessionData } from './types';
 import Cookie from './cookie';
+import { SessionOptions } from '.';
 
 function stringify(sess: Session) {
   return JSON.stringify(sess, (key, val) =>
@@ -11,29 +12,33 @@ declare interface Session {
   id: string;
   req: Request;
   res: Response;
+  _opts: SessionOptions;
+  _sessStr: string;
 }
 
 class Session {
   cookie: Cookie;
-  [key: string]: any;
-  constructor(req: Request, res: Response, sess?: SessionData) {
+  //[key: string]: any;
+  constructor(req: Request, res: Response, sess: SessionData | null, options: SessionOptions) {
     Object.defineProperty(this, 'id', { value: req.sessionId });
     Object.defineProperty(this, 'req', { value: req });
     Object.defineProperty(this, 'res', { value: res });
+    Object.defineProperty(this, '_opts', { value: options });
     if (sess) {
       Object.assign(this, sess);
       this.cookie = new Cookie(sess.cookie);
     } else {
-      this.cookie = new Cookie(req._sessOpts.cookie);
+      this.cookie = new Cookie(this._opts.cookie);
     }
+    Object.defineProperty(this, '_sessStr', { value: stringify(this) })
   }
 
   //  touch the session
   touch() {
     this.cookie.resetExpires();
     //  check if store supports touch()
-    if (typeof this.req.sessionStore.touch === 'function') {
-      return this.req.sessionStore.touch(this.id, this);
+    if (typeof this._opts.store.touch === 'function') {
+      return this._opts.store.touch(this.id, this);
     }
     return Promise.resolve();
   }
@@ -41,20 +46,20 @@ class Session {
   //  sessionStore to set this Session
   save() {
     this.cookie.resetExpires();
-    return this.req.sessionStore.set(this.id, this);
+    return this._opts.store.set(this.id, this);
   }
 
   destroy() {
     delete this.req.session;
-    return this.req.sessionStore.destroy(this.id);
+    return this._opts.store.destroy(this.id);
   }
 
   async commit() {
-    const { name, rolling, touchAfter } = this.req._sessOpts;
+    const { name, rolling, touchAfter } = this._opts;
     let touched = false;
     let saved = false;
 
-    const shouldSave = () => stringify(this) !== this.req._sessStr;
+    const shouldSave = () => stringify(this) !== this._sessStr;
     const shouldTouch = () => {
       if (!this.cookie.maxAge || !this.cookie.expires || touchAfter === -1)
         return false;
@@ -79,8 +84,8 @@ class Session {
     if (shouldSetCookie()) {
       if (this.res.headersSent) return;
       const sessionId =
-        typeof this.req._sessOpts.encode === 'function'
-          ? await this.req._sessOpts.encode(this.id)
+        typeof this._opts.encode === 'function'
+          ? await this._opts.encode(this.id)
           : this.id;
       this.res.setHeader('Set-Cookie', this.cookie.serialize(name, sessionId));
     }

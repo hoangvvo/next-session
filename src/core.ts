@@ -18,12 +18,6 @@ function getOptions(opts: Options = {}): SessionOptions {
   };
 }
 
-function stringify(sess: Session) {
-  return JSON.stringify(sess, (key, val) =>
-    key === 'cookie' ? undefined : val
-  );
-}
-
 export async function applySession(
   req: Request,
   res: Response,
@@ -44,21 +38,19 @@ export async function applySession(
 
   req._sessId = req.sessionId;
 
-  req._sessOpts = options;
-
   req.sessionStore = options.store;
 
   if (req.sessionId) {
     const sess = await req.sessionStore.get(req.sessionId);
-    if (sess) req.session = new Session(req, res, sess);
+    if (sess) req.session = new Session(req, res, sess, options);
   }
 
   if (!req.session) {
     req.sessionId = options.genid();
-    req.session = new Session(req, res);
+    req.session = new Session(req, res, null, options);
   }
 
-  req._sessStr = stringify(req.session);
+  req.sessionId = req.session.id;
 
   // autocommit
   if (options.autoCommit) {
