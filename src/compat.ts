@@ -1,7 +1,7 @@
 import { promisify, callbackify, inherits } from 'util';
 import { EventEmitter } from 'events';
 import { Store as ExpressStore } from 'express-session';
-import { IStore } from './types';
+import { SessionStore } from './types';
 import MemoryStore from './store/memory';
 
 export function Store() {
@@ -30,10 +30,10 @@ export { expressSession };
 
 export function promisifyStore(
   store: Pick<ExpressStore, 'get' | 'destroy' | 'set'> & Partial<ExpressStore>
-): IStore {
+): SessionStore {
   store.get = promisify(store.get);
   store.set = promisify(store.set);
   store.destroy = promisify(store.destroy);
   if (typeof store.touch === 'function') store.touch = promisify(store.touch);
-  return store as IStore;
+  return store as SessionStore;
 }

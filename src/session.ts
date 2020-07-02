@@ -1,6 +1,6 @@
 import { Request, Response, SessionData } from './types';
 import Cookie from './cookie';
-import { SessionOptions } from '.';
+import { SessionOptions } from './types';
 
 function stringify(sess: Session) {
   return JSON.stringify(sess, (key, val) =>
