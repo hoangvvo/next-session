@@ -239,6 +239,10 @@ await req.session.commit();
 
 The unique id that associates to the current session.
 
+### req.session.isNew
+
+Return *true* if the session is new.
+
 ## Session Store
 
 The session store to use for session middleware (see `options` above).
