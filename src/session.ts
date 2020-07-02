@@ -73,24 +73,24 @@ class Session {
     const { name, rolling, touchAfter } = this._opts;
     let touched = false;
     let saved = false;
-
-    const shouldSave = stringify(this) !== this._sessStr;
-    const shouldTouch =
-      this.cookie.maxAge !== null &&
-      this.cookie.expires &&
-      touchAfter === -1 &&
-      this.cookie.maxAge * 1000 -
-        (this.cookie.expires.getTime() - Date.now()) >=
-        touchAfter;
-
-    if (shouldSave) {
+    // Check if session is mutated
+    if (stringify(this) !== this._sessStr) {
       saved = true;
       await this.save();
     }
+    const shouldTouch =
+      touchAfter !== -1 &&
+      this.cookie.maxAge !== null &&
+      this.cookie.expires &&
+      // Session must be older than touchAfter
+      this.cookie.maxAge * 1000 -
+        (this.cookie.expires.getTime() - Date.now()) >=
+        touchAfter;
     if (!saved && shouldTouch) {
       touched = true;
       await this.touch();
     }
+    // Check if new cookie should be set
     if ((rolling && touched) || this.isNew) {
       if (this.res.headersSent) return;
       this.res.setHeader(
