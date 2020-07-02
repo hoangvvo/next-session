@@ -1,12 +1,9 @@
-import { Session, IStore, SessionOptions } from '.';
+import { Session, SessionStore, SessionOptions } from '.';
 
 declare module 'http' {
   export interface IncomingMessage {
-    sessionId?: string | null;
-    _sessId?: string | null;
+    sessionId: string | null;
     session: Session;
-    _sessOpts: SessionOptions;
-    _sessStr: string;
-    sessionStore: IStore;
+    sessionStore: SessionStore;
   }
 }

@@ -4,12 +4,6 @@ import MemoryStore from './store/memory';
 import Session from './session';
 import { Options, Request, Response, SessionOptions } from './types';
 
-export function stringify(sess: Session) {
-  return JSON.stringify(sess, (key, val) =>
-    key === 'cookie' ? undefined : val
-  );
-}
-
 function getOptions(opts: Options = {}): SessionOptions {
   return {
     name: opts.name || 'sid',
@@ -33,29 +27,22 @@ export async function applySession(
 
   if (req.session) return;
 
-  const rawSessionId =
-    req.headers && req.headers.cookie
-      ? parseCookie(req.headers.cookie)[options.name]
-      : null;
-  req._sessId = req.sessionId =
-    rawSessionId && typeof options.decode === 'function'
-      ? await options.decode(rawSessionId)
-      : rawSessionId;
-  req._sessOpts = options;
+  req.sessionId = req.headers && req.headers.cookie
+    ? parseCookie(req.headers.cookie)[options.name]
+    : null;
+
+  if (req.sessionId && typeof options.decode === 'function') {
+    req.sessionId = await options.decode(req.sessionId);
+  }
 
   req.sessionStore = options.store;
 
-  if (req.sessionId) {
-    const sess = await req.sessionStore.get(req.sessionId);
-    if (sess) req.session = new Session(req, res, sess);
-  }
-
-  if (!req.session) {
-    req.sessionId = options.genid();
-    req.session = new Session(req, res);
-  }
-
-  req._sessStr = stringify(req.session);
+  req.session = new Session(
+    req,
+    res,
+    req.sessionId ? await req.sessionStore.get(req.sessionId) : null,
+    options
+  );
 
   // autocommit
   if (options.autoCommit) {

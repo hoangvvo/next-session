@@ -16,7 +16,7 @@ export interface SessionCookieData {
   expires?: Date;
 }
 
-export abstract class IStore {
+export abstract class SessionStore {
   abstract get: (sid: string) => Promise<SessionData | null>;
   abstract set: (sid: string, sess: SessionData) => Promise<void>;
   abstract destroy: (sid: string) => Promise<void>;
@@ -35,7 +35,7 @@ export interface CookieOptions {
 
 export interface Options {
   name?: string;
-  store?: IStore;
+  store?: SessionStore;
   genid?: () => string;
   encode?: (rawSid: string) => string;
   decode?: (encryptedSid: string) => string;

@@ -97,10 +97,12 @@ export default async function handler(req, res) {
 
 `next-session` does not work in [Custom App](https://nextjs.org/docs/advanced-features/custom-app) since it leads to deoptimization.
 
-#### `{ withSession }` ([`getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps))
+#### ~~`{ withSession }` ([`getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps))~~
 
-*Note: This usage is not recommended. `next@>9.3.0` recommends using `getServerSideProps` instead of `getInitialProps`.*
-**This will work on [server only](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#context-object) (first render)**.
+**This will be deprecated in the next major release!**
+
+> `next@>9.3.0` recommends using `getServerSideProps` instead of `getInitialProps`.
+> Also, it is not reliable since `req` or `req.session` is only available on [server only](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#context-object)
 
 ```javascript
 import { withSession } from 'next-session';
@@ -124,8 +126,6 @@ Page.getInitialProps = ({ req }) => {
 
 export default withSession(Page, options);
 ```
-
-If you want session to always be available, consider using `{ applySession }` in `getServerSideProps`.
 
 #### `{ applySession }` ([`getServerSideProps`](https://nextjs.org/docs/basic-features/data-fetching#getserversideprops-server-side-rendering))
 
@@ -238,6 +238,10 @@ await req.session.commit();
 ### req.session.id
 
 The unique id that associates to the current session.
+
+### req.session.isNew
+
+Return *true* if the session is new.
 
 ## Session Store
 

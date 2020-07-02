@@ -9,10 +9,10 @@ import {
   promisifyStore,
   withSession,
   session,
-  Options,
   SessionData,
-  expressSession
+  expressSession,
 } from '../src';
+import { Options } from '../src/types';
 import MemoryStore from '../src/store/memory';
 import Session from '../src/session';
 import Cookie from '../src/cookie';
@@ -20,7 +20,7 @@ import { ServerResponse } from 'http';
 import { IncomingMessage } from 'http';
 import { NextPage, NextApiHandler, NextComponentType } from 'next';
 const signature = require('cookie-signature');
-const { parse: parseCookie } = require('cookie')
+const { parse: parseCookie } = require('cookie');
 
 const defaultHandler = (req: IncomingMessage, res: ServerResponse) => {
   if (req.method === 'POST')
@@ -29,7 +29,11 @@ const defaultHandler = (req: IncomingMessage, res: ServerResponse) => {
   res.end(`${(req.session && req.session.views) || 0}`);
 };
 
-function setUpServer(handler: RequestListener = defaultHandler, options?: boolean | Options, prehandler?: (req: IncomingMessage, res: ServerResponse) => any) {
+function setUpServer(
+  handler: RequestListener = defaultHandler,
+  options?: boolean | Options,
+  prehandler?: (req: IncomingMessage, res: ServerResponse) => any
+) {
   const server = createServer(async (req, res) => {
     if (prehandler) await prehandler(req, res);
     if (options !== false) await applySession(req, res, options as Options);
@@ -137,8 +141,10 @@ describe('applySession', () => {
     const badSecret = 'nyan cat';
     const store = new MemoryStore();
 
-    const decodeFn = (key: string) => (raw: string) => signature.unsign(raw.slice(2), key);
-    const encodeFn = (key: string) => (sessId: string) => sessId && `s:${signature.sign(sessId, key)}`
+    const decodeFn = (key: string) => (raw: string) =>
+      signature.unsign(raw.slice(2), key);
+    const encodeFn = (key: string) => (sessId: string) =>
+      sessId && `s:${signature.sign(sessId, key)}`;
     const server = setUpServer(
       async (req, res) => {
         if (req.method === 'POST') req.session.hello = 'world';
@@ -147,7 +153,7 @@ describe('applySession', () => {
       {
         store,
         decode: decodeFn(secret),
-        encode: encodeFn(secret)
+        encode: encodeFn(secret),
       }
     );
     const server2 = setUpServer(
@@ -155,16 +161,32 @@ describe('applySession', () => {
       {
         store,
         decode: decodeFn(badSecret),
-        encode: encodeFn(badSecret)
+        encode: encodeFn(badSecret),
       }
-    )
+    );
     let sessId = '';
-    await request(server).post('/').expect('world').expect(({ header }) => {
-      sessId = parseCookie(header['set-cookie'][0]).sid;
-    })
+    await request(server)
+      .post('/')
+      .expect('world')
+      .expect(({ header }) => {
+        sessId = parseCookie(header['set-cookie'][0]).sid;
+      });
     // Return undefined due to mismatched secret
-    await request(server2).get('/').set('Cookie', `sid=${sessId}`).expect('undefined');
+    await request(server2)
+      .get('/')
+      .set('Cookie', `sid=${sessId}`)
+      .expect('undefined');
   });
+  test('should define session.isNew that determines if session is new', async () => {
+    const server = setUpServer((req, res) => {
+      const isNew = req.session.isNew;
+      req.session.foo = 'bar';
+      res.end(String(isNew));
+    });
+    const agent = request.agent(server);
+    await agent.get('/').expect('true');
+    await agent.get('/').expect('false');
+  })
 });
 
 describe('withSession', () => {
@@ -176,31 +198,33 @@ describe('withSession', () => {
     function handler(req: any, res: any) {
       return req.session;
     }
-    expect(await (withSession(handler) as NextApiHandler)(request, response)).toBeInstanceOf(
-      Session
-    );
+    expect(
+      await (withSession(handler) as NextApiHandler)(request, response)
+    ).toBeInstanceOf(Session);
   });
 
   test('works with pages#getInitialProps', async () => {
     const Page: NextPage = () => {
       return React.createElement('div');
-    }
+    };
     Page.getInitialProps = (context) => {
       return (context.req as IncomingMessage).session;
     };
     const ctx = { req: { headers: { cookie: '' } }, res: {} };
-    expect(await ((withSession(Page) as NextPage).getInitialProps as NonNullable<
-    NextComponentType['getInitialProps']
-  >)(ctx as any)).toBeInstanceOf(
-      Session
-    );
+    expect(
+      await ((withSession(Page) as NextPage).getInitialProps as NonNullable<
+        NextComponentType['getInitialProps']
+      >)(ctx as any)
+    ).toBeInstanceOf(Session);
   });
 
   test('return no-op if no ssr', async () => {
     function StaticPage() {
       return React.createElement('div');
     }
-    expect((withSession(StaticPage) as NextPage).getInitialProps).toBeUndefined();
+    expect(
+      (withSession(StaticPage) as NextPage).getInitialProps
+    ).toBeUndefined();
   });
 });
 
@@ -274,15 +298,26 @@ describe('promisifyStore', () => {
         cb && cb(null, this.sessions);
       }
 
-      set(sid: string, sess: SessionData, cb: (err: any, session?: SessionData | null) => void) {
+      set(
+        sid: string,
+        sess: SessionData,
+        cb: (err: any, session?: SessionData | null) => void
+      ) {
         cb && cb(null, this.sessions);
       }
 
-      destroy(sid: string, cb: (err: any, session?: SessionData | null) => void) {
+      destroy(
+        sid: string,
+        cb: (err: any, session?: SessionData | null) => void
+      ) {
         cb && cb(null, this.sessions);
       }
 
-      touch(sid: string, sess: SessionData, cb: (err: any, session?: SessionData | null) => void) {
+      touch(
+        sid: string,
+        sess: SessionData,
+        cb: (err: any, session?: SessionData | null) => void
+      ) {
         cb && cb(null, this.sessions);
       }
     }
