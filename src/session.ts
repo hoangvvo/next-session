@@ -20,12 +20,17 @@ declare interface Session {
 class Session {
   cookie: Cookie;
   //[key: string]: any;
-  constructor(req: Request, res: Response, sess: SessionData | null, options: SessionOptions) {
+  constructor(
+    req: Request,
+    res: Response,
+    sess: SessionData | null,
+    options: SessionOptions
+  ) {
     Object.defineProperties(this, {
       req: { value: req },
       res: { value: res },
-      _opts: { value: options }
-    })
+      _opts: { value: options },
+    });
     let isNew = false;
     if (sess) {
       Object.assign(this, sess);
@@ -39,8 +44,8 @@ class Session {
     Object.defineProperties(this, {
       isNew: { value: isNew },
       id: { value: req.sessionId },
-      _sessStr: { value: stringify(this) }
-    })
+      _sessStr: { value: stringify(this) },
+    });
   }
 
   //  touch the session
@@ -69,32 +74,34 @@ class Session {
     let touched = false;
     let saved = false;
 
-    const shouldSave = () => stringify(this) !== this._sessStr;
-    const shouldTouch = () => {
-      if (!this.cookie.maxAge || !this.cookie.expires || touchAfter === -1)
-        return false;
-      const elapsed =
-        this.cookie.maxAge * 1000 -
-        (this.cookie.expires.getTime() - Date.now());
-      return elapsed >= touchAfter;
-    };
-    const shouldSetCookie = () => (rolling && touched) || this.isNew;
+    const shouldSave = stringify(this) !== this._sessStr;
+    const shouldTouch =
+      this.cookie.maxAge !== null &&
+      this.cookie.expires &&
+      touchAfter === -1 &&
+      this.cookie.maxAge * 1000 -
+        (this.cookie.expires.getTime() - Date.now()) >=
+        touchAfter;
 
-    if (shouldSave()) {
+    if (shouldSave) {
       saved = true;
       await this.save();
     }
-    if (!saved && shouldTouch()) {
+    if (!saved && shouldTouch) {
       touched = true;
       await this.touch();
     }
-    if (shouldSetCookie()) {
+    if ((rolling && touched) || this.isNew) {
       if (this.res.headersSent) return;
-      const sessionId =
-        typeof this._opts.encode === 'function'
-          ? await this._opts.encode(this.id)
-          : this.id;
-      this.res.setHeader('Set-Cookie', this.cookie.serialize(name, sessionId));
+      this.res.setHeader(
+        'Set-Cookie',
+        this.cookie.serialize(
+          name,
+          typeof this._opts.encode === 'function'
+            ? await this._opts.encode(this.id)
+            : this.id
+        )
+      );
     }
   }
 }

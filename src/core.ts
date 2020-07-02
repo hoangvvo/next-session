@@ -27,18 +27,22 @@ export async function applySession(
 
   if (req.session) return;
 
-  req.sessionId =
-    req.headers?.cookie
-      ? parseCookie(req.headers.cookie)[options.name]
-      : null;
+  req.sessionId = req.headers?.cookie
+    ? parseCookie(req.headers.cookie)[options.name]
+    : null;
 
   if (req.sessionId && typeof options.decode === 'function') {
-    req.sessionId = await options.decode(req.sessionId)
+    req.sessionId = await options.decode(req.sessionId);
   }
 
   req.sessionStore = options.store;
 
-  req.session = new Session(req, res, req.sessionId ? await req.sessionStore.get(req.sessionId) : null , options)
+  req.session = new Session(
+    req,
+    res,
+    req.sessionId ? await req.sessionStore.get(req.sessionId) : null,
+    options
+  );
 
   // autocommit
   if (options.autoCommit) {
