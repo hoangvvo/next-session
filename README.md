@@ -79,6 +79,19 @@ function handler(req, res) {
 export default withSession(handler, options);
 ```
 
+#### `{ nextApiHandlerWithSession }` (for TypeScript)
+
+```javascript
+import { nextApiHandlerWithSession } from 'next-session';
+
+export default nextApiHandlerWithSession((req, res) => {
+  req.session.views = req.session.views ? req.session.views + 1 : 1;
+  res.send(
+    `In this session, you have visited this website ${req.session.views} time(s).`
+  );
+}, options);
+```
+
 #### `{ applySession }`
 
 ```javascript
