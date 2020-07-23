@@ -1,5 +1,13 @@
-/// <reference path="./extendedRequest.d.ts" />
-import { IncomingMessage, ServerResponse } from 'http';
+import type Session from "./session";
+import { IncomingMessage, ServerResponse } from "http";
+
+declare module "http" {
+  export interface IncomingMessage {
+    sessionId: string | null;
+    session: Session;
+    sessionStore: SessionStore;
+  }
+}
 
 export type SessionData = {
   [key: string]: any;

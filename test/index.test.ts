@@ -1,4 +1,3 @@
-/// <reference path="../src/extendedRequest.d.ts" />
 import React from 'react';
 import { createServer, RequestListener } from 'http';
 import request from 'supertest';
