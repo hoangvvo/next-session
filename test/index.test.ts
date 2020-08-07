@@ -19,7 +19,7 @@ import Cookie from '../src/cookie';
 import { ServerResponse } from 'http';
 import { IncomingMessage } from 'http';
 import { NextPage, NextApiHandler, NextComponentType } from 'next';
-import { assert } from 'console';
+import assert from 'assert';
 const signature = require('cookie-signature');
 const { parse: parseCookie } = require('cookie');
 
@@ -195,7 +195,7 @@ describe('applySession', () => {
       async (req, res) => {
         req.session.hello = 'world';
         if (req.method === 'POST') await req.session.commit();
-        assert(req.session._committed, true);
+        assert.strictEqual(req.session._committed, true);
         res.end((req.session && req.session.hello) || '');
       },
       { autoCommit: true }
