@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.4
+
+- Avoid calling session.commit more than once (#240)
+
 ## 3.2.3
 
 - Add new compatible layer for express-session stores (#157)
