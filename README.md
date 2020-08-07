@@ -227,12 +227,14 @@ if (loggedOut) req.session.destroy();
 
 ### req.session.commit()
 
-Save the session and set neccessary headers and return Promise. Use this if `autoCommit` is set to `false`. It must be called before sending response.
+Save the session and set neccessary headers. Return Promise. It must be called before *sending the headers (`res.writeHead`) or response (`res.send`, `res.end`, etc.)*.
+
+You **must** call this if `autoCommit` is set to `false`.
 
 ```javascript
 req.session.hello = 'world';
 await req.session.commit();
-// calling res.end or finishing the resolver after the above
+// always calling res.end or res.writeHead after the above
 ```
 
 ### req.session.id
