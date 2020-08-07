@@ -19,6 +19,7 @@ import Cookie from '../src/cookie';
 import { ServerResponse } from 'http';
 import { IncomingMessage } from 'http';
 import { NextPage, NextApiHandler, NextComponentType } from 'next';
+import { assert } from 'console';
 const signature = require('cookie-signature');
 const { parse: parseCookie } = require('cookie');
 
@@ -177,6 +178,7 @@ describe('applySession', () => {
       .set('Cookie', `sid=${sessId}`)
       .expect('undefined');
   });
+
   test('should define session.isNew that determines if session is new', async () => {
     const server = setUpServer((req, res) => {
       const isNew = req.session.isNew;
@@ -186,6 +188,22 @@ describe('applySession', () => {
     const agent = request.agent(server);
     await agent.get('/').expect('true');
     await agent.get('/').expect('false');
+  })
+
+  test('should only call session.commit once', async () => {
+    const server = setUpServer(
+      async (req, res) => {
+        req.session.hello = 'world';
+        if (req.method === 'POST') await req.session.commit();
+        assert(req.session._committed, true);
+        res.end((req.session && req.session.hello) || '');
+      },
+      { autoCommit: true }
+    );
+    const agent = request.agent(server);
+    await agent
+      .post('/')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
   })
 });
 
