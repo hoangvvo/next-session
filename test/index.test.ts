@@ -1,6 +1,5 @@
-/// <reference path="../src/extendedRequest.d.ts" />
 import React from 'react';
-import { createServer, RequestListener } from 'http';
+import { createServer } from 'http';
 import request from 'supertest';
 import EventEmitter from 'events';
 import { parse } from 'url';
@@ -23,7 +22,9 @@ import assert from 'assert';
 const signature = require('cookie-signature');
 const { parse: parseCookie } = require('cookie');
 
-const defaultHandler = (req: IncomingMessage, res: ServerResponse) => {
+type RequestListener = (req: IncomingMessage & { session: any }, res: ServerResponse) => any | Promise<any>;
+
+const defaultHandler: RequestListener = (req, res) => {
   if (req.method === 'POST')
     req.session.views = req.session.views ? req.session.views + 1 : 1;
   if (req.method === 'DELETE') req.session.destroy();
@@ -33,9 +34,9 @@ const defaultHandler = (req: IncomingMessage, res: ServerResponse) => {
 function setUpServer(
   handler: RequestListener = defaultHandler,
   options?: boolean | Options,
-  prehandler?: (req: IncomingMessage, res: ServerResponse) => any
+  prehandler?: RequestListener
 ) {
-  const server = createServer(async (req, res) => {
+  const server = createServer(async (req: IncomingMessage & { session: any }, res) => {
     if (prehandler) await prehandler(req, res);
     if (options !== false) await applySession(req, res, options as Options);
     await handler(req, res);
@@ -226,7 +227,7 @@ describe('withSession', () => {
       return React.createElement('div');
     };
     Page.getInitialProps = (context) => {
-      return (context.req as IncomingMessage).session;
+      return (context.req as IncomingMessage & { session: any }).session;
     };
     const ctx = { req: { headers: { cookie: '' } }, res: {} };
     expect(
@@ -362,7 +363,7 @@ describe('MemoryStore', () => {
     const server = setUpServer(
       async (req, res) => {
         if (req.url === '/all') {
-          const ss = (await req.sessionStore.all()).map(
+          const ss = (await (req as any).sessionStore.all()).map(
             (sess: string) => JSON.parse(sess).user
           );
           res.end(ss.toString());
@@ -388,7 +389,7 @@ describe('MemoryStore', () => {
         if (req.method === 'POST') {
           req.session.views = req.session.views ? req.session.views + 1 : 1;
           sessionInstance = req.session;
-          sessionId = req.sessionId;
+          sessionId = (req as any).session.id;
         }
         res.end(`${(req.session && req.session.views) || 0}`);
       },

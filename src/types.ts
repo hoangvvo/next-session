@@ -1,4 +1,3 @@
-/// <reference path="./extendedRequest.d.ts" />
 import { IncomingMessage, ServerResponse } from 'http';
 
 export type SessionData = {
