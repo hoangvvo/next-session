@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.2.5
+
+- Fix autoCommit usage with res.writeHead (#253)
+- Improve types and undo #240 (#252)
+
 ## 3.2.4
 
 - Avoid calling session.commit more than once (#240)
