@@ -40,7 +40,7 @@ export async function applySession<T = {}>(
 
   const sess = sessId ? await options.store.get(sessId) : null;
   if (sess) sess.id = sessId;
-  req.session = new Session<T>(req, res, options, sess);
+  req.session = new Session<T>(res, options, sess);
 
 
   // autocommit

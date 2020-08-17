@@ -9,20 +9,19 @@ function stringify(sess: SessionData) {
   );
 }
 
-declare interface Session<T = {}> {
+declare interface Session<T extends { [key: string]: any } = {}> {
   id: string;
-  req: IncomingMessage & { session: Session<T> };
   res: ServerResponse;
   _opts: SessionOptions;
   _sessStr: string;
   isNew: boolean;
+  // https://github.com/Microsoft/TypeScript/pull/26797
+  [field: string]: any
 }
 
 class Session<T = {}> {
   cookie: Cookie;
-  [key: string]: any;
   constructor(
-    req: IncomingMessage & { session: Session<T> },
     res: ServerResponse,
     options: SessionOptions,
     prevSess: SessionData | null
@@ -31,7 +30,6 @@ class Session<T = {}> {
     this.cookie = new Cookie(prevSess ? prevSess.cookie : options.cookie);
     Object.defineProperties(this, {
       id: { value: prevSess?.id || options.genid() },
-      req: { value: req },
       res: { value: res },
       _opts: { value: options },
       isNew: { value: !prevSess, writable: true },
@@ -57,7 +55,6 @@ class Session<T = {}> {
 
   destroy() {
     this.isNew = true;
-    delete this.req.session;
     return this._opts.store.destroy(this.id);
   }
 
