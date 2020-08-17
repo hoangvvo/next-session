@@ -43,7 +43,7 @@ class Session<T = {}> {
   touch() {
     this.cookie.resetExpires();
     //  check if store supports touch()
-    if (typeof this._opts.store.touch === 'function') {
+    if (this._opts.store.touch) {
       return this._opts.store.touch(this.id, this);
     }
     return Promise.resolve();
@@ -51,8 +51,16 @@ class Session<T = {}> {
 
   //  sessionStore to set this Session
   save() {
-    this.cookie.resetExpires();
-    return this._opts.store.set(this.id, this);
+    // session had been destroyed. do nothing
+    if (this.isDestroy) return Promise.resolve();
+    if (stringify(this) !== this._sessStr) {
+      // session has changed
+      this.cookie.resetExpires();
+      return this._opts.store.set(this.id, this);
+    } else if (this.shouldTouch()) {
+      // session hasn't changed, try touch
+      return this.touch();
+    }
   }
 
   destroy() {
@@ -60,42 +68,36 @@ class Session<T = {}> {
     return this._opts.store.destroy(this.id);
   }
 
-  async commit() {
-    const { name, rolling, touchAfter } = this._opts;
-    let touched = false;
-    if (!this.isDestroy) {
-      // Check if session is mutated
-      if (stringify(this) !== this._sessStr) {
-        await this.save();
-      }
-      // Check if should touch
-      else if (
-        touchAfter !== -1 &&
-        this.cookie.maxAge !== null &&
-        this.cookie.expires &&
-        // Session must be older than touchAfter
-        this.cookie.maxAge * 1000 -
-          (this.cookie.expires.getTime() - Date.now()) >=
-          touchAfter
-      ) {
-        touched = true;
-        await this.touch();
-      }
-    }
+  shouldTouch() {
+    return this._opts.touchAfter !== -1 &&
+      this.cookie.maxAge !== null &&
+      this.cookie.expires &&
+      // Session must be older than touchAfter
+      this.cookie.maxAge * 1000 -
+        (this.cookie.expires.getTime() - Date.now()) >=
+        this._opts.touchAfter
+  }
 
+  commitHead() {
+    // Header sent, cannot commit
+    if (this.res.headersSent) return;
     // Check if new cookie should be set
-    if ((rolling && touched) || this.isNew) {
-      if (this.res.headersSent) return;
+    if ((this._opts.rolling && this.shouldTouch()) || this.isNew) {
       this.res.setHeader(
         'Set-Cookie',
         this.cookie.serialize(
-          name,
-          typeof this._opts.encode === 'function'
-            ? await this._opts.encode(this.id)
+          this._opts.name,
+          this._opts.encode
+            ? this._opts.encode(this.id)
             : this.id
         )
       );
     }
+  }
+
+  async commit() {
+    this.commitHead();
+    await this.save();
   }
 }
 
