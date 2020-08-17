@@ -15,7 +15,6 @@ declare interface Session<T = {}> {
   res: ServerResponse;
   _opts: SessionOptions;
   _sessStr: string;
-  _committed: boolean;
   isNew: boolean;
 }
 
@@ -35,7 +34,6 @@ class Session<T = {}> {
       req: { value: req },
       res: { value: res },
       _opts: { value: options },
-      _committed: { value: false, writable: true },
       isNew: { value: !prevSess, writable: true },
       _sessStr: { value: prevSess ? stringify(prevSess) : '{}' },
     });
@@ -64,8 +62,6 @@ class Session<T = {}> {
   }
 
   async commit() {
-    if (this._committed) return;
-    this._committed = true;
     const { name, rolling, touchAfter } = this._opts;
     let touched = false;
     let saved = false;
