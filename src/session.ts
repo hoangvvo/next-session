@@ -26,18 +26,18 @@ class Session<T = {}> {
     req: IncomingMessage & { session: Session<T> },
     res: ServerResponse,
     options: SessionOptions,
-    prevSess: { id?: string, sess: SessionData } | null
+    prevSess: SessionData | null
   ) {
-    if (prevSess?.sess) Object.assign(this, prevSess.sess);
-    this.cookie = new Cookie(prevSess?.sess ? prevSess.sess.cookie : options.cookie);
+    if (prevSess) Object.assign(this, prevSess);
+    this.cookie = new Cookie(prevSess ? prevSess.cookie : options.cookie);
     Object.defineProperties(this, {
       id: { value: prevSess?.id || options.genid() },
       req: { value: req },
       res: { value: res },
       _opts: { value: options },
       _committed: { value: false, writable: true },
-      isNew: { value: !prevSess?.sess, writable: true },
-      _sessStr: { value: prevSess?.sess ? stringify(prevSess.sess) : '{}' },
+      isNew: { value: !prevSess, writable: true },
+      _sessStr: { value: prevSess ? stringify(prevSess) : '{}' },
     });
   }
 
