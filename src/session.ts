@@ -43,7 +43,7 @@ class Session<T = {}> {
   touch() {
     this.cookie.resetExpires();
     //  check if store supports touch()
-    if (typeof this._opts.store.touch === 'function') {
+    if (this._opts.store.touch) {
       return this._opts.store.touch(this.id, this);
     }
     return Promise.resolve();
@@ -87,7 +87,7 @@ class Session<T = {}> {
         'Set-Cookie',
         this.cookie.serialize(
           this._opts.name,
-          typeof this._opts.encode === 'function'
+          this._opts.encode
             ? this._opts.encode(this.id)
             : this.id
         )

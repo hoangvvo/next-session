@@ -32,7 +32,7 @@ export async function applySession<T = {}>(
     ? parseCookie(req.headers.cookie)[options.name]
     : null;
 
-  if (sessId && typeof options.decode === 'function') {
+  if (sessId && options.decode) {
     sessId = options.decode(sessId);
   }
 
