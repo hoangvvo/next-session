@@ -1,4 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
+import Session from './session';
 
 export type SessionData = {
   [key: string]: any;
@@ -57,7 +58,3 @@ export type SessionOptions = Pick<
   encode?: (rawSid: string) => string;
   decode?: (encryptedSid: string) => string;
 };
-
-export type Request = IncomingMessage;
-
-export type Response = ServerResponse;

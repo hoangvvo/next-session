@@ -1,50 +1,42 @@
-import { Request, Response, SessionData } from './types';
+import { SessionData } from './types';
 import Cookie from './cookie';
 import { SessionOptions } from './types';
+import { IncomingMessage, ServerResponse } from 'http';
 
-function stringify(sess: Session) {
+function stringify(sess: SessionData) {
   return JSON.stringify(sess, (key, val) =>
     key === 'cookie' ? undefined : val
   );
 }
 
-declare interface Session {
+declare interface Session<T = {}> {
   id: string;
-  req: Request;
-  res: Response;
+  req: IncomingMessage & { session: Session<T> };
+  res: ServerResponse;
   _opts: SessionOptions;
   _sessStr: string;
   _committed: boolean;
   isNew: boolean;
 }
 
-class Session {
+class Session<T = {}> {
   cookie: Cookie;
   [key: string]: any;
   constructor(
-    req: Request,
-    res: Response,
-    sess: SessionData | null,
-    options: SessionOptions
+    req: IncomingMessage & { session: Session<T> },
+    res: ServerResponse,
+    options: SessionOptions,
+    prevSess: { id?: string, sess: SessionData } | null
   ) {
+    if (prevSess?.sess) Object.assign(this, prevSess.sess);
+    this.cookie = new Cookie(prevSess?.sess ? prevSess.sess.cookie : options.cookie);
     Object.defineProperties(this, {
+      id: { value: prevSess?.id || options.genid() },
       req: { value: req },
       res: { value: res },
       _opts: { value: options },
       _committed: { value: false, writable: true },
-      isNew: { value: false, writable: true }
-    });
-    if (sess) {
-      Object.assign(this, sess);
-      this.cookie = new Cookie(sess.cookie);
-    } else {
-      this.isNew = true;
-      // Create new session
-      this.cookie = new Cookie(this._opts.cookie);
-      req.sessionId = options.genid();
-    }
-    Object.defineProperties(this, {
-      id: { value: req.sessionId },
+      isNew: { value: !!prevSess?.sess, writable: true },
       _sessStr: { value: stringify(this) },
     });
   }
