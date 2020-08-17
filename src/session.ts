@@ -15,8 +15,9 @@ declare interface Session<T extends { [key: string]: any } = {}> {
   _opts: SessionOptions;
   _sessStr: string;
   isNew: boolean;
+  isDestroy: boolean;
   // https://github.com/Microsoft/TypeScript/pull/26797
-  [field: string]: any
+  [field: string]: any;
 }
 
 class Session<T = {}> {
@@ -33,6 +34,7 @@ class Session<T = {}> {
       res: { value: res },
       _opts: { value: options },
       isNew: { value: !prevSess, writable: true },
+      isDestroyed: { value: false, writable: true },
       _sessStr: { value: prevSess ? stringify(prevSess) : '{}' },
     });
   }
@@ -54,31 +56,33 @@ class Session<T = {}> {
   }
 
   destroy() {
-    this.isNew = true;
+    this.isDestroy = true;
     return this._opts.store.destroy(this.id);
   }
 
   async commit() {
     const { name, rolling, touchAfter } = this._opts;
     let touched = false;
-    let saved = false;
-    // Check if session is mutated
-    if (stringify(this) !== this._sessStr) {
-      saved = true;
-      await this.save();
+    if (!this.isDestroy) {
+      // Check if session is mutated
+      if (stringify(this) !== this._sessStr) {
+        await this.save();
+      }
+      // Check if should touch
+      else if (
+        touchAfter !== -1 &&
+        this.cookie.maxAge !== null &&
+        this.cookie.expires &&
+        // Session must be older than touchAfter
+        this.cookie.maxAge * 1000 -
+          (this.cookie.expires.getTime() - Date.now()) >=
+          touchAfter
+      ) {
+        touched = true;
+        await this.touch();
+      }
     }
-    const shouldTouch =
-      touchAfter !== -1 &&
-      this.cookie.maxAge !== null &&
-      this.cookie.expires &&
-      // Session must be older than touchAfter
-      this.cookie.maxAge * 1000 -
-        (this.cookie.expires.getTime() - Date.now()) >=
-        touchAfter;
-    if (!saved && shouldTouch) {
-      touched = true;
-      await this.touch();
-    }
+
     // Check if new cookie should be set
     if ((rolling && touched) || this.isNew) {
       if (this.res.headersSent) return;
