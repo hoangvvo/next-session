@@ -47,7 +47,7 @@
     "eslint": "^7.1.0",
     "eslint-plugin-react": "^7.20.0",
     "jest": "^26.0.1",
-    "next": "9.4.4",
+    "next": "9.5.2",
     "react": "^16.13.0",
     "react-dom": "^16.13.0",
     "supertest": "^4.0.2",
