@@ -1,5 +1,5 @@
 import React from 'react';
-import { createServer } from 'http';
+import { createServer, RequestListener } from 'http';
 import request from 'supertest';
 import EventEmitter from 'events';
 import { parse } from 'url';
@@ -15,14 +15,17 @@ import { Options } from '../src/types';
 import MemoryStore from '../src/store/memory';
 import Session from '../src/session';
 import Cookie from '../src/cookie';
-import { ServerResponse } from 'http';
 import { IncomingMessage } from 'http';
 import { NextPage, NextApiHandler, NextComponentType } from 'next';
 import assert from 'assert';
 const signature = require('cookie-signature');
 const { parse: parseCookie } = require('cookie');
 
-type RequestListener = (req: IncomingMessage & { session: any }, res: ServerResponse) => any | Promise<any>;
+declare module 'http' {
+  export interface IncomingMessage {
+    session: Session;
+  }
+}
 
 const defaultHandler: RequestListener = (req, res) => {
   if (req.method === 'POST')
@@ -33,12 +36,12 @@ const defaultHandler: RequestListener = (req, res) => {
 
 function setUpServer(
   handler: RequestListener = defaultHandler,
-  options?: boolean | Options,
+  options?: false | Options,
   prehandler?: RequestListener
 ) {
-  const server = createServer(async (req: IncomingMessage & { session: any }, res) => {
+  const server = createServer(async (req: IncomingMessage, res) => {
     if (prehandler) await prehandler(req, res);
-    if (options !== false) await applySession(req, res, options as Options);
+    if (options !== false) await applySession(req as any, res, options);
     await handler(req, res);
   });
   return server;
