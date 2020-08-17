@@ -33,7 +33,7 @@ export async function applySession<T = {}>(
     : null;
 
   if (sessId && typeof options.decode === 'function') {
-    sessId = await options.decode(sessId);
+    sessId = options.decode(sessId);
   }
 
   (req as any).sessionStore = options.store;
@@ -45,10 +45,15 @@ export async function applySession<T = {}>(
 
   // autocommit
   if (options.autoCommit) {
+    const oldWritehead = res.writeHead;
+    res.writeHead = function resWriteHeadProxy(...args: any) {
+      if (!(res.finished || res.writableEnded))
+        req.session.commitHead();
+      return oldWritehead.apply(this, args);
+    }
     const oldEnd = res.end;
     res.end = async function resEndProxy(...args: any) {
-      if (res.finished || res.writableEnded) return;
-      if (req.session) await req.session.commit();
+      await req.session.save();
       oldEnd.apply(this, args);
     };
   }
