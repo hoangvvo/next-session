@@ -197,6 +197,16 @@ describe('applySession', () => {
     await agent.get('/').expect('true');
     await agent.get('/').expect('false');
   })
+
+  test('should works with writeHead and autoCommit', async () => {
+    const server = setUpServer((req, res) => {
+      req.session.foo = 'bar';
+      res.writeHead(302, { Location: '/login' }).end()
+    });
+    await request(server)
+      .post('/')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+  })
 });
 
 describe('withSession', () => {
