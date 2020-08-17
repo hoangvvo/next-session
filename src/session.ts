@@ -36,8 +36,8 @@ class Session<T = {}> {
       res: { value: res },
       _opts: { value: options },
       _committed: { value: false, writable: true },
-      isNew: { value: !!prevSess?.sess, writable: true },
-      _sessStr: { value: stringify(this) },
+      isNew: { value: !prevSess?.sess, writable: true },
+      _sessStr: { value: prevSess?.sess ? stringify(prevSess.sess) : '{}' },
     });
   }
 

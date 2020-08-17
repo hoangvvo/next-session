@@ -1,6 +1,3 @@
-import { IncomingMessage, ServerResponse } from 'http';
-import Session from './session';
-
 export type SessionData = {
   [key: string]: any;
   cookie: SessionCookieData;
