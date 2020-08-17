@@ -1,51 +1,41 @@
-import { Request, Response, SessionData } from './types';
+import { SessionData } from './types';
 import Cookie from './cookie';
 import { SessionOptions } from './types';
+import { IncomingMessage, ServerResponse } from 'http';
 
-function stringify(sess: Session) {
+function stringify(sess: SessionData) {
   return JSON.stringify(sess, (key, val) =>
     key === 'cookie' ? undefined : val
   );
 }
 
-declare interface Session {
+declare interface Session<T extends { [key: string]: any } = {}> {
   id: string;
-  req: Request;
-  res: Response;
+  res: ServerResponse;
   _opts: SessionOptions;
   _sessStr: string;
-  _committed: boolean;
   isNew: boolean;
+  isDestroy: boolean;
+  // https://github.com/Microsoft/TypeScript/pull/26797
+  [field: string]: any;
 }
 
-class Session {
+class Session<T = {}> {
   cookie: Cookie;
-  [key: string]: any;
   constructor(
-    req: Request,
-    res: Response,
-    sess: SessionData | null,
-    options: SessionOptions
+    res: ServerResponse,
+    options: SessionOptions,
+    prevSess: SessionData | null
   ) {
+    if (prevSess) Object.assign(this, prevSess);
+    this.cookie = new Cookie(prevSess ? prevSess.cookie : options.cookie);
     Object.defineProperties(this, {
-      req: { value: req },
+      id: { value: prevSess?.id || options.genid() },
       res: { value: res },
       _opts: { value: options },
-      _committed: { value: false, writable: true },
-      isNew: { value: false, writable: true }
-    });
-    if (sess) {
-      Object.assign(this, sess);
-      this.cookie = new Cookie(sess.cookie);
-    } else {
-      this.isNew = true;
-      // Create new session
-      this.cookie = new Cookie(this._opts.cookie);
-      req.sessionId = options.genid();
-    }
-    Object.defineProperties(this, {
-      id: { value: req.sessionId },
-      _sessStr: { value: stringify(this) },
+      isNew: { value: !prevSess, writable: true },
+      isDestroyed: { value: false, writable: true },
+      _sessStr: { value: prevSess ? stringify(prevSess) : '{}' },
     });
   }
 
@@ -66,34 +56,33 @@ class Session {
   }
 
   destroy() {
-    this.isNew = true;
-    delete this.req.session;
+    this.isDestroy = true;
     return this._opts.store.destroy(this.id);
   }
 
   async commit() {
-    if (this._committed) return;
-    this._committed = true;
     const { name, rolling, touchAfter } = this._opts;
     let touched = false;
-    let saved = false;
-    // Check if session is mutated
-    if (stringify(this) !== this._sessStr) {
-      saved = true;
-      await this.save();
+    if (!this.isDestroy) {
+      // Check if session is mutated
+      if (stringify(this) !== this._sessStr) {
+        await this.save();
+      }
+      // Check if should touch
+      else if (
+        touchAfter !== -1 &&
+        this.cookie.maxAge !== null &&
+        this.cookie.expires &&
+        // Session must be older than touchAfter
+        this.cookie.maxAge * 1000 -
+          (this.cookie.expires.getTime() - Date.now()) >=
+          touchAfter
+      ) {
+        touched = true;
+        await this.touch();
+      }
     }
-    const shouldTouch =
-      touchAfter !== -1 &&
-      this.cookie.maxAge !== null &&
-      this.cookie.expires &&
-      // Session must be older than touchAfter
-      this.cookie.maxAge * 1000 -
-        (this.cookie.expires.getTime() - Date.now()) >=
-        touchAfter;
-    if (!saved && shouldTouch) {
-      touched = true;
-      await this.touch();
-    }
+
     // Check if new cookie should be set
     if ((rolling && touched) || this.isNew) {
       if (this.res.headersSent) return;

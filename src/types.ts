@@ -1,6 +1,3 @@
-/// <reference path="./extendedRequest.d.ts" />
-import { IncomingMessage, ServerResponse } from 'http';
-
 export type SessionData = {
   [key: string]: any;
   cookie: SessionCookieData;
@@ -58,7 +55,3 @@ export type SessionOptions = Pick<
   encode?: (rawSid: string) => string;
   decode?: (encryptedSid: string) => string;
 };
-
-export type Request = IncomingMessage;
-
-export type Response = ServerResponse;

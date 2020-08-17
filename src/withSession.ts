@@ -9,7 +9,8 @@ import {
 } from 'next';
 import { applySession } from './core';
 import { Options } from './types';
-import { ServerResponse, IncomingMessage } from 'http';
+import Session from './session';
+import { IncomingMessage, ServerResponse } from 'http';
 
 function getDisplayName(WrappedComponent: NextComponentType<any>) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component';
@@ -21,7 +22,7 @@ function isNextApiHandler(
   return handler.length > 1;
 }
 
-export default function withSession(
+export default function withSession<T = {}>(
   handler: NextApiHandler | NextPage,
   options?: Options
 ): NextApiHandler | NextPage {
@@ -31,7 +32,7 @@ export default function withSession(
       req: NextApiRequest,
       res: NextApiResponse
     ) {
-      await applySession(req, res, options);
+      await applySession(req as NextApiRequest & { session: Session<T> }, res, options);
       return handler(req, res);
     };
 
@@ -46,7 +47,7 @@ export default function withSession(
       // @ts-ignore
       if (typeof window === 'undefined') {
         await applySession(
-          pageCtx.req as IncomingMessage,
+          pageCtx.req as IncomingMessage & { session: Session<T> },
           pageCtx.res as ServerResponse,
           options
         );

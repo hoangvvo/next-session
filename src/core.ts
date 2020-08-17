@@ -2,7 +2,8 @@ import { parse as parseCookie } from 'cookie';
 import { nanoid } from 'nanoid';
 import MemoryStore from './store/memory';
 import Session from './session';
-import { Options, Request, Response, SessionOptions } from './types';
+import { Options, SessionOptions } from './types';
+import { IncomingMessage, ServerResponse } from 'http';
 
 function getOptions(opts: Options = {}): SessionOptions {
   return {
@@ -18,31 +19,29 @@ function getOptions(opts: Options = {}): SessionOptions {
   };
 }
 
-export async function applySession(
-  req: Request,
-  res: Response,
+export async function applySession<T = {}>(
+  req: IncomingMessage & { session: Session<T> },
+  res: ServerResponse,
   opts?: Options
 ): Promise<void> {
   const options = getOptions(opts);
 
   if (req.session) return;
 
-  req.sessionId = req.headers && req.headers.cookie
+  let sessId = req.headers && req.headers.cookie
     ? parseCookie(req.headers.cookie)[options.name]
     : null;
 
-  if (req.sessionId && typeof options.decode === 'function') {
-    req.sessionId = await options.decode(req.sessionId);
+  if (sessId && typeof options.decode === 'function') {
+    sessId = await options.decode(sessId);
   }
 
-  req.sessionStore = options.store;
+  (req as any).sessionStore = options.store;
 
-  req.session = new Session(
-    req,
-    res,
-    req.sessionId ? await req.sessionStore.get(req.sessionId) : null,
-    options
-  );
+  const sess = sessId ? await options.store.get(sessId) : null;
+  if (sess) sess.id = sessId;
+  req.session = new Session<T>(res, options, sess);
+
 
   // autocommit
   if (options.autoCommit) {
