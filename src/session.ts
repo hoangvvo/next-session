@@ -79,9 +79,10 @@ class Session<T = {}> {
   }
 
   commitHead() {
+    // Header sent, cannot commit
+    if (this.res.headersSent) return;
     // Check if new cookie should be set
     if ((this._opts.rolling && this.shouldTouch()) || this.isNew) {
-      if (this.res.headersSent) return;
       this.res.setHeader(
         'Set-Cookie',
         this.cookie.serialize(

@@ -47,8 +47,7 @@ export async function applySession<T = {}>(
   if (options.autoCommit) {
     const oldWritehead = res.writeHead;
     res.writeHead = function resWriteHeadProxy(...args: any) {
-      if (!(res.finished || res.writableEnded))
-        req.session.commitHead();
+      req.session.commitHead();
       return oldWritehead.apply(this, args);
     }
     const oldEnd = res.end;
