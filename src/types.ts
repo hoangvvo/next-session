@@ -1,3 +1,5 @@
+import { Store as ExpressStore } from 'express-session';
+
 export type SessionData = {
   [key: string]: any;
   cookie: SessionCookieData;
@@ -14,11 +16,11 @@ export interface SessionCookieData {
 }
 
 export abstract class SessionStore {
-  abstract get: (sid: string) => Promise<SessionData | null>;
-  abstract set: (sid: string, sess: SessionData) => Promise<void>;
-  abstract destroy: (sid: string) => Promise<void>;
-  abstract touch?: (sid: string, sess: SessionData) => Promise<void>;
-  [key: string]: any;
+  abstract get: ((sid: string) => Promise<SessionData | null>);
+  abstract set: ((sid: string, sess: SessionData) => Promise<void>);
+  abstract destroy: ((sid: string) => Promise<void>);
+  abstract touch?: ((sid: string, sess: SessionData) => Promise<void>);
+  on?: (event: string | symbol, listener: (...args: any[]) => void) => this;
 }
 
 export interface CookieOptions {
@@ -32,7 +34,7 @@ export interface CookieOptions {
 
 export interface Options {
   name?: string;
-  store?: SessionStore;
+  store?: SessionStore | ExpressStore;
   genid?: () => string;
   encode?: (rawSid: string) => string;
   decode?: (encryptedSid: string) => string;

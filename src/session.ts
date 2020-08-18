@@ -1,11 +1,13 @@
-import { SessionData } from './types';
-import Cookie from './cookie';
-import { SessionOptions } from './types';
-import { IncomingMessage, ServerResponse } from 'http';
+import { SessionData } from "./types";
+import Cookie from "./cookie";
+import { SessionOptions } from "./types";
+import { isCallbackStore } from "./core";
+import { ServerResponse } from "http";
+import { rejects } from "assert";
 
 function stringify(sess: SessionData) {
   return JSON.stringify(sess, (key, val) =>
-    key === 'cookie' ? undefined : val
+    key === "cookie" ? undefined : val
   );
 }
 
@@ -35,32 +37,42 @@ class Session<T = {}> {
       _opts: { value: options },
       isNew: { value: !prevSess, writable: true },
       isDestroyed: { value: false, writable: true },
-      _sessStr: { value: prevSess ? stringify(prevSess) : '{}' },
+      _sessStr: { value: prevSess ? stringify(prevSess) : "{}" },
     });
   }
 
   //  touch the session
   touch() {
-    this.cookie.resetExpires();
-    //  check if store supports touch()
-    if (this._opts.store.touch) {
-      return this._opts.store.touch(this.id, this);
-    }
-    return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      this.cookie.resetExpires();
+      if (!this._opts.store.touch) return resolve();
+      return isCallbackStore(this._opts.store)
+        // @ts-ignore
+        ? this._opts.store.touch(this.id, this, (err) =>
+            err ? reject(err) : resolve()
+          )
+        : resolve(this._opts.store.touch(this.id, this));
+    });
   }
 
   //  sessionStore to set this Session
   save() {
-    // session had been destroyed. do nothing
-    if (this.isDestroy) return Promise.resolve();
-    if (stringify(this) !== this._sessStr) {
-      // session has changed
-      this.cookie.resetExpires();
-      return this._opts.store.set(this.id, this);
-    } else if (this.shouldTouch()) {
-      // session hasn't changed, try touch
-      return this.touch();
-    }
+    return new Promise((resolve, reject) => {
+      if (this.isDestroy) return resolve();
+      if (stringify(this) !== this._sessStr) {
+        // session has changed
+        this.cookie.resetExpires();
+        return isCallbackStore(this._opts.store)
+        // @ts-ignore
+        ? this._opts.store.set(this.id, this, (err) =>
+            err ? reject(err) : resolve()
+          )
+        : resolve(this._opts.store.set(this.id, this));
+      } else if (this.shouldTouch()) {
+        // session hasn't changed, try touch
+        return this.touch();
+      }
+    });
   }
 
   destroy() {
@@ -69,13 +81,15 @@ class Session<T = {}> {
   }
 
   shouldTouch() {
-    return this._opts.touchAfter !== -1 &&
+    return (
+      this._opts.touchAfter !== -1 &&
       this.cookie.maxAge !== null &&
       this.cookie.expires &&
       // Session must be older than touchAfter
       this.cookie.maxAge * 1000 -
         (this.cookie.expires.getTime() - Date.now()) >=
         this._opts.touchAfter
+    );
   }
 
   commitHead() {
@@ -84,12 +98,10 @@ class Session<T = {}> {
     // Check if new cookie should be set
     if ((this._opts.rolling && this.shouldTouch()) || this.isNew) {
       this.res.setHeader(
-        'Set-Cookie',
+        "Set-Cookie",
         this.cookie.serialize(
           this._opts.name,
-          this._opts.encode
-            ? this._opts.encode(this.id)
-            : this.id
+          this._opts.encode ? this._opts.encode(this.id) : this.id
         )
       );
     }

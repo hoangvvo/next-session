@@ -251,19 +251,21 @@ The session store to use for session middleware (see `options` above).
 
 ### Compatibility with Express/Connect stores
 
-To use [Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores), use `expressSession` and `promisifyStore` from `next-session`.
+To use [Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores), you may need to use `expressSession` from `next-session` if the store has the following pattern.
 
 ```javascript
-import { expressSession, promisifyStore } from 'next-session';
+const session = require('express-session');
+const MongoStore = require('connect-mongo')(session);
+
+// Use `expressSession` as the replacement
+
+import { expressSession } from 'next-session';
 const MongoStore = require('connect-mongo')(expressSession);
-const options = {
-  store: promisifyStore(new MongoStore(options))
-}
 ```
 
 ### Implementation
 
-A compatible session store must include three functions: `set(sid, session)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions must return **Promises** (*callbacks* are not supported or must be promisified like above).
+A compatible session store must include three functions: `set(sid, session)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions can either return **Promises** or **callback** in the last argument.
 
 The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness. (only works with `{ session }`)
 
