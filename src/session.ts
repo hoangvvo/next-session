@@ -3,7 +3,6 @@ import Cookie from "./cookie";
 import { SessionOptions } from "./types";
 import { isCallbackStore } from "./core";
 import { ServerResponse } from "http";
-import { rejects } from "assert";
 
 function stringify(sess: SessionData) {
   return JSON.stringify(sess, (key, val) =>
