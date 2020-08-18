@@ -32,7 +32,11 @@ export default function withSession<T = {}>(
       req: NextApiRequest,
       res: NextApiResponse
     ) {
-      await applySession(req as NextApiRequest & { session: Session<T> }, res, options);
+      await applySession(
+        req as NextApiRequest & { session: Session<T> },
+        res,
+        options
+      );
       return handler(req, res);
     };
 

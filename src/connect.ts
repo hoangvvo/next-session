@@ -15,7 +15,11 @@ export default function session<T = {}>(opts?: Options) {
       storeReady = true;
     });
   }
-  return (req: IncomingMessage & { session: Session<T> }, res: ServerResponse, next: (err?: any) => void) => {
+  return (
+    req: IncomingMessage & { session: Session<T> },
+    res: ServerResponse,
+    next: (err?: any) => void
+  ) => {
     if (!storeReady) {
       next();
       return;

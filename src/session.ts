@@ -1,12 +1,12 @@
-import { SessionData } from "./types";
-import Cookie from "./cookie";
-import { SessionOptions } from "./types";
-import { isCallbackStore } from "./core";
-import { ServerResponse } from "http";
+import { SessionData } from './types';
+import Cookie from './cookie';
+import { SessionOptions } from './types';
+import { isCallbackStore } from './core';
+import { ServerResponse } from 'http';
 
 function stringify(sess: SessionData) {
   return JSON.stringify(sess, (key, val) =>
-    key === "cookie" ? undefined : val
+    key === 'cookie' ? undefined : val
   );
 }
 
@@ -36,7 +36,7 @@ class Session<T = {}> {
       _opts: { value: options },
       isNew: { value: !prevSess, writable: true },
       isDestroyed: { value: false, writable: true },
-      _sessStr: { value: prevSess ? stringify(prevSess) : "{}" },
+      _sessStr: { value: prevSess ? stringify(prevSess) : '{}' },
     });
   }
 
@@ -46,8 +46,8 @@ class Session<T = {}> {
       this.cookie.resetExpires();
       if (!this._opts.store.touch) return resolve();
       return isCallbackStore(this._opts.store)
-        // @ts-ignore
-        ? this._opts.store.touch(this.id, this, (err) =>
+        ? // @ts-ignore
+          this._opts.store.touch(this.id, this, (err) =>
             err ? reject(err) : resolve()
           )
         : resolve(this._opts.store.touch(this.id, this));
@@ -62,11 +62,11 @@ class Session<T = {}> {
         // session has changed
         this.cookie.resetExpires();
         return isCallbackStore(this._opts.store)
-        // @ts-ignore
-        ? this._opts.store.set(this.id, this, (err) =>
-            err ? reject(err) : resolve()
-          )
-        : resolve(this._opts.store.set(this.id, this));
+          ? // @ts-ignore
+            this._opts.store.set(this.id, this, (err) =>
+              err ? reject(err) : resolve()
+            )
+          : resolve(this._opts.store.set(this.id, this));
       } else if (this.shouldTouch()) {
         // session hasn't changed, try touch
         return this.touch();
@@ -97,7 +97,7 @@ class Session<T = {}> {
     // Check if new cookie should be set
     if ((this._opts.rolling && this.shouldTouch()) || this.isNew) {
       this.res.setHeader(
-        "Set-Cookie",
+        'Set-Cookie',
         this.cookie.serialize(
           this._opts.name,
           this._opts.encode ? this._opts.encode(this.id) : this.id

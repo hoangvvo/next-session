@@ -1,10 +1,10 @@
-import { parse as parseCookie } from "cookie";
-import { nanoid } from "nanoid";
-import { Store as ExpressStore } from "express-session";
-import MemoryStore from "./store/memory";
-import Session from "./session";
-import { Options, SessionOptions, SessionData, SessionStore } from "./types";
-import { IncomingMessage, ServerResponse } from "http";
+import { parse as parseCookie } from 'cookie';
+import { nanoid } from 'nanoid';
+import { Store as ExpressStore } from 'express-session';
+import MemoryStore from './store/memory';
+import Session from './session';
+import { Options, SessionOptions, SessionData, SessionStore } from './types';
+import { IncomingMessage, ServerResponse } from 'http';
 
 export function isCallbackStore<E extends ExpressStore, S extends SessionStore>(
   store: E | S
@@ -14,7 +14,7 @@ export function isCallbackStore<E extends ExpressStore, S extends SessionStore>(
 
 function getOptions(opts: Options = {}): SessionOptions {
   return {
-    name: opts.name || "sid",
+    name: opts.name || 'sid',
     store: opts.store || new MemoryStore(),
     genid: opts.genid || nanoid,
     encode: opts.encode,
@@ -22,7 +22,7 @@ function getOptions(opts: Options = {}): SessionOptions {
     rolling: opts.rolling || false,
     touchAfter: opts.touchAfter ? opts.touchAfter : 0,
     cookie: opts.cookie || {},
-    autoCommit: typeof opts.autoCommit !== "undefined" ? opts.autoCommit : true,
+    autoCommit: typeof opts.autoCommit !== 'undefined' ? opts.autoCommit : true,
   };
 }
 
@@ -52,8 +52,7 @@ export async function applySession<T = {}>(
     if (isCallbackStore(options.store)) {
       sess = await new Promise((resolve, reject) => {
         options.store.get(sessId as string, (err, data) => {
-          // @ts-ignore
-          err ? reject(err) : resolve(data || null);
+          err ? reject(err) : resolve((data as SessionData) || null);
         });
       });
     } else sess = await options.store.get(sessId);

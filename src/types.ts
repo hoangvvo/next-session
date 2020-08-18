@@ -16,10 +16,10 @@ export interface SessionCookieData {
 }
 
 export abstract class SessionStore {
-  abstract get: ((sid: string) => Promise<SessionData | null>);
-  abstract set: ((sid: string, sess: SessionData) => Promise<void>);
-  abstract destroy: ((sid: string) => Promise<void>);
-  abstract touch?: ((sid: string, sess: SessionData) => Promise<void>);
+  abstract get: (sid: string) => Promise<SessionData | null>;
+  abstract set: (sid: string, sess: SessionData) => Promise<void>;
+  abstract destroy: (sid: string) => Promise<void>;
+  abstract touch?: (sid: string, sess: SessionData) => Promise<void>;
   on?: (event: string | symbol, listener: (...args: any[]) => void) => this;
 }
 
