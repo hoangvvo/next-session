@@ -15,10 +15,46 @@ import { Options } from '../src/types';
 import MemoryStore from '../src/store/memory';
 import Session from '../src/session';
 import Cookie from '../src/cookie';
+import { Store as ExpressStore } from 'express-session';
 import { IncomingMessage } from 'http';
 import { NextPage, NextApiHandler, NextComponentType } from 'next';
 const signature = require('cookie-signature');
 const { parse: parseCookie } = require('cookie');
+
+class CbStore {
+  sessions: any;
+  constructor() {
+    this.sessions = {};
+  }
+
+  /* eslint-disable no-unused-expressions */
+  get(sid: string, cb: (err?: any, session?: SessionData | null) => void) {
+    cb && cb(null, this.sessions);
+  }
+
+  set(
+    sid: string,
+    sess: SessionData,
+    cb: (err: any, session?: SessionData | null) => void
+  ) {
+    cb && cb(null, this.sessions);
+  }
+
+  destroy(
+    sid: string,
+    cb: (err: any, session?: SessionData | null) => void
+  ) {
+    cb && cb(null, this.sessions);
+  }
+
+  touch(
+    sid: string,
+    sess: SessionData,
+    cb: (err: any, session?: SessionData | null) => void
+  ) {
+    cb && cb(null, this.sessions);
+  }
+}
 
 declare module 'http' {
   export interface IncomingMessage {
@@ -305,55 +341,24 @@ describe('Store', () => {
   });
 });
 
+describe('callback store', () => {
+  it('should work', async () => {
+    const server = setUpServer(defaultHandler, { store: new CbStore() as unknown as ExpressStore });
+    const agent = request.agent(server);
+    await agent
+      .post('/')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+    await agent
+      .get('/')
+      .expect('1')
+      .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+  })
+})
+
 describe('promisifyStore', () => {
-  test('can promisify callback store', async () => {
-    class CbStore {
-      sessions: any;
-      constructor() {
-        this.sessions = {};
-      }
-
-      /* eslint-disable no-unused-expressions */
-      get(sid: string, cb: (err?: any, session?: SessionData | null) => void) {
-        cb && cb(null, this.sessions);
-      }
-
-      set(
-        sid: string,
-        sess: SessionData,
-        cb: (err: any, session?: SessionData | null) => void
-      ) {
-        cb && cb(null, this.sessions);
-      }
-
-      destroy(
-        sid: string,
-        cb: (err: any, session?: SessionData | null) => void
-      ) {
-        cb && cb(null, this.sessions);
-      }
-
-      touch(
-        sid: string,
-        sess: SessionData,
-        cb: (err: any, session?: SessionData | null) => void
-      ) {
-        cb && cb(null, this.sessions);
-      }
-    }
-
-    const req: any = {};
-    const res: any = { end: () => null };
-    // We have some discrepancies in session.cookie.sameSite, one specifies 'lax', 'strict' while other is string
-    // @ts-ignore
-    applySession(req, res, { store: promisifyStore(new CbStore()) });
-    // facebook/jest#2549
-    expect(req.sessionStore.get().constructor.name).toStrictEqual('Promise');
-    expect(req.sessionStore.set().constructor.name).toStrictEqual('Promise');
-    expect(req.sessionStore.destroy().constructor.name).toStrictEqual(
-      'Promise'
-    );
-    expect(req.sessionStore.touch().constructor.name).toStrictEqual('Promise');
+  test('should returns the store itself (with console.warn)', async () => {
+    const store = new CbStore();
+    expect(promisifyStore(store as unknown as ExpressStore)).toBe(store)
   });
 });
 
