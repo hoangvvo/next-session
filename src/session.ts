@@ -69,14 +69,20 @@ class Session<T = {}> {
           : resolve(this._opts.store.set(this.id, this));
       } else if (this.shouldTouch()) {
         // session hasn't changed, try touch
-        return this.touch();
+        return resolve(this.touch());
       }
     });
   }
 
   destroy() {
     this.isDestroy = true;
-    return this._opts.store.destroy(this.id);
+    return new Promise((resolve, reject) => {
+      isCallbackStore(this._opts.store)
+        ? this._opts.store.destroy(this.id, (err) =>
+            err ? reject(err) : resolve()
+          )
+        : resolve(this._opts.store.destroy(this.id));
+    });
   }
 
   shouldTouch() {
