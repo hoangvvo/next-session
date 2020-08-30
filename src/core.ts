@@ -1,7 +1,7 @@
-import { parse as parseCookie, serialize } from "cookie";
-import { nanoid } from "nanoid";
-import { Store as ExpressStore } from "express-session";
-import MemoryStore from "./store/memory";
+import { parse, serialize } from 'cookie';
+import { nanoid } from 'nanoid';
+import { Store as ExpressStore } from 'express-session';
+import MemoryStore from './store/memory';
 import {
   Options,
   SessionOptions,
@@ -10,9 +10,9 @@ import {
   CookieOptions,
   SessionCookieData,
   NormalizedSessionStore,
-} from "./types";
-import { IncomingMessage, ServerResponse } from "http";
-import { promisify } from "util";
+} from './types';
+import { IncomingMessage, ServerResponse } from 'http';
+import { promisify } from 'util';
 
 function isCallbackStore<E extends ExpressStore, S extends SessionStore>(
   store: E | S
@@ -34,7 +34,7 @@ export const getCookieData = (
   }
 ) => {
   const c: SessionCookieData = {
-    path: options.path || "/",
+    path: options.path || '/',
     maxAge: options.maxAge || null,
     httpOnly: options.httpOnly || true,
     domain: options.domain || undefined,
@@ -43,7 +43,7 @@ export const getCookieData = (
   };
   if (options.expires)
     c.expires =
-      typeof options.expires === "string"
+      typeof options.expires === 'string'
         ? new Date(options.expires)
         : options.expires;
   else if (c.maxAge) c.expires = new Date(Date.now() + c.maxAge * 1000);
@@ -51,7 +51,7 @@ export const getCookieData = (
 };
 
 const stringify = (sess: SessionData) =>
-  JSON.stringify(sess, (key, val) => (key === "cookie" ? undefined : val));
+  JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));
 
 const commitHead = (
   req: IncomingMessage & { session?: SessionData | null },
@@ -64,7 +64,7 @@ const commitHead = (
     (options.rolling && shouldTouch(options, req.session.cookie))
   ) {
     res.setHeader(
-      "Set-Cookie",
+      'Set-Cookie',
       serialize(
         options.name,
         options.encode ? options.encode(req.session.id) : req.session.id
@@ -82,7 +82,7 @@ const save = async (
   const obj: SessionData = {} as any;
 
   for (const key in req.session) {
-    if (!(key === ("isNew" || key === "id"))) obj[key] = req.session[key];
+    if (!(key === ('isNew' || key === 'id'))) obj[key] = req.session[key];
   }
   if (stringify(req.session) !== prevSessStr) {
     await options.store.__set(req.session.id, obj);
@@ -104,7 +104,7 @@ function setupStore(store: SessionStore | ExpressStore) {
     s.__set = promisify(store.set).bind(store);
     if (store.touch)
       // @ts-ignore
-      normalizedStore.__touch = promisify(store.touch).bind(store);
+      s.__touch = promisify(store.touch).bind(store);
   } else {
     s.__destroy = store.destroy.bind(store);
     s.__get = store.get.bind(store);
@@ -122,7 +122,7 @@ export async function applySession<T = {}>(
   if (req.session) return;
 
   const options: SessionOptions = {
-    name: opts?.name || "sid",
+    name: opts?.name || 'sid',
     store: setupStore(opts?.store || new MemoryStore()),
     genid: opts?.genid || nanoid,
     encode: opts?.encode,
@@ -131,43 +131,49 @@ export async function applySession<T = {}>(
     touchAfter: opts?.touchAfter ? opts.touchAfter : 0,
     cookie: opts?.cookie || {},
     autoCommit:
-      typeof opts?.autoCommit !== "undefined" ? opts.autoCommit : true,
+      typeof opts?.autoCommit !== 'undefined' ? opts.autoCommit : true,
   };
 
   let sessId =
     req.headers && req.headers.cookie
-      ? parseCookie(req.headers.cookie)[options.name]
+      ? parse(req.headers.cookie)[options.name]
       : null;
 
   if (sessId && options.decode) sessId = options.decode(sessId);
 
   const sess = sessId ? await options.store.__get(sessId) : null;
 
-  if (sess) {
-    const { cookie, ...data } = sess;
-    req.session = { cookie: getCookieData(cookie) };
-    for (const key in data) req.session[key] = data[key];
-  } else {
-    req.session = { cookie: getCookieData(options.cookie) };
-  }
-
-  req.session = Object.assign({ id: sessId }, sess, {
-    cookie: getCookieData(sess?.cookie || options.cookie),
-  });
-
-  const prevSessStr: string | undefined = sess
-    ? stringify(sess)
-    : (req.session.isNew = true && undefined);
-
-  req.session.commit = async () => {
+  const commit = async () => {
     commitHead(req, res, options);
     await save(req, prevSessStr, options);
   };
 
-  req.session.destroy = async () => {
+  const destroy = async () => {
     await options.store.__destroy(req.session.id);
     delete req.session;
   };
+
+  if (sess) {
+    const { cookie, ...data } = sess;
+    req.session = {
+      cookie: getCookieData(cookie),
+      commit,
+      destroy,
+      isNew: false,
+      id: sessId!,
+    };
+    for (const key in data) req.session[key] = data[key];
+  } else {
+    req.session = {
+      cookie: getCookieData(options.cookie),
+      commit,
+      destroy,
+      isNew: true,
+      id: nanoid(),
+    };
+  }
+
+  const prevSessStr: string | undefined = sess ? stringify(sess) : undefined;
 
   // autocommit
   if (options.autoCommit) {

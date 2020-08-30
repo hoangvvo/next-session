@@ -4,6 +4,8 @@ import { EventEmitter } from 'events';
 const s: Record<string, string> = {}
 
 export default class MemoryStore extends EventEmitter implements SessionStore {
+  public sessions = s;
+
   constructor() {
     super();
   }
@@ -11,7 +13,7 @@ export default class MemoryStore extends EventEmitter implements SessionStore {
   get(sid: string): Promise<SessionData | null> {
     const self = this;
 
-    const sess = s[sid];
+    const sess = this.sessions[sid];
     if (sess) {
       const session = JSON.parse(sess);
       session.cookie.expires = session.cookie.expires
@@ -33,7 +35,7 @@ export default class MemoryStore extends EventEmitter implements SessionStore {
   }
 
   set(sid: string, sess: SessionData) {
-    s[sid] = JSON.stringify(sess);
+    this.sessions[sid] = JSON.stringify(sess);
     return Promise.resolve();
   }
 
@@ -51,16 +53,11 @@ export default class MemoryStore extends EventEmitter implements SessionStore {
   }
 
   all() {
-    const arr = [];
-    const keys = Object.keys(s);
-    for (let i = 0, len = keys.length; i < len; i += 1) {
-      arr.push(s[keys[i]]);
-    }
-    return Promise.resolve(arr);
+    return Promise.resolve(this.sessions);
   }
 
   destroy(sid: string) {
-    delete s[sid];
+    delete this.sessions[sid];
     return Promise.resolve();
   }
 }

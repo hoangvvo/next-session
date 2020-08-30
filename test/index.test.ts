@@ -125,7 +125,7 @@ describe('applySession', () => {
       .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
     await agent.delete('/');
     // FIXME: This should be 0, but for some reason we get an orphaned session after setUpServer
-    expect(Object.keys(store.sessions).length).toBe(1);
+    expect(Object.keys(await store.all()).length).toBe(1);
     await agent
       .get('/')
       .expect('0')

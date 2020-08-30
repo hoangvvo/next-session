@@ -2,7 +2,10 @@ import { Store as ExpressStore } from 'express-session';
 
 export type SessionData = {
   [key: string]: any;
+  id: string;
   cookie: SessionCookieData;
+  destroy: () => Promise<void>;
+  isNew: boolean;
 };
 
 export interface SessionCookieData {
