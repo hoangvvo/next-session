@@ -8,11 +8,11 @@ export type SessionData = {
 export interface SessionCookieData {
   path: string;
   maxAge: number | null;
+  secure: boolean;
   httpOnly: boolean;
   domain?: string | undefined;
-  sameSite?: boolean | 'lax' | 'strict' | 'none';
-  secure: boolean;
   expires?: Date;
+  sameSite?: boolean | 'lax' | 'strict' | 'none';
 }
 
 export abstract class SessionStore {

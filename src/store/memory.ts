@@ -1,12 +1,11 @@
 import { SessionStore, SessionData } from '../types';
 import { EventEmitter } from 'events';
-const MemoryStoreSession = {};
 
 export default class MemoryStore extends EventEmitter implements SessionStore {
   sessions: Record<string, string>;
   constructor() {
     super();
-    this.sessions = MemoryStoreSession;
+    this.sessions = {};
   }
 
   get(sid: string): Promise<SessionData | null> {

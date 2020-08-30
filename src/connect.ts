@@ -1,11 +1,10 @@
 import { applySession } from './core';
-import { Options } from './types';
+import { Options, SessionData } from './types';
 import { IncomingMessage, ServerResponse } from 'http';
-import Session from './session';
 
 let storeReady = true;
 
-export default function session<T = {}>(opts?: Options) {
+export default function session(opts?: Options) {
   //  store readiness
   if (opts && opts.store && opts.store.on) {
     opts.store.on('disconnect', () => {
@@ -16,7 +15,7 @@ export default function session<T = {}>(opts?: Options) {
     });
   }
   return (
-    req: IncomingMessage & { session: Session<T> },
+    req: IncomingMessage & { session: SessionData },
     res: ServerResponse,
     next: (err?: any) => void
   ) => {
