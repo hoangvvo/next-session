@@ -44,16 +44,4 @@ export interface Options {
   autoCommit?: boolean;
 }
 
-export type SessionOptions = Pick<
-  Required<Options>,
-  | 'name'
-  | 'store'
-  | 'genid'
-  | 'rolling'
-  | 'touchAfter'
-  | 'cookie'
-  | 'autoCommit'
-> & {
-  encode?: (rawSid: string) => string;
-  decode?: (encryptedSid: string) => string;
-};
+export type SessionOptions = Omit<Required<Options>, 'encode' | 'decode'> & Pick<Options, 'encode' | 'decode'>
