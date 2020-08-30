@@ -115,12 +115,15 @@ export async function applySession<T = {}>(
     }
   }
 
-  req.session.save = async () => {
-    commitHead();
+  const save = async () => {
     if (!req.session) return;
     const obj: SessionData = {} as any;
-    Object.keys(req.session)
-      .forEach(key => key === ('isNew' || key === 'id') && (obj[key] = req.session![key]))
+
+    for (const key in req.session) {
+      if (!(key === ('isNew' || key === 'id')))
+        obj[key] = req.session[key]
+    }
+
     if (stringify(req.session) !== prevSessStr) {
       if (isCallbackStore(options.store)) {
         // @ts-ignore
@@ -137,6 +140,11 @@ export async function applySession<T = {}>(
     }
   }
 
+  req.session.commit = async () => {
+    commitHead();
+    await save();
+  }
+
   // autocommit
   if (options.autoCommit) {
     const oldWritehead = res.writeHead;
@@ -146,7 +154,7 @@ export async function applySession<T = {}>(
     };
     const oldEnd = res.end;
     res.end = async function resEndProxy(...args: any) {
-      await req.session.save();
+      await save();
       oldEnd.apply(this, args);
     };
   }
