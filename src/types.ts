@@ -55,4 +55,11 @@ export interface Options {
   autoCommit?: boolean;
 }
 
-export type SessionOptions = Omit<Required<Options>, 'encode' | 'decode' | 'store'> & Pick<Options, 'encode' | 'decode'> & { store: NormalizedSessionStore }
+export type SessionOptions = Omit<
+  Required<Options>,
+  'encode' | 'decode' | 'store' | 'cookie'
+> &
+  Pick<Options, 'encode' | 'decode'> & {
+    store: NormalizedSessionStore;
+    cookie: SessionCookieData;
+  };

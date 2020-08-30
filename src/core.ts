@@ -28,28 +28,6 @@ const shouldTouch = (options: SessionOptions, cookie: SessionCookieData) =>
   cookie.maxAge * 1000 - (cookie.expires.getTime() - Date.now()) >=
     options.touchAfter;
 
-export const getCookieData = (
-  options: (CookieOptions | SessionCookieData) & {
-    expires?: Date | string | null;
-  }
-) => {
-  const c: SessionCookieData = {
-    path: options.path || '/',
-    maxAge: options.maxAge || null,
-    httpOnly: options.httpOnly || true,
-    domain: options.domain || undefined,
-    sameSite: options.sameSite,
-    secure: options.secure || false,
-  };
-  if (options.expires)
-    c.expires =
-      typeof options.expires === 'string'
-        ? new Date(options.expires)
-        : options.expires;
-  else if (c.maxAge) c.expires = new Date(Date.now() + c.maxAge * 1000);
-  return c;
-};
-
 const stringify = (sess: SessionData) =>
   JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));
 
@@ -129,7 +107,14 @@ export async function applySession<T = {}>(
     decode: opts?.decode,
     rolling: opts?.rolling || false,
     touchAfter: opts?.touchAfter ? opts.touchAfter : 0,
-    cookie: opts?.cookie || {},
+    cookie: {
+      path: opts?.cookie?.path || '/',
+      maxAge: opts?.cookie?.maxAge || null,
+      httpOnly: opts?.cookie?.httpOnly || true,
+      domain: opts?.cookie?.domain || undefined,
+      sameSite: opts?.cookie?.sameSite,
+      secure: opts?.cookie?.secure || false,
+    },
     autoCommit:
       typeof opts?.autoCommit !== 'undefined' ? opts.autoCommit : true,
   };
@@ -155,8 +140,17 @@ export async function applySession<T = {}>(
 
   if (sess) {
     const { cookie, ...data } = sess;
+
+    if (cookie.expires)
+      cookie.expires =
+        typeof cookie.expires === 'string'
+          ? new Date(cookie.expires)
+          : cookie.expires;
+    else if (cookie.maxAge)
+      cookie.expires = new Date(Date.now() + cookie.maxAge * 1000);
+
     req.session = {
-      cookie: getCookieData(cookie),
+      cookie,
       commit,
       destroy,
       isNew: false,
@@ -165,7 +159,7 @@ export async function applySession<T = {}>(
     for (const key in data) req.session[key] = data[key];
   } else {
     req.session = {
-      cookie: getCookieData(options.cookie),
+      cookie: options.cookie,
       commit,
       destroy,
       isNew: true,
