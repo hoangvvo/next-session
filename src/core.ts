@@ -2,9 +2,11 @@ import { parse as parseCookie, serialize } from 'cookie';
 import { nanoid } from 'nanoid';
 import { Store as ExpressStore } from 'express-session';
 import MemoryStore from './store/memory';
-import { Options, SessionOptions, SessionData, SessionStore, CookieOptions, SessionCookieData } from './types';
+import { Options, SessionOptions, SessionData, SessionStore, CookieOptions, SessionCookieData, NormalizedSessionStore } from './types';
 import { IncomingMessage, ServerResponse } from 'http';
 import { promisify } from 'util';
+
+let memoryStore: MemoryStore;
 
 export function isCallbackStore<E extends ExpressStore, S extends SessionStore>(
   store: E | S
@@ -20,7 +22,7 @@ const shouldTouch = (options: SessionOptions, cookie: SessionCookieData) => (opt
     (cookie.expires.getTime() - Date.now()) >=
     options.touchAfter)
 
-const getCookieData =  (options: (CookieOptions | SessionCookieData) & {
+const getCookieData = (options: (CookieOptions | SessionCookieData) & {
   expires?: Date | string | null;
 }) => {
   const c: SessionCookieData = {
@@ -41,12 +43,43 @@ const getCookieData =  (options: (CookieOptions | SessionCookieData) & {
     return c;
 }
 
-let memoryStore: MemoryStore;
+function getOptions(opts?: Options): SessionOptions {
+  return {
+    name: opts?.name || 'sid',
+    store: setupStore(opts?.store || (memoryStore = memoryStore || new MemoryStore())),
+    genid: opts?.genid || nanoid,
+    encode: opts?.encode,
+    decode: opts?.decode,
+    rolling: opts?.rolling || false,
+    touchAfter: opts?.touchAfter ? opts.touchAfter : 0,
+    cookie: opts?.cookie || {},
+    autoCommit: typeof opts?.autoCommit !== 'undefined' ? opts.autoCommit : true,
+  }
+}
 
 function stringify(sess: SessionData) {
   return JSON.stringify(sess, (key, val) =>
     key === 'cookie' ? undefined : val
   );
+}
+
+function setupStore(store: SessionStore | ExpressStore) {
+  const normalizedStore = (store as unknown as NormalizedSessionStore)
+  if (isCallbackStore(store)) {
+    normalizedStore.__destroy = promisify(store.destroy).bind(store);
+    // @ts-ignore
+    normalizedStore.__get = promisify(store.get).bind(store);
+     // @ts-ignore
+    normalizedStore.__set = promisify(store.set).bind(store);
+     // @ts-ignore
+    if (store.touch) normalizedStore.__touch = promisify(store.touch).bind(store);
+  } else {
+    normalizedStore.__destroy = store.destroy;
+    normalizedStore.__get = store.get;
+    normalizedStore.__set = store.set;
+    normalizedStore.__touch = store.touch;
+  }
+  return normalizedStore
 }
 
 export async function applySession<T = {}>(
@@ -56,17 +89,7 @@ export async function applySession<T = {}>(
 ): Promise<void> {
   if (req.session) return;
 
-  const options = {
-    name: opts?.name || 'sid',
-    store: opts?.store || (memoryStore = memoryStore || new MemoryStore()),
-    genid: opts?.genid || nanoid,
-    encode: opts?.encode,
-    decode: opts?.decode,
-    rolling: opts?.rolling || false,
-    touchAfter: opts?.touchAfter ? opts.touchAfter : 0,
-    cookie: opts?.cookie || {},
-    autoCommit: typeof opts?.autoCommit !== 'undefined' ? opts.autoCommit : true,
-  }
+  const options = getOptions(opts);
 
   let sessId =
     req.headers && req.headers.cookie
@@ -81,12 +104,7 @@ export async function applySession<T = {}>(
 
   let sess: SessionData | null | undefined;
 
-  if (sessId) {
-    if (isCallbackStore(options.store)) {
-      // @ts-ignore
-      sess = await promisify(options.store.get)(sessId);
-    } else sess = await options.store.get(sessId);
-  }
+  if (sessId) sess = await options.store.__get(sessId);
 
   if (sess) {
     const { cookie, ...data } = sess;
@@ -103,7 +121,7 @@ export async function applySession<T = {}>(
   const prevSessStr: string | undefined = sess ? stringify(sess) : (req.session.isNew = true && undefined)
 
   const commitHead = () => {
-    if (res.headersSent) return;
+    if (res.headersSent || !req.session) return;
     if (req.session.isNew || (options.rolling && shouldTouch(options, req.session.cookie))) {
       res.setHeader(
         'Set-Cookie',
@@ -123,26 +141,24 @@ export async function applySession<T = {}>(
       if (!(key === ('isNew' || key === 'id')))
         obj[key] = req.session[key]
     }
-
     if (stringify(req.session) !== prevSessStr) {
-      if (isCallbackStore(options.store)) {
-        // @ts-ignore
-        await promisify(options.store.set)(req.session.id, obj);
-      } else await options.store.set(req.session.id, obj)
+      await options.store.__set(req.session.id, obj)
     } else if (shouldTouch(options, req.session.cookie)) {
       if (req.session.expires && req.session.maxAge) {
         req.session.expires = new Date(Date.now() + req.session.maxAge * 1000);
       }
-      if (isCallbackStore(options.store)) {
-        // @ts-ignore
-        await promisify(options.store.touch)(req.session.id, obj);
-      } else await options.store.touch?.(req.session.id, obj)
+      await options.store.__touch?.(req.session.id, obj)
     }
   }
 
   req.session.commit = async () => {
     commitHead();
     await save();
+  }
+
+  req.session.destroy = async () => {
+    await options.store.__destroy(req.session.id)
+    delete req.session;
   }
 
   // autocommit

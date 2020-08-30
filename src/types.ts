@@ -23,6 +23,14 @@ export abstract class SessionStore {
   on?: (event: string | symbol, listener: (...args: any[]) => void) => this;
 }
 
+export interface NormalizedSessionStore {
+  [key: string]: any;
+  __get: (sid: string) => Promise<SessionData | null>;
+  __set: (sid: string, sess: SessionData) => Promise<void>;
+  __destroy: (sid: string) => Promise<void>;
+  __touch?: (sid: string, sess: SessionData) => Promise<void>;
+}
+
 export interface CookieOptions {
   secure?: boolean;
   httpOnly?: boolean;
@@ -44,4 +52,4 @@ export interface Options {
   autoCommit?: boolean;
 }
 
-export type SessionOptions = Omit<Required<Options>, 'encode' | 'decode'> & Pick<Options, 'encode' | 'decode'>
+export type SessionOptions = Omit<Required<Options>, 'encode' | 'decode' | 'store'> & Pick<Options, 'encode' | 'decode'> & { store: NormalizedSessionStore }
