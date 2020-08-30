@@ -22,7 +22,7 @@ const shouldTouch = (options: SessionOptions, cookie: SessionCookieData) => (opt
     (cookie.expires.getTime() - Date.now()) >=
     options.touchAfter)
 
-const getCookieData = (options: (CookieOptions | SessionCookieData) & {
+export const getCookieData = (options: (CookieOptions | SessionCookieData) & {
   expires?: Date | string | null;
 }) => {
   const c: SessionCookieData = {

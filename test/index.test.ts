@@ -13,11 +13,10 @@ import {
 } from '../src';
 import { Options } from '../src/types';
 import MemoryStore from '../src/store/memory';
-import Session from '../src/session';
-import Cookie from '../src/cookie';
 import { Store as ExpressStore } from 'express-session';
 import { IncomingMessage } from 'http';
 import { NextPage, NextApiHandler, NextComponentType } from 'next';
+import { getCookieData } from '../src/core';
 const signature = require('cookie-signature');
 const { parse: parseCookie } = require('cookie');
 
@@ -58,7 +57,7 @@ class CbStore {
 
 declare module 'http' {
   export interface IncomingMessage {
-    session: Session;
+    session: SessionData;
   }
 }
 
@@ -256,7 +255,7 @@ describe('withSession', () => {
     }
     expect(
       await (withSession(handler) as NextApiHandler)(request, response)
-    ).toBeInstanceOf(Session);
+    ).toBeTruthy()
   });
 
   test('works with pages#getInitialProps', async () => {
@@ -271,7 +270,7 @@ describe('withSession', () => {
       await ((withSession(Page) as NextPage).getInitialProps as NonNullable<
         NextComponentType['getInitialProps']
       >)(ctx as any)
-    ).toBeInstanceOf(Session);
+    ).toBeTruthy()
   });
 
   test('return no-op if no ssr', async () => {
@@ -292,7 +291,7 @@ describe('connect middleware', () => {
     await new Promise((resolve) => {
       session()(request, response, resolve);
     });
-    expect(request.session).toBeInstanceOf(Session);
+    expect(request.session).toBeTruthy()
   });
 
   test('respects storeReady', async () => {
@@ -317,11 +316,11 @@ describe('connect middleware', () => {
 describe('Store', () => {
   test('should convert String() expires to Date() expires', () => {
     let sess = {
-      cookie: new Cookie({ maxAge: 100000 }),
+      cookie: getCookieData({ maxAge: 100000 }),
     };
     //  force sess.cookie.expires to be string
     sess = JSON.parse(JSON.stringify(sess));
-    const cookie = new Cookie(sess.cookie);
+    const cookie = getCookieData(sess.cookie);
     expect(cookie.expires).toBeInstanceOf(Date);
   });
   test('should extend EventEmitter', () => {
@@ -389,7 +388,7 @@ describe('MemoryStore', () => {
   test('should expire session', async () => {
     const sessionStore = new MemoryStore();
     let sessionId: string | undefined | null;
-    let sessionInstance: Session;
+    let sessionInstance: SessionData;
     const server = setUpServer(
       (req, res) => {
         if (req.method === 'POST') {
