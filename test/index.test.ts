@@ -11,7 +11,7 @@ import {
   SessionData,
   expressSession,
 } from '../src';
-import { Options } from '../src/types';
+import { Options, SessionStore } from '../src/types';
 import MemoryStore from '../src/store/memory';
 import { Store as ExpressStore } from 'express-session';
 import { IncomingMessage } from 'http';
@@ -315,16 +315,23 @@ describe('connect middleware', () => {
 describe('Store', () => {
   test('should convert String() expires to Date() expires', async () => {
     // FIXME
-    const store = new MemoryStore();
-    store.sessions = {
+    const sessions: Record<string, string> = {
       //  force sess.cookie.expires to be string
       test: JSON.stringify({
         cookie: ({ maxAge: 100000, expires: new Date(Date.now() + 4000) }),
       })
     }
+
+    const store = {
+      get: async (id: string) => { return JSON.parse(sessions[id]) },
+      set: async (sid: string, sess: SessionData) => undefined,
+      destroy: async (id: string) => undefined,
+    }
+
     const req = { headers: { cookie: 'sid=test' } } as any
     await applySession(req, { end: () => true, writeHead: () => true } as any, { cookie: { maxAge: 5000 }, store });
 
+    expect
     expect(req.session.cookie.expires).toBeInstanceOf(Date);
   });
   test('should extend EventEmitter', () => {
