@@ -28,7 +28,7 @@ const shouldTouch = (options: SessionOptions, cookie: SessionCookieData) =>
     options.touchAfter;
 
 const stringify = (sess: SessionData) =>
-  JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));
+  JSON.stringify(sess, (key, val) => (key === 'cookie' || key === 'isNew' || key === 'id' ? undefined : val));
 
 const commitHead = (
   req: IncomingMessage & { session?: SessionData | null },
