@@ -11,18 +11,41 @@ import {
   SessionData,
   expressSession,
 } from '../src';
-import { Options } from '../src/types';
+import { Options, SessionStore } from '../src/types';
 import MemoryStore from '../src/store/memory';
-import Session from '../src/session';
-import Cookie from '../src/cookie';
+import { Store as ExpressStore } from 'express-session';
 import { IncomingMessage } from 'http';
 import { NextPage, NextApiHandler, NextComponentType } from 'next';
 const signature = require('cookie-signature');
 const { parse: parseCookie } = require('cookie');
 
+class CbStore {
+  sessions: Record<string, any> = {};
+  constructor() {}
+
+  /* eslint-disable no-unused-expressions */
+  get(sid: string, cb: (err?: any, session?: SessionData | null) => void) {
+    cb && cb(null, this.sessions[sid]);
+  }
+
+  set(sid: string, sess: SessionData, cb: (err?: any) => void) {
+    this.sessions[sid] = sess;
+    cb && cb();
+  }
+
+  destroy(sid: string, cb: (err?: any) => void) {
+    delete this.sessions[sid];
+    cb();
+  }
+
+  touch(sid: string, sess: SessionData, cb: (err: any) => void) {
+    cb && cb(null);
+  }
+}
+
 declare module 'http' {
   export interface IncomingMessage {
-    session: Session;
+    session: SessionData;
   }
 }
 
@@ -79,18 +102,15 @@ describe('applySession', () => {
     const store = new MemoryStore();
     const server = setUpServer(defaultHandler, { store });
     const agent = request.agent(server);
-    await agent
-      .post('/')
-      .then(({ header }) => {
-        expect(header).toHaveProperty('set-cookie');
-      });
+    await agent.post('/').then(({ header }) => {
+      expect(header).toHaveProperty('set-cookie');
+    });
     await agent
       .get('/')
       .expect('1')
       .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
     await agent.delete('/');
-    // FIXME: This should be 0, but for some reason we get an orphaned session after setUpServer
-    expect(Object.keys(store.sessions).length).toBe(1);
+    expect(Object.keys(store.sessions).length).toBe(0);
     await agent
       .get('/')
       .expect('0')
@@ -122,7 +142,12 @@ describe('applySession', () => {
         req.session.hello = 'world';
         res.end(`${req.session.cookie.expires?.valueOf()}`);
       },
-      { rolling: true, touchAfter: 5000, cookie: { maxAge: 60 * 60 * 24 } }
+      {
+        rolling: true,
+        touchAfter: 5000,
+        cookie: { maxAge: 60 * 60 * 24 },
+        store: new MemoryStore(),
+      }
     );
     const agent = request.agent(server);
     await agent.post('/');
@@ -196,17 +221,17 @@ describe('applySession', () => {
     const agent = request.agent(server);
     await agent.get('/').expect('true');
     await agent.get('/').expect('false');
-  })
+  });
 
   test('should works with writeHead and autoCommit', async () => {
     const server = setUpServer((req, res) => {
       req.session.foo = 'bar';
-      res.writeHead(302, { Location: '/login' }).end()
+      res.writeHead(302, { Location: '/login' }).end();
     });
     await request(server)
       .post('/')
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
-  })
+  });
 });
 
 describe('withSession', () => {
@@ -220,7 +245,7 @@ describe('withSession', () => {
     }
     expect(
       await (withSession(handler) as NextApiHandler)(request, response)
-    ).toBeInstanceOf(Session);
+    ).toBeTruthy();
   });
 
   test('works with pages#getInitialProps', async () => {
@@ -235,7 +260,7 @@ describe('withSession', () => {
       await ((withSession(Page) as NextPage).getInitialProps as NonNullable<
         NextComponentType['getInitialProps']
       >)(ctx as any)
-    ).toBeInstanceOf(Session);
+    ).toBeTruthy();
   });
 
   test('return no-op if no ssr', async () => {
@@ -256,7 +281,7 @@ describe('connect middleware', () => {
     await new Promise((resolve) => {
       session()(request, response, resolve);
     });
-    expect(request.session).toBeInstanceOf(Session);
+    expect(request.session).toBeTruthy();
   });
 
   test('respects storeReady', async () => {
@@ -279,14 +304,31 @@ describe('connect middleware', () => {
 });
 
 describe('Store', () => {
-  test('should convert String() expires to Date() expires', () => {
-    let sess = {
-      cookie: new Cookie({ maxAge: 100000 }),
+  test('should convert String() expires to Date() expires', async () => {
+    // FIXME
+    const sessions: Record<string, string> = {
+      //  force sess.cookie.expires to be string
+      test: JSON.stringify({
+        cookie: { maxAge: 100000, expires: new Date(Date.now() + 4000) },
+      }),
     };
-    //  force sess.cookie.expires to be string
-    sess = JSON.parse(JSON.stringify(sess));
-    const cookie = new Cookie(sess.cookie);
-    expect(cookie.expires).toBeInstanceOf(Date);
+
+    const store = {
+      get: async (id: string) => {
+        return JSON.parse(sessions[id]);
+      },
+      set: async (sid: string, sess: SessionData) => undefined,
+      destroy: async (id: string) => undefined,
+    };
+
+    const req = { headers: { cookie: 'sid=test' } } as any;
+    await applySession(req, { end: () => true, writeHead: () => true } as any, {
+      cookie: { maxAge: 5000 },
+      store,
+    });
+
+    expect;
+    expect(req.session.cookie.expires).toBeInstanceOf(Date);
   });
   test('should extend EventEmitter', () => {
     // @ts-ignore
@@ -305,55 +347,26 @@ describe('Store', () => {
   });
 });
 
+describe('callback store', () => {
+  it('should work', async () => {
+    const server = setUpServer(defaultHandler, {
+      store: (new CbStore() as unknown) as ExpressStore,
+    });
+    const agent = request.agent(server);
+    await agent
+      .post('/')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+    await agent
+      .get('/')
+      .expect('1')
+      .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+  });
+});
+
 describe('promisifyStore', () => {
-  test('can promisify callback store', async () => {
-    class CbStore {
-      sessions: any;
-      constructor() {
-        this.sessions = {};
-      }
-
-      /* eslint-disable no-unused-expressions */
-      get(sid: string, cb: (err?: any, session?: SessionData | null) => void) {
-        cb && cb(null, this.sessions);
-      }
-
-      set(
-        sid: string,
-        sess: SessionData,
-        cb: (err: any, session?: SessionData | null) => void
-      ) {
-        cb && cb(null, this.sessions);
-      }
-
-      destroy(
-        sid: string,
-        cb: (err: any, session?: SessionData | null) => void
-      ) {
-        cb && cb(null, this.sessions);
-      }
-
-      touch(
-        sid: string,
-        sess: SessionData,
-        cb: (err: any, session?: SessionData | null) => void
-      ) {
-        cb && cb(null, this.sessions);
-      }
-    }
-
-    const req: any = {};
-    const res: any = { end: () => null };
-    // We have some discrepancies in session.cookie.sameSite, one specifies 'lax', 'strict' while other is string
-    // @ts-ignore
-    applySession(req, res, { store: promisifyStore(new CbStore()) });
-    // facebook/jest#2549
-    expect(req.sessionStore.get().constructor.name).toStrictEqual('Promise');
-    expect(req.sessionStore.set().constructor.name).toStrictEqual('Promise');
-    expect(req.sessionStore.destroy().constructor.name).toStrictEqual(
-      'Promise'
-    );
-    expect(req.sessionStore.touch().constructor.name).toStrictEqual('Promise');
+  test('should returns the store itself (with console.warn)', async () => {
+    const store = new CbStore();
+    expect(promisifyStore((store as unknown) as ExpressStore)).toBe(store);
   });
 });
 
@@ -384,7 +397,7 @@ describe('MemoryStore', () => {
   test('should expire session', async () => {
     const sessionStore = new MemoryStore();
     let sessionId: string | undefined | null;
-    let sessionInstance: Session;
+    let sessionInstance: SessionData;
     const server = setUpServer(
       (req, res) => {
         if (req.method === 'POST') {
