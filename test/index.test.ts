@@ -156,7 +156,7 @@ describe('applySession', () => {
         req.session.hello = 'world';
         res.end(`${req.session.cookie.expires?.valueOf()}`);
       },
-      { rolling: true, touchAfter: 5000, cookie: { maxAge: 60 * 60 * 24 } }
+      { rolling: true, touchAfter: 5000, cookie: { maxAge: 60 * 60 * 24 }, store: new MemoryStore() }
     );
     const agent = request.agent(server);
     await agent.post('/');
