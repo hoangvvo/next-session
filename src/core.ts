@@ -1,9 +1,9 @@
-import { parse, serialize } from "cookie";
-import { nanoid } from "nanoid";
-import { Store as ExpressStore } from "express-session";
-import { IncomingMessage, ServerResponse } from "http";
-import { promisify } from "util";
-import MemoryStore from "./store/memory";
+import { parse, serialize } from 'cookie';
+import { nanoid } from 'nanoid';
+import { Store as ExpressStore } from 'express-session';
+import { IncomingMessage, ServerResponse } from 'http';
+import { promisify } from 'util';
+import MemoryStore from './store/memory';
 import {
   Options,
   SessionOptions,
@@ -11,7 +11,7 @@ import {
   SessionStore,
   SessionCookieData,
   NormalizedSessionStore,
-} from "./types";
+} from './types';
 
 function isCallbackStore<E extends ExpressStore, S extends SessionStore>(
   store: E | S
@@ -29,7 +29,7 @@ const shouldTouch = (cookie: SessionCookieData, touchAfter: number) => {
 
 const stringify = (sess: SessionData) =>
   JSON.stringify(sess, (key, val) =>
-    key === "cookie" || key === "isNew" || key === "id" ? undefined : val
+    key === 'cookie' || key === 'isNew' || key === 'id' ? undefined : val
   );
 
 const commitHead = (
@@ -41,7 +41,7 @@ const commitHead = (
   if (res.headersSent || !req.session) return;
   if (req.session.isNew || (options.rolling && touched)) {
     res.setHeader(
-      "Set-Cookie",
+      'Set-Cookie',
       serialize(
         options.name,
         options.encode ? options.encode(req.session.id) : req.session.id
@@ -59,7 +59,7 @@ const save = async (
   if (!req.session) return;
   const obj: SessionData = {} as any;
   for (const key in req.session) {
-    if (!(key === ("isNew" || key === "id"))) obj[key] = req.session[key];
+    if (!(key === ('isNew' || key === 'id'))) obj[key] = req.session[key];
   }
 
   if (stringify(req.session) !== prevSessStr) {
@@ -99,7 +99,7 @@ export async function applySession<T = {}>(
   if (req.session) return;
 
   const options: SessionOptions = {
-    name: opts?.name || "sid",
+    name: opts?.name || 'sid',
     store: setupStore(
       opts?.store || (memoryStore = memoryStore || new MemoryStore())
     ),
@@ -109,7 +109,7 @@ export async function applySession<T = {}>(
     rolling: opts?.rolling || false,
     touchAfter: opts?.touchAfter ? opts.touchAfter : 0,
     cookie: {
-      path: opts?.cookie?.path || "/",
+      path: opts?.cookie?.path || '/',
       maxAge: opts?.cookie?.maxAge || null,
       httpOnly: opts?.cookie?.httpOnly || true,
       domain: opts?.cookie?.domain || undefined,
@@ -117,7 +117,7 @@ export async function applySession<T = {}>(
       secure: opts?.cookie?.secure || false,
     },
     autoCommit:
-      typeof opts?.autoCommit !== "undefined" ? opts.autoCommit : true,
+      typeof opts?.autoCommit !== 'undefined' ? opts.autoCommit : true,
   };
 
   let sessId =
@@ -143,7 +143,7 @@ export async function applySession<T = {}>(
 
   if (sess) {
     const { cookie, ...data } = sess;
-    if (typeof cookie.expires === "string")
+    if (typeof cookie.expires === 'string')
       cookie.expires = new Date(cookie.expires);
     req.session = {
       cookie,

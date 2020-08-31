@@ -50,7 +50,9 @@ export default function withSession<T = {}>(
       // @ts-ignore
       if (typeof window === 'undefined') {
         await applySession(
-          pageCtx.req as NonNullable<NextPageContext['req']> & { session: SessionData },
+          pageCtx.req as NonNullable<NextPageContext['req']> & {
+            session: SessionData;
+          },
           pageCtx.res as NonNullable<NextPageContext['res']>,
           options
         );

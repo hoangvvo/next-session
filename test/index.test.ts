@@ -21,36 +21,24 @@ const { parse: parseCookie } = require('cookie');
 
 class CbStore {
   sessions: Record<string, any> = {};
-  constructor() {
-  }
+  constructor() {}
 
   /* eslint-disable no-unused-expressions */
   get(sid: string, cb: (err?: any, session?: SessionData | null) => void) {
     cb && cb(null, this.sessions[sid]);
   }
 
-  set(
-    sid: string,
-    sess: SessionData,
-    cb: (err?: any) => void
-  ) {
+  set(sid: string, sess: SessionData, cb: (err?: any) => void) {
     this.sessions[sid] = sess;
     cb && cb();
   }
 
-  destroy(
-    sid: string,
-    cb: (err?: any) => void
-  ) {
+  destroy(sid: string, cb: (err?: any) => void) {
     delete this.sessions[sid];
     cb();
   }
 
-  touch(
-    sid: string,
-    sess: SessionData,
-    cb: (err: any) => void
-  ) {
+  touch(sid: string, sess: SessionData, cb: (err: any) => void) {
     cb && cb(null);
   }
 }
@@ -114,11 +102,9 @@ describe('applySession', () => {
     const store = new MemoryStore();
     const server = setUpServer(defaultHandler, { store });
     const agent = request.agent(server);
-    await agent
-      .post('/')
-      .then(({ header }) => {
-        expect(header).toHaveProperty('set-cookie');
-      });
+    await agent.post('/').then(({ header }) => {
+      expect(header).toHaveProperty('set-cookie');
+    });
     await agent
       .get('/')
       .expect('1')
@@ -156,7 +142,12 @@ describe('applySession', () => {
         req.session.hello = 'world';
         res.end(`${req.session.cookie.expires?.valueOf()}`);
       },
-      { rolling: true, touchAfter: 5000, cookie: { maxAge: 60 * 60 * 24 }, store: new MemoryStore() }
+      {
+        rolling: true,
+        touchAfter: 5000,
+        cookie: { maxAge: 60 * 60 * 24 },
+        store: new MemoryStore(),
+      }
     );
     const agent = request.agent(server);
     await agent.post('/');
@@ -230,17 +221,17 @@ describe('applySession', () => {
     const agent = request.agent(server);
     await agent.get('/').expect('true');
     await agent.get('/').expect('false');
-  })
+  });
 
   test('should works with writeHead and autoCommit', async () => {
     const server = setUpServer((req, res) => {
       req.session.foo = 'bar';
-      res.writeHead(302, { Location: '/login' }).end()
+      res.writeHead(302, { Location: '/login' }).end();
     });
     await request(server)
       .post('/')
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
-  })
+  });
 });
 
 describe('withSession', () => {
@@ -254,7 +245,7 @@ describe('withSession', () => {
     }
     expect(
       await (withSession(handler) as NextApiHandler)(request, response)
-    ).toBeTruthy()
+    ).toBeTruthy();
   });
 
   test('works with pages#getInitialProps', async () => {
@@ -269,7 +260,7 @@ describe('withSession', () => {
       await ((withSession(Page) as NextPage).getInitialProps as NonNullable<
         NextComponentType['getInitialProps']
       >)(ctx as any)
-    ).toBeTruthy()
+    ).toBeTruthy();
   });
 
   test('return no-op if no ssr', async () => {
@@ -290,7 +281,7 @@ describe('connect middleware', () => {
     await new Promise((resolve) => {
       session()(request, response, resolve);
     });
-    expect(request.session).toBeTruthy()
+    expect(request.session).toBeTruthy();
   });
 
   test('respects storeReady', async () => {
@@ -318,20 +309,25 @@ describe('Store', () => {
     const sessions: Record<string, string> = {
       //  force sess.cookie.expires to be string
       test: JSON.stringify({
-        cookie: ({ maxAge: 100000, expires: new Date(Date.now() + 4000) }),
-      })
-    }
+        cookie: { maxAge: 100000, expires: new Date(Date.now() + 4000) },
+      }),
+    };
 
     const store = {
-      get: async (id: string) => { return JSON.parse(sessions[id]) },
+      get: async (id: string) => {
+        return JSON.parse(sessions[id]);
+      },
       set: async (sid: string, sess: SessionData) => undefined,
       destroy: async (id: string) => undefined,
-    }
+    };
 
-    const req = { headers: { cookie: 'sid=test' } } as any
-    await applySession(req, { end: () => true, writeHead: () => true } as any, { cookie: { maxAge: 5000 }, store });
+    const req = { headers: { cookie: 'sid=test' } } as any;
+    await applySession(req, { end: () => true, writeHead: () => true } as any, {
+      cookie: { maxAge: 5000 },
+      store,
+    });
 
-    expect
+    expect;
     expect(req.session.cookie.expires).toBeInstanceOf(Date);
   });
   test('should extend EventEmitter', () => {
@@ -353,7 +349,9 @@ describe('Store', () => {
 
 describe('callback store', () => {
   it('should work', async () => {
-    const server = setUpServer(defaultHandler, { store: new CbStore() as unknown as ExpressStore });
+    const server = setUpServer(defaultHandler, {
+      store: (new CbStore() as unknown) as ExpressStore,
+    });
     const agent = request.agent(server);
     await agent
       .post('/')
@@ -362,13 +360,13 @@ describe('callback store', () => {
       .get('/')
       .expect('1')
       .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
-  })
-})
+  });
+});
 
 describe('promisifyStore', () => {
   test('should returns the store itself (with console.warn)', async () => {
     const store = new CbStore();
-    expect(promisifyStore(store as unknown as ExpressStore)).toBe(store)
+    expect(promisifyStore((store as unknown) as ExpressStore)).toBe(store);
   });
 });
 
