@@ -11,7 +11,7 @@ import {
   SessionData,
   expressSession,
 } from '../src';
-import { Options, SessionStore } from '../src/types';
+import { Options } from '../src/types';
 import MemoryStore from '../src/store/memory';
 import { Store as ExpressStore } from 'express-session';
 import { IncomingMessage } from 'http';
@@ -78,7 +78,7 @@ describe('applySession', () => {
   });
 
   test('should do nothing if req.session is defined', async () => {
-    const server = setUpServer(defaultHandler, undefined, (req, res) => {
+    const server = setUpServer(defaultHandler, undefined, (req) => {
       req.session = {} as any;
     });
     await request(server)

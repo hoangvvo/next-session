@@ -2,7 +2,7 @@
 // Switch out node-fetch since it cannot save cookie
 import path from 'path';
 import http from 'http';
-import spawn from 'cross-spawn';
+import { spawn } from 'child_process';
 import nextServer from 'next';
 
 /**

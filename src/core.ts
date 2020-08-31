@@ -140,6 +140,8 @@ export async function applySession<T = {}>(
 
   const destroy = async () => {
     await options.store.__destroy(req.session.id);
+    // This is a valid TS error, but considering its usage, it's fine.
+    // @ts-ignore
     delete req.session;
   };
 
