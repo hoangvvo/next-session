@@ -32,6 +32,7 @@ export interface NormalizedSessionStore {
   __set: (sid: string, sess: SessionData) => Promise<void>;
   __destroy: (sid: string) => Promise<void>;
   __touch?: (sid: string, sess: SessionData) => Promise<void>;
+  __normalized: true,
 }
 
 export interface CookieOptions {

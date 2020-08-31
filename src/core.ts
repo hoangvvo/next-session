@@ -69,9 +69,10 @@ const save = async (
   }
 };
 
-function setupStore(store: SessionStore | ExpressStore) {
+function setupStore(store: SessionStore | ExpressStore | NormalizedSessionStore) {
+  if ('__normalized' in store) return store;
   const s = (store as unknown) as NormalizedSessionStore;
-  if (isCallbackStore(store)) {
+  if (isCallbackStore(store as SessionStore | ExpressStore)) {
     s.__destroy = promisify(store.destroy).bind(store);
     // @ts-ignore
     s.__get = promisify(store.get).bind(store);
@@ -86,6 +87,7 @@ function setupStore(store: SessionStore | ExpressStore) {
     s.__set = store.set.bind(store);
     s.__touch = store.touch?.bind(store);
   }
+  s.__normalized = true;
   return s;
 }
 
