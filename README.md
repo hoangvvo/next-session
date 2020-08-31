@@ -265,9 +265,7 @@ const MongoStore = require('connect-mongo')(expressSession);
 
 ### Implementation
 
-A compatible session store must include three functions: `set(sid, session)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions can either return **Promises** or **callback** in the last argument.
-
-The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness. (only works with `{ session }`)
+A compatible session store must include three functions: `set(sid, session)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions can either return **Promises** or allowing **callback** in the last argument.
 
 ## Contributing
 
