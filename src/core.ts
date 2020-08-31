@@ -58,7 +58,6 @@ const save = async (
 ) => {
   if (!req.session) return;
   const obj: SessionData = {} as any;
-
   for (const key in req.session) {
     if (!(key === ('isNew' || key === 'id'))) obj[key] = req.session[key];
   }

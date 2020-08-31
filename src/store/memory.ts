@@ -25,7 +25,7 @@ export default class MemoryStore extends EventEmitter implements SessionStore {
         Date.now() < session.cookie.expires.getTime()
       ) {
         //  check expires before returning
-        return Promise.resolve(session as SessionData);
+        return Promise.resolve(session);
       }
 
       self.destroy(sid);
@@ -53,7 +53,7 @@ export default class MemoryStore extends EventEmitter implements SessionStore {
   }
 
   all() {
-    return Promise.resolve(this.sessions);
+    return Promise.resolve(Object.values(this.sessions));
   }
 
   destroy(sid: string) {

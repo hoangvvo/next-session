@@ -16,7 +16,6 @@ import MemoryStore from '../src/store/memory';
 import { Store as ExpressStore } from 'express-session';
 import { IncomingMessage } from 'http';
 import { NextPage, NextApiHandler, NextComponentType } from 'next';
-import { getCookieData } from '../src/core';
 const signature = require('cookie-signature');
 const { parse: parseCookie } = require('cookie');
 
@@ -314,14 +313,18 @@ describe('connect middleware', () => {
 });
 
 describe('Store', () => {
-  test('should convert String() expires to Date() expires', () => {
-    let sess = {
-      cookie: getCookieData({ maxAge: 100000 }),
-    };
-    //  force sess.cookie.expires to be string
-    sess = JSON.parse(JSON.stringify(sess));
-    const cookie = getCookieData(sess.cookie);
-    expect(cookie.expires).toBeInstanceOf(Date);
+  test('should convert String() expires to Date() expires', async () => {
+    // FIXME
+    const store = new MemoryStore();
+    store.sessions = {
+      //  force sess.cookie.expires to be string
+      test: JSON.parse(JSON.stringify({
+        cookie: ({ maxAge: 100000 }),
+      }))
+    }
+    const req ={ headers: { cookie: 'sid=test' } } as any
+    await applySession(req, { end: () => true, writeHead: () => true } as any);
+    expect(req.session.cookie.expires).toBeInstanceOf(Date);
   });
   test('should extend EventEmitter', () => {
     // @ts-ignore
