@@ -1,18 +1,17 @@
 import { parse, serialize } from 'cookie';
 import { nanoid } from 'nanoid';
 import { Store as ExpressStore } from 'express-session';
+import { IncomingMessage, ServerResponse } from 'http';
+import { promisify } from 'util';
 import MemoryStore from './store/memory';
 import {
   Options,
   SessionOptions,
   SessionData,
   SessionStore,
-  CookieOptions,
   SessionCookieData,
   NormalizedSessionStore,
 } from './types';
-import { IncomingMessage, ServerResponse } from 'http';
-import { promisify } from 'util';
 
 function isCallbackStore<E extends ExpressStore, S extends SessionStore>(
   store: E | S
@@ -91,6 +90,8 @@ function setupStore(store: SessionStore | ExpressStore) {
   return s;
 }
 
+let memoryStore: MemoryStore;
+
 export async function applySession<T = {}>(
   req: IncomingMessage & { session: SessionData },
   res: ServerResponse,
@@ -100,7 +101,7 @@ export async function applySession<T = {}>(
 
   const options: SessionOptions = {
     name: opts?.name || 'sid',
-    store: setupStore(opts?.store || new MemoryStore()),
+    store: setupStore(opts?.store || (memoryStore = memoryStore || new MemoryStore())),
     genid: opts?.genid || nanoid,
     encode: opts?.encode,
     decode: opts?.decode,

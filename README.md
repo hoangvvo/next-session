@@ -222,7 +222,7 @@ const currentUser = req.session.user; // "John Doe"
 Destroy to current session and remove it from session store.
 
 ```javascript
-if (loggedOut) req.session.destroy();
+if (loggedOut) await req.session.destroy();
 ```
 
 ### req.session.commit()

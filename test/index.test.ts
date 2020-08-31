@@ -20,37 +20,38 @@ const signature = require('cookie-signature');
 const { parse: parseCookie } = require('cookie');
 
 class CbStore {
-  sessions: any;
+  sessions: Record<string, any> = {};
   constructor() {
-    this.sessions = {};
   }
 
   /* eslint-disable no-unused-expressions */
   get(sid: string, cb: (err?: any, session?: SessionData | null) => void) {
-    cb && cb(null, this.sessions);
+    cb && cb(null, this.sessions[sid]);
   }
 
   set(
     sid: string,
     sess: SessionData,
-    cb: (err: any, session?: SessionData | null) => void
+    cb: (err?: any) => void
   ) {
-    cb && cb(null, this.sessions);
+    this.sessions[sid] = sess;
+    cb && cb();
   }
 
   destroy(
     sid: string,
-    cb: (err: any, session?: SessionData | null) => void
+    cb: (err?: any) => void
   ) {
-    cb && cb(null, this.sessions);
+    delete this.sessions[sid];
+    cb();
   }
 
   touch(
     sid: string,
     sess: SessionData,
-    cb: (err: any, session?: SessionData | null) => void
+    cb: (err: any) => void
   ) {
-    cb && cb(null, this.sessions);
+    cb && cb(null);
   }
 }
 
@@ -123,8 +124,7 @@ describe('applySession', () => {
       .expect('1')
       .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
     await agent.delete('/');
-    // FIXME: This should be 0, but for some reason we get an orphaned session after setUpServer
-    expect(Object.keys(await store.all()).length).toBe(1);
+    expect(Object.keys(store.sessions).length).toBe(0);
     await agent
       .get('/')
       .expect('0')
@@ -318,12 +318,13 @@ describe('Store', () => {
     const store = new MemoryStore();
     store.sessions = {
       //  force sess.cookie.expires to be string
-      test: JSON.parse(JSON.stringify({
-        cookie: ({ maxAge: 100000 }),
-      }))
+      test: JSON.stringify({
+        cookie: ({ maxAge: 100000, expires: new Date(Date.now() + 4000) }),
+      })
     }
-    const req ={ headers: { cookie: 'sid=test' } } as any
-    await applySession(req, { end: () => true, writeHead: () => true } as any);
+    const req = { headers: { cookie: 'sid=test' } } as any
+    await applySession(req, { end: () => true, writeHead: () => true } as any, { cookie: { maxAge: 5000 }, store });
+
     expect(req.session.cookie.expires).toBeInstanceOf(Date);
   });
   test('should extend EventEmitter', () => {

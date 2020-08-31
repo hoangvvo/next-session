@@ -1,10 +1,7 @@
-import { SessionStore, SessionData } from '../types';
 import { EventEmitter } from 'events';
-
-const s: Record<string, string> = {}
-
+import { SessionStore, SessionData } from '../types';
 export default class MemoryStore extends EventEmitter implements SessionStore {
-  public sessions = s;
+  public sessions :Record<string, string> = {}
 
   constructor() {
     super();
