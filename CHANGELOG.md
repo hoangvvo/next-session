@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.3.0
+
+- Remove the need to use promisifyStore and refactor (#257)
+- Bump dependencies
+
 ## 3.2.5
 
 - Fix autoCommit usage with res.writeHead (#253)
