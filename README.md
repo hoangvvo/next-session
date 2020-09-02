@@ -200,8 +200,6 @@ session({
   decode: (raw) => signature.unsign(raw.slice(2), secret),
   encode: (sid) => (sid ? 's:' + signature.sign(sid, secret) : null),
 });
-
-// async function is also supported
 ```
 
 ## API
@@ -266,6 +264,18 @@ const MongoStore = require('connect-mongo')(expressSession);
 ### Implementation
 
 A compatible session store must include three functions: `set(sid, session)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions can either return **Promises** or allowing **callback** in the last argument.
+
+```js
+// Both of the below work!
+
+function get(sid) {
+  return promiseGetFn(sid)
+}
+
+function get(sid, done) {
+  cbGetFn(sid, done);
+}
+```
 
 ## Contributing
 

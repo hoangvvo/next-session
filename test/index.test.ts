@@ -351,15 +351,21 @@ describe('callback store', () => {
   it('should work', async () => {
     const server = setUpServer(defaultHandler, {
       store: (new CbStore() as unknown) as ExpressStore,
+      rolling: true
     });
     const agent = request.agent(server);
     await agent
       .post('/')
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
     await agent
-      .get('/')
-      .expect('1')
+      .post('/')
       .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    await agent.get('/').expect('2');
+    await agent.delete('/');
+    await await agent
+      .post('/')
+      .expect('1')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
   });
 });
 
