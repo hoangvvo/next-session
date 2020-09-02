@@ -25,14 +25,16 @@ const stringify = (sess: SessionData) =>
     key === 'cookie' || key === 'isNew' || key === 'id' ? undefined : val
   );
 
+const SESS_PREV = Symbol('session#prev');
+const SESS_TOUCHED = Symbol('session#touched')
+
 const commitHead = (
   req: IncomingMessage & { session?: SessionData | null },
   res: ServerResponse,
   options: SessionOptions,
-  touched: boolean
 ) => {
   if (res.headersSent || !req.session) return;
-  if (req.session.isNew || (options.rolling && touched)) {
+  if (req.session.isNew || (options.rolling && (req as any)[SESS_TOUCHED])) {
     res.setHeader(
       'Set-Cookie',
       serialize(
@@ -45,9 +47,7 @@ const commitHead = (
 
 const save = async (
   req: IncomingMessage & { session?: SessionData | null },
-  prevSessStr: string | undefined,
   options: SessionOptions,
-  touched: boolean
 ) => {
   if (!req.session) return;
   const obj: SessionData = {} as any;
@@ -55,9 +55,9 @@ const save = async (
     if (!(key === ('isNew' || key === 'id'))) obj[key] = req.session[key];
   }
 
-  if (stringify(req.session) !== prevSessStr) {
+  if (stringify(req.session) !== (req as any)[SESS_PREV]) {
     await options.store.__set(req.session.id, obj);
-  } else if (touched) {
+  } else if ((req as any)[SESS_TOUCHED]) {
     await options.store.__touch?.(req.session.id, obj);
   }
 };
@@ -144,11 +144,9 @@ export async function applySession<T = {}>(
 
   const sess = sessId ? await options.store.__get(sessId) : null;
 
-  let touched = false;
-
   const commit = async () => {
-    commitHead(req, res, options, touched);
-    await save(req, prevSessStr, options, touched);
+    commitHead(req, res, options);
+    await save(req, options);
   };
 
   const destroy = async () => {
@@ -182,24 +180,24 @@ export async function applySession<T = {}>(
   }
 
   // Extend session expiry
-  if ((touched = shouldTouch(req.session.cookie, options.touchAfter))) {
+  if (((req as any)[SESS_TOUCHED] = shouldTouch(req.session.cookie, options.touchAfter))) {
     req.session.cookie.expires = new Date(
       Date.now() + req.session.cookie.maxAge! * 1000
     );
   }
 
-  const prevSessStr: string | undefined = sess ? stringify(sess) : undefined;
+  (req as any)[SESS_PREV] = sess ? stringify(sess) : '{}';
 
   // autocommit
   if (options.autoCommit) {
     const oldWritehead = res.writeHead;
     res.writeHead = function resWriteHeadProxy(...args: any) {
-      commitHead(req, res, options, touched);
+      commitHead(req, res, options);
       return oldWritehead.apply(this, args);
     };
     const oldEnd = res.end;
     res.end = async function resEndProxy(...args: any) {
-      await save(req, prevSessStr, options, touched);
+      await save(req, options);
       oldEnd.apply(this, args);
     };
   }
