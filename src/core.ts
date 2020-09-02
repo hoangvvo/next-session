@@ -2,7 +2,6 @@ import { parse, serialize } from 'cookie';
 import { nanoid } from 'nanoid';
 import { Store as ExpressStore } from 'express-session';
 import { IncomingMessage, ServerResponse } from 'http';
-import { promisify } from 'util';
 import MemoryStore from './store/memory';
 import {
   Options,
@@ -12,12 +11,6 @@ import {
   SessionCookieData,
   NormalizedSessionStore,
 } from './types';
-
-function isCallbackStore<E extends ExpressStore, S extends SessionStore>(
-  store: E | S
-): store is E {
-  return store.get.length === 2;
-}
 
 const shouldTouch = (cookie: SessionCookieData, touchAfter: number) => {
   if (touchAfter === -1 || !cookie.maxAge) return false;
@@ -72,21 +65,41 @@ const save = async (
 function setupStore(store: SessionStore | ExpressStore | NormalizedSessionStore) {
   if ('__normalized' in store) return store;
   const s = (store as unknown) as NormalizedSessionStore;
-  if (isCallbackStore(store as SessionStore | ExpressStore)) {
-    s.__destroy = promisify(store.destroy).bind(store);
-    // @ts-ignore
-    s.__get = promisify(store.get).bind(store);
-    // @ts-ignore
-    s.__set = promisify(store.set).bind(store);
-    if (store.touch)
-      // @ts-ignore
-      s.__touch = promisify(store.touch).bind(store);
-  } else {
-    s.__destroy = store.destroy.bind(store);
-    s.__get = store.get.bind(store);
-    s.__set = store.set.bind(store);
-    s.__touch = store.touch?.bind(store);
+
+  s.__destroy = function destroy(sid) {
+    return new Promise((resolve, reject) => {
+      const done = (err: any) => err ? reject(err) : resolve()
+      const result = store.destroy(sid, done);
+      if (result && typeof result.then === 'function') result.then(resolve, reject);
+    })
   }
+
+  s.__get = function get(sid) {
+    return new Promise((resolve, reject) => {
+      const done = (err: any, val: SessionData) => err ? reject(err) : resolve(val)
+      const result = store.destroy(sid, done);
+      if (result && typeof result.then === 'function') result.then(resolve, reject);
+    })
+  }
+
+  s.__set = function set(sid, sess) {
+    return new Promise((resolve, reject) => {
+      const done = (err: any) => err ? reject(err) : resolve();
+      const result = store.set(sid, sess, done);
+      if (result && typeof result.then === 'function') result.then(resolve, reject);
+    })
+  }
+
+  if (store.touch) {
+    s.__touch = function touch(sid, sess) {
+      return new Promise((resolve, reject) => {
+        const done = (err: any) => err ? reject(err) : resolve();
+        const result = store.touch(sid, sess, done);
+        if (result && typeof result.then === 'function') result.then(resolve, reject);
+      })
+    }
+  }
+
   s.__normalized = true;
   return s;
 }
