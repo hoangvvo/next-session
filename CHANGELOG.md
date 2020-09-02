@@ -1,6 +1,13 @@
 # Changelog
 
-## 3.3.0
+## 3.3.1
+
+- Fix callback store support (#273)
+- Set cookie properly :facepalm:
+
+## ~~3.3.0~~
+
+*Broken release*
 
 - Remove the need to use promisifyStore and refactor (#257)
 - Bump dependencies
