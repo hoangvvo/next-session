@@ -69,7 +69,7 @@ function setupStore(store: SessionStore | ExpressStore | NormalizedSessionStore)
   s.__destroy = function destroy(sid) {
     return new Promise((resolve, reject) => {
       const done = (err: any) => err ? reject(err) : resolve()
-      const result = store.destroy(sid, done);
+      const result = this.destroy(sid, done);
       if (result && typeof result.then === 'function') result.then(resolve, reject);
     })
   }
@@ -77,7 +77,7 @@ function setupStore(store: SessionStore | ExpressStore | NormalizedSessionStore)
   s.__get = function get(sid) {
     return new Promise((resolve, reject) => {
       const done = (err: any, val: SessionData) => err ? reject(err) : resolve(val)
-      const result = store.destroy(sid, done);
+      const result = this.get(sid, done);
       if (result && typeof result.then === 'function') result.then(resolve, reject);
     })
   }
@@ -85,7 +85,7 @@ function setupStore(store: SessionStore | ExpressStore | NormalizedSessionStore)
   s.__set = function set(sid, sess) {
     return new Promise((resolve, reject) => {
       const done = (err: any) => err ? reject(err) : resolve();
-      const result = store.set(sid, sess, done);
+      const result = this.set(sid, sess, done);
       if (result && typeof result.then === 'function') result.then(resolve, reject);
     })
   }
@@ -94,7 +94,7 @@ function setupStore(store: SessionStore | ExpressStore | NormalizedSessionStore)
     s.__touch = function touch(sid, sess) {
       return new Promise((resolve, reject) => {
         const done = (err: any) => err ? reject(err) : resolve();
-        const result = store.touch(sid, sess, done);
+        const result = this.touch(sid, sess, done);
         if (result && typeof result.then === 'function') result.then(resolve, reject);
       })
     }
