@@ -26,12 +26,12 @@ const stringify = (sess: SessionData) =>
   );
 
 const SESS_PREV = Symbol('session#prev');
-const SESS_TOUCHED = Symbol('session#touched')
+const SESS_TOUCHED = Symbol('session#touched');
 
 const commitHead = (
   req: IncomingMessage & { session?: SessionData | null },
   res: ServerResponse,
-  options: SessionOptions,
+  options: SessionOptions
 ) => {
   if (res.headersSent || !req.session) return;
   if (req.session.isNew || (options.rolling && (req as any)[SESS_TOUCHED])) {
@@ -39,7 +39,15 @@ const commitHead = (
       'Set-Cookie',
       serialize(
         options.name,
-        options.encode ? options.encode(req.session.id) : req.session.id
+        options.encode ? options.encode(req.session.id) : req.session.id,
+        {
+          path: options.cookie.path,
+          httpOnly: options.cookie.httpOnly,
+          expires: options.cookie.expires,
+          domain: options.cookie.domain,
+          sameSite: options.cookie.sameSite,
+          secure: options.cookie.secure,
+        }
       )
     );
   }
@@ -47,7 +55,7 @@ const commitHead = (
 
 const save = async (
   req: IncomingMessage & { session?: SessionData | null },
-  options: SessionOptions,
+  options: SessionOptions
 ) => {
   if (!req.session) return;
   const obj: SessionData = {} as any;
@@ -62,42 +70,49 @@ const save = async (
   }
 };
 
-function setupStore(store: SessionStore | ExpressStore | NormalizedSessionStore) {
+function setupStore(
+  store: SessionStore | ExpressStore | NormalizedSessionStore
+) {
   if ('__normalized' in store) return store;
   const s = (store as unknown) as NormalizedSessionStore;
 
   s.__destroy = function destroy(sid) {
     return new Promise((resolve, reject) => {
-      const done = (err: any) => err ? reject(err) : resolve()
+      const done = (err: any) => (err ? reject(err) : resolve());
       const result = this.destroy(sid, done);
-      if (result && typeof result.then === 'function') result.then(resolve, reject);
-    })
-  }
+      if (result && typeof result.then === 'function')
+        result.then(resolve, reject);
+    });
+  };
 
   s.__get = function get(sid) {
     return new Promise((resolve, reject) => {
-      const done = (err: any, val: SessionData) => err ? reject(err) : resolve(val)
+      const done = (err: any, val: SessionData) =>
+        err ? reject(err) : resolve(val);
       const result = this.get(sid, done);
-      if (result && typeof result.then === 'function') result.then(resolve, reject);
-    })
-  }
+      if (result && typeof result.then === 'function')
+        result.then(resolve, reject);
+    });
+  };
 
   s.__set = function set(sid, sess) {
     return new Promise((resolve, reject) => {
-      const done = (err: any) => err ? reject(err) : resolve();
+      const done = (err: any) => (err ? reject(err) : resolve());
       const result = this.set(sid, sess, done);
-      if (result && typeof result.then === 'function') result.then(resolve, reject);
-    })
-  }
+      if (result && typeof result.then === 'function')
+        result.then(resolve, reject);
+    });
+  };
 
   if (store.touch) {
     s.__touch = function touch(sid, sess) {
       return new Promise((resolve, reject) => {
-        const done = (err: any) => err ? reject(err) : resolve();
+        const done = (err: any) => (err ? reject(err) : resolve());
         const result = this.touch(sid, sess, done);
-        if (result && typeof result.then === 'function') result.then(resolve, reject);
-      })
-    }
+        if (result && typeof result.then === 'function')
+          result.then(resolve, reject);
+      });
+    };
   }
 
   s.__normalized = true;
@@ -157,6 +172,7 @@ export async function applySession<T = {}>(
   };
 
   if (sess) {
+    (req as any)[SESS_PREV] = stringify(sess);
     const { cookie, ...data } = sess;
     if (typeof cookie.expires === 'string')
       cookie.expires = new Date(cookie.expires);
@@ -169,6 +185,7 @@ export async function applySession<T = {}>(
     };
     for (const key in data) req.session[key] = data[key];
   } else {
+    (req as any)[SESS_PREV] = '{}';
     req.session = {
       cookie: options.cookie,
       commit,
@@ -180,13 +197,16 @@ export async function applySession<T = {}>(
   }
 
   // Extend session expiry
-  if (((req as any)[SESS_TOUCHED] = shouldTouch(req.session.cookie, options.touchAfter))) {
+  if (
+    ((req as any)[SESS_TOUCHED] = shouldTouch(
+      req.session.cookie,
+      options.touchAfter
+    ))
+  ) {
     req.session.cookie.expires = new Date(
       Date.now() + req.session.cookie.maxAge! * 1000
     );
   }
-
-  (req as any)[SESS_PREV] = sess ? stringify(sess) : '{}';
 
   // autocommit
   if (options.autoCommit) {
