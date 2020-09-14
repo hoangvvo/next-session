@@ -41,7 +41,7 @@ export interface CookieOptions {
   path?: string;
   domain?: string;
   sameSite?: boolean | 'lax' | 'strict' | 'none';
-  maxAge?: number;
+  maxAge?: number | null;
 }
 
 export interface Options {
@@ -55,12 +55,3 @@ export interface Options {
   cookie?: CookieOptions;
   autoCommit?: boolean;
 }
-
-export type SessionOptions = Omit<
-  Required<Options>,
-  'encode' | 'decode' | 'store' | 'cookie'
-> &
-  Pick<Options, 'encode' | 'decode'> & {
-    store: NormalizedSessionStore;
-    cookie: SessionCookieData;
-  };

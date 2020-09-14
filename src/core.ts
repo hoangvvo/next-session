@@ -5,12 +5,19 @@ import { IncomingMessage, ServerResponse } from 'http';
 import MemoryStore from './store/memory';
 import {
   Options,
-  SessionOptions,
   SessionData,
   SessionStore,
   SessionCookieData,
   NormalizedSessionStore,
 } from './types';
+
+type SessionOptions = Omit<
+  Required<Options>,
+  'encode' | 'decode' | 'store' | 'cookie'
+> &
+  Pick<Options, 'encode' | 'decode'> & {
+    store: NormalizedSessionStore;
+  };
 
 const shouldTouch = (cookie: SessionCookieData, touchAfter: number) => {
   if (touchAfter === -1 || !cookie.maxAge) return false;
@@ -41,12 +48,12 @@ const commitHead = (
         options.name,
         options.encode ? options.encode(req.session.id) : req.session.id,
         {
-          path: options.cookie.path,
-          httpOnly: options.cookie.httpOnly,
-          expires: options.cookie.expires,
-          domain: options.cookie.domain,
-          sameSite: options.cookie.sameSite,
-          secure: options.cookie.secure,
+          path: req.session.cookie.path,
+          httpOnly: req.session.cookie.httpOnly,
+          expires: req.session.cookie.expires,
+          domain: req.session.cookie.domain,
+          sameSite: req.session.cookie.sameSite,
+          secure: req.session.cookie.secure,
         }
       )
     );
@@ -138,14 +145,6 @@ export async function applySession<T = {}>(
     decode: opts?.decode,
     rolling: opts?.rolling || false,
     touchAfter: opts?.touchAfter ? opts.touchAfter : 0,
-    cookie: {
-      path: opts?.cookie?.path || '/',
-      maxAge: opts?.cookie?.maxAge || null,
-      httpOnly: opts?.cookie?.httpOnly || true,
-      domain: opts?.cookie?.domain || undefined,
-      sameSite: opts?.cookie?.sameSite,
-      secure: opts?.cookie?.secure || false,
-    },
     autoCommit:
       typeof opts?.autoCommit !== 'undefined' ? opts.autoCommit : true,
   };
@@ -187,13 +186,20 @@ export async function applySession<T = {}>(
   } else {
     (req as any)[SESS_PREV] = '{}';
     req.session = {
-      cookie: options.cookie,
+      cookie: {
+        path: opts?.cookie?.path || '/',
+        maxAge: opts?.cookie?.maxAge || null,
+        httpOnly: opts?.cookie?.httpOnly || true,
+        domain: opts?.cookie?.domain || undefined,
+        sameSite: opts?.cookie?.sameSite,
+        secure: opts?.cookie?.secure || false,
+      },
       commit,
       destroy,
       isNew: true,
-      id: nanoid(),
+      id: options.genid(),
     };
-    if (options.cookie.maxAge) req.session.cookie.expires = new Date();
+    if (opts?.cookie?.maxAge) req.session.cookie.expires = new Date();
   }
 
   // Extend session expiry
