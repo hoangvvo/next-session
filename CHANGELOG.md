@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.2
+
+- Fix cookie expiry. (Fix #280)
+
 ## 3.3.1
 
 - Fix callback store support (#273)

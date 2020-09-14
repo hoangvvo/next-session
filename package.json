@@ -1,6 +1,6 @@
 {
   "name": "next-session",
-  "version": "3.3.1",
+  "version": "3.3.2",
   "description": "Simple promise-based session middleware for Next.js",
   "keywords": [
     "javascript",
