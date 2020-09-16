@@ -143,7 +143,6 @@ describe('applySession', () => {
         res.end(`${req.session.cookie.expires?.valueOf()}`);
       },
       {
-        rolling: true,
         touchAfter: 5000,
         cookie: { maxAge: 60 * 60 * 24 },
         store: new MemoryStore(),
@@ -157,7 +156,6 @@ describe('applySession', () => {
     });
     const res = await agent.get('/');
     expect(res.text).toStrictEqual(originalExpires);
-    // should not set-cookie despite rolling=true
     expect(res.header).not.toHaveProperty('set-cookie');
   });
 
@@ -350,8 +348,7 @@ describe('Store', () => {
 describe('callback store', () => {
   it('should work', async () => {
     const server = setUpServer(defaultHandler, {
-      store: (new CbStore() as unknown) as ExpressStore,
-      rolling: true
+      store: (new CbStore() as unknown) as ExpressStore
     });
     const agent = request.agent(server);
     await agent

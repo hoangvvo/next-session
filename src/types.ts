@@ -50,7 +50,6 @@ export interface Options {
   genid?: () => string;
   encode?: (rawSid: string) => string;
   decode?: (encryptedSid: string) => string;
-  rolling?: boolean;
   touchAfter?: number;
   cookie?: CookieOptions;
   autoCommit?: boolean;

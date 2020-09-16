@@ -178,8 +178,7 @@ await applySession(req, res, options);
 | genid | The function that generates a string for a new session ID. | [`nanoid`](https://github.com/ai/nanoid) |
 | encode | Transforms session ID before setting cookie. It takes the raw session ID and returns the decoded/decrypted session ID. | undefined |
 | decode | Transforms session ID back while getting from cookie. It should return the encoded/encrypted session ID | undefined |
-| touchAfter | Only touch (extend session lifetime despite no modification) after an amount of time to decrease database load. Setting the value to `-1` will disable `touch()`. | `0` (Touch every time) |
-| rolling | Extends the life time of the cookie in the browser if the session is touched. This respects touchAfter. | `false` |
+| touchAfter | Only touch (extend session lifetime, both in browser and store, despite no modification) after an amount of time to decrease database load. Setting the value to `-1` will disable `touch`. | `0` (Touch every time) |
 | autoCommit | Automatically commit session. Disable this if you want to manually `session.commit()` | `true` |
 | cookie.secure | Specifies the boolean value for the **Secure** `Set-Cookie` attribute. | `false` |
 | cookie.httpOnly | Specifies the boolean value for the **httpOnly** `Set-Cookie` attribute. | `true` |

@@ -41,7 +41,7 @@ const commitHead = (
   options: SessionOptions
 ) => {
   if (res.headersSent || !req.session) return;
-  if (req.session.isNew || (options.rolling && (req as any)[SESS_TOUCHED])) {
+  if (req.session.isNew || (req as any)[SESS_TOUCHED]) {
     res.setHeader(
       'Set-Cookie',
       serialize(
@@ -69,7 +69,6 @@ const save = async (
   for (const key in req.session) {
     if (!(key === ('isNew' || key === 'id'))) obj[key] = req.session[key];
   }
-
   if (stringify(req.session) !== (req as any)[SESS_PREV]) {
     await options.store.__set(req.session.id, obj);
   } else if ((req as any)[SESS_TOUCHED]) {
@@ -143,7 +142,6 @@ export async function applySession<T = {}>(
     genid: opts?.genid || nanoid,
     encode: opts?.encode,
     decode: opts?.decode,
-    rolling: opts?.rolling || false,
     touchAfter: opts?.touchAfter ? opts.touchAfter : 0,
     autoCommit:
       typeof opts?.autoCommit !== 'undefined' ? opts.autoCommit : true,
