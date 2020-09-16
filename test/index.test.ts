@@ -63,18 +63,23 @@ function setUpServer(
 ) {
   const server = createServer(async (req: IncomingMessage, res) => {
     if (prehandler) await prehandler(req, res);
-    if (options !== false) await applySession(req as any, res, options);
+    if (options !== false) {
+      await applySession(req as any, res, options);
+    }
     await handler(req, res);
   });
   return server;
 }
 
 describe('applySession', () => {
-  test('should default to MemoryStore', async () => {
+  test('should default to MemoryStore that attaches to global', async () => {
     const req: any = {};
     const res: any = { end: () => null };
     await applySession(req, res);
     expect(req.sessionStore).toBeInstanceOf(MemoryStore);
+    const req2: any = {};
+    await applySession(req2, res);
+    expect(req2.sessionStore).toBe(req.sessionStore)
   });
 
   test('should do nothing if req.session is defined', async () => {
@@ -87,7 +92,7 @@ describe('applySession', () => {
   });
 
   test('should create and persist session', async () => {
-    const server = setUpServer(defaultHandler);
+    const server = setUpServer(defaultHandler, { store: new MemoryStore() });
     const agent = request.agent(server);
     await agent
       .post('/')
@@ -125,7 +130,7 @@ describe('applySession', () => {
         if (req.method === 'POST') await req.session.commit();
         res.end((req.session && req.session.hello) || '');
       },
-      { autoCommit: false }
+      { autoCommit: false, store: new MemoryStore() }
     );
     const agent = request.agent(server);
     await agent
@@ -136,14 +141,69 @@ describe('applySession', () => {
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
   });
 
-  test('should respect touchAfter', async () => {
+  test('should always touch by default', async () => {
     const server = setUpServer(
       (req, res) => {
         req.session.hello = 'world';
         res.end(`${req.session.cookie.expires?.valueOf()}`);
       },
       {
-        touchAfter: 5000,
+        cookie: { maxAge: 60 * 60 * 24 },
+        store: new MemoryStore(),
+      }
+    );
+    const agent = request.agent(server);
+    await agent.post('/');
+    let originalExpires;
+    await agent.get('/').then((res) => {
+      originalExpires = res.text;
+    });
+    const res = await agent.get('/');
+    expect(res.text).not.toStrictEqual(originalExpires);
+    expect(res.header).toHaveProperty('set-cookie');
+  });
+
+  test('should touch if lifetime > touchAfter', async () => {
+    const sessionStore = new MemoryStore();
+    let sessId: string = ''
+    const server = setUpServer(
+      (req, res) => {
+        req.session.hello = 'world';
+        sessId = req.session.id;
+        res.end(`${req.session.cookie.expires?.valueOf()}`);
+      },
+      {
+        touchAfter: 8 * 1000, // 8 sec
+        cookie: { maxAge: 60 * 60 * 24 },
+        store: sessionStore,
+      }
+    );
+    const agent = request.agent(server);
+    await agent.post('/');
+    let originalExpires;
+    await agent.get('/').then((res) => {
+      originalExpires = res.text;
+    });
+
+    //  Shift expires 10 seconds to simulate 10 seconds time fly
+    const sess = await sessionStore.get(sessId as string);
+    // Force 10 sec back in the past for cookie to expire
+    sess!.cookie.expires! = new Date(sess!.cookie.expires!.valueOf() - 10 * 1000)
+    await sessionStore.set(sessId as string, sess!)
+
+    const res = await agent.get('/');
+    expect(res.text).not.toStrictEqual(originalExpires);
+    expect(res.header).toHaveProperty('set-cookie');
+  })
+
+  test('should not touch if lifetime < touchAfter', async () => {
+    const server = setUpServer(
+      (req, res) => {
+        req.session.hello = 'world';
+        res.end(`${req.session.cookie.expires?.valueOf()}`);
+      },
+      {
+        touchAfter: 20 * 1000,
         cookie: { maxAge: 60 * 60 * 24 },
         store: new MemoryStore(),
       }
@@ -215,7 +275,7 @@ describe('applySession', () => {
       const isNew = req.session.isNew;
       req.session.foo = 'bar';
       res.end(String(isNew));
-    });
+    }, {store: new MemoryStore()});
     const agent = request.agent(server);
     await agent.get('/').expect('true');
     await agent.get('/').expect('false');
@@ -225,10 +285,35 @@ describe('applySession', () => {
     const server = setUpServer((req, res) => {
       req.session.foo = 'bar';
       res.writeHead(302, { Location: '/login' }).end();
-    });
+    }, {store: new MemoryStore()});
     await request(server)
       .post('/')
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+  });
+
+  test('should convert String() expires to Date() expires', async () => {
+    const sessions: Record<string, string> = {
+      //  force sess.cookie.expires to be string
+      test: JSON.stringify({
+        cookie: { maxAge: 100000, expires: new Date(Date.now() + 4000) },
+      }),
+    };
+
+    const store = {
+      get: async (id: string) => {
+        return JSON.parse(sessions[id]);
+      },
+      set: async (sid: string, sess: SessionData) => undefined,
+      destroy: async (id: string) => undefined,
+    };
+
+    const req = { headers: { cookie: 'sid=test' } } as any;
+    await applySession(req, { end: () => true, writeHead: () => true } as any, {
+      cookie: { maxAge: 5000 },
+      store,
+    });
+
+    expect(req.session.cookie.expires).toBeInstanceOf(Date);
   });
 });
 
@@ -302,32 +387,6 @@ describe('connect middleware', () => {
 });
 
 describe('Store', () => {
-  test('should convert String() expires to Date() expires', async () => {
-    // FIXME
-    const sessions: Record<string, string> = {
-      //  force sess.cookie.expires to be string
-      test: JSON.stringify({
-        cookie: { maxAge: 100000, expires: new Date(Date.now() + 4000) },
-      }),
-    };
-
-    const store = {
-      get: async (id: string) => {
-        return JSON.parse(sessions[id]);
-      },
-      set: async (sid: string, sess: SessionData) => undefined,
-      destroy: async (id: string) => undefined,
-    };
-
-    const req = { headers: { cookie: 'sid=test' } } as any;
-    await applySession(req, { end: () => true, writeHead: () => true } as any, {
-      cookie: { maxAge: 5000 },
-      store,
-    });
-
-    expect;
-    expect(req.session.cookie.expires).toBeInstanceOf(Date);
-  });
   test('should extend EventEmitter', () => {
     // @ts-ignore
     expect(new expressSession.Store()).toBeInstanceOf(EventEmitter);
@@ -415,9 +474,12 @@ describe('MemoryStore', () => {
     const agent = request.agent(server);
     await agent.post('/');
     await agent.get('/').expect('1');
-    //  Mock waiting for 10 second later for cookie to expire
-    const futureTime = new Date(Date.now() + 10000).valueOf();
-    global.Date.now = jest.fn(() => futureTime);
+
+    const sess = await sessionStore.get(sessionId as string);
+    // Force 10 sec back in the past for cookie to expire
+    sess!.cookie.expires! = new Date(sess!.cookie.expires!.valueOf() - 10000)
+    await sessionStore.set(sessionId as string, sess!)
+
     await agent.get('/').expect('0');
     //  Check in the store
     expect(await sessionStore.get(sessionId as string)).toBeNull();
@@ -426,7 +488,5 @@ describe('MemoryStore', () => {
       // @ts-ignore
       await sessionStore.touch(sessionId as string, sessionInstance)
     ).toBeUndefined();
-    // @ts-ignore
-    global.Date.now.mockReset();
   });
 });

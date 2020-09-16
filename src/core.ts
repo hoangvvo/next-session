@@ -171,6 +171,7 @@ export async function applySession<T = {}>(
   if (sess) {
     (req as any)[SESS_PREV] = stringify(sess);
     const { cookie, ...data } = sess;
+    // Some store return cookie.expires as string, convert it to Date
     if (typeof cookie.expires === 'string')
       cookie.expires = new Date(cookie.expires);
     req.session = {
