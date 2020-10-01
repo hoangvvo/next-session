@@ -49,7 +49,7 @@ export interface Options {
   store?: SessionStore | ExpressStore;
   genid?: () => string;
   encode?: (rawSid: string) => string;
-  decode?: (encryptedSid: string) => string;
+  decode?: (encryptedSid: string) => string | null;
   rolling?: boolean;
   touchAfter?: number;
   cookie?: CookieOptions;
