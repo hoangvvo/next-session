@@ -4,6 +4,7 @@ export type SessionData = {
   [key: string]: any;
   id: string;
   cookie: SessionCookieData;
+  commit: () => Promise<void>;
   destroy: () => Promise<void>;
   isNew: boolean;
 };
