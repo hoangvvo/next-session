@@ -8,6 +8,8 @@
 
 Simple *promise-based* session middleware for [Next.js](https://github.com/zeit/next.js). Also works in [micro](https://github.com/zeit/micro) or [Node.js HTTP Server](https://nodejs.org/api/http.html), [Express](https://github.com/expressjs/express), and more.
 
+> For a more battle-tested solution, you should use [express-session](https://github.com/expressjs/session) with [next-connect](https://github.com/hoangvvo/next-connect) instead.
+
 ## Installation
 
 ```sh
