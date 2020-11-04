@@ -2,7 +2,7 @@
 // Switch out node-fetch since it cannot save cookie
 import path from 'path';
 import http from 'http';
-import spawn from 'cross-spawn';
+import { spawn } from 'child_process';
 import nextServer from 'next';
 
 /**
@@ -23,10 +23,10 @@ function promiseCall(obj: any, method: string, ...args: any) {
   return new Promise((resolve, reject) => {
     const newArgs = [
       ...args,
-      function(err: Error, res: any) {
+      function (err: Error, res: any) {
         if (err) return reject(err);
         resolve(res);
-      }
+      },
     ];
 
     obj[method](...newArgs);
@@ -71,19 +71,19 @@ export function runNextCommand(
     const instance = spawn('node', [nextBin, ...args], {
       cwd,
       env,
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
 
     let stderrOutput = '';
     if (options.stderr) {
-      instance.stderr!.on('data', function(chunk) {
+      instance.stderr!.on('data', function (chunk) {
         stderrOutput += chunk;
       });
     }
 
     let stdoutOutput = '';
     if (options.stdout) {
-      instance.stdout!.on('data', function(chunk) {
+      instance.stdout!.on('data', function (chunk) {
         stdoutOutput += chunk;
       });
     }
@@ -91,7 +91,7 @@ export function runNextCommand(
     instance.on('close', () => {
       resolve({
         stdout: stdoutOutput,
-        stderr: stderrOutput
+        stderr: stderrOutput,
       });
     });
 

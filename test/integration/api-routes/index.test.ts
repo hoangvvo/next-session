@@ -1,9 +1,5 @@
-import request from 'supertest'
-import {
-  nextBuild,
-  startApp,
-  stopApp,
-} from '../next-test-utils';
+import request from 'supertest';
+import { nextBuild, startApp, stopApp } from '../next-test-utils';
 import { Server } from 'http';
 import { AddressInfo } from 'net';
 
@@ -20,13 +16,13 @@ beforeAll(async () => {
   server = await startApp({
     dir: appDir,
     dev: false,
-    quiet: true
+    quiet: true,
   });
   const appPort = (server.address() as AddressInfo).port;
-  base = `http://localhost:${appPort}`
+  base = `http://localhost:${appPort}`;
 });
 
-afterAll(() => stopApp(server))
+afterAll(() => stopApp(server));
 
 describe('Using API Routes', () => {
   beforeEach(() => {
@@ -39,7 +35,7 @@ describe('Using API Routes', () => {
     expect(res.header).toHaveProperty('set-cookie');
     expect(res.text).toContain('1');
     res = await agent.get('/api/with-session');
-    expect(res.header).not.toHaveProperty('set-cookie')
+    expect(res.header).not.toHaveProperty('set-cookie');
     expect(res.text).toContain('2');
     await agent.delete('/api/with-session');
     res = await agent.get('/api/apply-session');
@@ -53,7 +49,7 @@ describe('Using API Routes', () => {
     expect(res.header).toHaveProperty('set-cookie');
     expect(res.text).toContain('1');
     res = await agent.get('/api/apply-session');
-    expect(res.header).not.toHaveProperty('set-cookie')
+    expect(res.header).not.toHaveProperty('set-cookie');
     expect(res.text).toContain('2');
     await agent.delete('/api/apply-session');
     res = await agent.get('/api/apply-session');

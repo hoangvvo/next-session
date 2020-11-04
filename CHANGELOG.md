@@ -1,5 +1,30 @@
 # Changelog
 
+## 3.3.2
+
+- Fix cookie expiry. (Fix #280)
+
+## 3.3.1
+
+- Fix callback store support (#273)
+- Set cookie properly :facepalm:
+
+## ~~3.3.0~~
+
+*Broken release*
+
+- Remove the need to use promisifyStore and refactor (#257)
+- Bump dependencies
+
+## 3.2.5
+
+- Fix autoCommit usage with res.writeHead (#253)
+- Improve types and undo #240 (#252)
+
+## 3.2.4
+
+- Avoid calling session.commit more than once (#240)
+
 ## 3.2.3
 
 - Add new compatible layer for express-session stores (#157)

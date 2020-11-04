@@ -1,5 +1,6 @@
 import { applySession } from './core';
-import { Options, Response, Request } from './types';
+import { Options, SessionData } from './types';
+import { IncomingMessage, ServerResponse } from 'http';
 
 let storeReady = true;
 
@@ -13,7 +14,11 @@ export default function session(opts?: Options) {
       storeReady = true;
     });
   }
-  return (req: Request, res: Response, next: (err?: any) => void) => {
+  return (
+    req: IncomingMessage & { session: SessionData },
+    res: ServerResponse,
+    next: (err?: any) => void
+  ) => {
     if (!storeReady) {
       next();
       return;

@@ -8,6 +8,8 @@
 
 Simple *promise-based* session middleware for [Next.js](https://github.com/zeit/next.js). Also works in [micro](https://github.com/zeit/micro) or [Node.js HTTP Server](https://nodejs.org/api/http.html), [Express](https://github.com/expressjs/express), and more.
 
+> For a more battle-tested solution, you should use [express-session](https://github.com/expressjs/session) with [next-connect](https://github.com/hoangvvo/next-connect) instead.
+
 ## Installation
 
 ```sh
@@ -189,8 +191,8 @@ await applySession(req, res, options);
 | name | The name of the cookie to be read from the request and set to the response. | `sid` |
 | store | The session store instance to be used. | `MemoryStore` |
 | genid | The function that generates a string for a new session ID. | [`nanoid`](https://github.com/ai/nanoid) |
-| encode | Transforms session ID before setting cookie. It takes the raw session ID and returns the decoded/decrypted session ID. | undefined |
-| decode | Transforms session ID back while getting from cookie. It should return the encoded/encrypted session ID | undefined |
+| encode | Transforms session ID before setting cookie. It should return the encoded/encrypted session ID. | undefined |
+| decode | Transforms session ID back while getting from cookie. It takes the raw session ID and returns the decoded/decrypted session ID. | undefined |
 | touchAfter | Only touch (extend session lifetime despite no modification) after an amount of time to decrease database load. Setting the value to `-1` will disable `touch()`. | `0` (Touch every time) |
 | rolling | Extends the life time of the cookie in the browser if the session is touched. This respects touchAfter. | `false` |
 | autoCommit | Automatically commit session. Disable this if you want to manually `session.commit()` | `true` |
@@ -213,8 +215,6 @@ session({
   decode: (raw) => signature.unsign(raw.slice(2), secret),
   encode: (sid) => (sid ? 's:' + signature.sign(sid, secret) : null),
 });
-
-// async function is also supported
 ```
 
 ## API
@@ -235,17 +235,19 @@ const currentUser = req.session.user; // "John Doe"
 Destroy to current session and remove it from session store.
 
 ```javascript
-if (loggedOut) req.session.destroy();
+if (loggedOut) await req.session.destroy();
 ```
 
 ### req.session.commit()
 
-Save the session and set neccessary headers and return Promise. Use this if `autoCommit` is set to `false`. It must be called before sending response.
+Save the session and set neccessary headers. Return Promise. It must be called before *sending the headers (`res.writeHead`) or response (`res.send`, `res.end`, etc.)*.
+
+You **must** call this if `autoCommit` is set to `false`.
 
 ```javascript
 req.session.hello = 'world';
 await req.session.commit();
-// calling res.end or finishing the resolver after the above
+// always calling res.end or res.writeHead after the above
 ```
 
 ### req.session.id
@@ -262,21 +264,33 @@ The session store to use for session middleware (see `options` above).
 
 ### Compatibility with Express/Connect stores
 
-To use [Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores), use `expressSession` and `promisifyStore` from `next-session`.
+To use [Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores), you may need to use `expressSession` from `next-session` if the store has the following pattern.
 
 ```javascript
-import { expressSession, promisifyStore } from 'next-session';
+const session = require('express-session');
+const MongoStore = require('connect-mongo')(session);
+
+// Use `expressSession` as the replacement
+
+import { expressSession } from 'next-session';
 const MongoStore = require('connect-mongo')(expressSession);
-const options = {
-  store: promisifyStore(new MongoStore(options))
-}
 ```
 
 ### Implementation
 
-A compatible session store must include three functions: `set(sid, session)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions must return **Promises** (*callbacks* are not supported or must be promisified like above).
+A compatible session store must include three functions: `set(sid, session)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions can either return **Promises** or allowing **callback** in the last argument.
 
-The store may emit `store.emit('disconnect')` or `store.emit('connect')` to inform its readiness. (only works with `{ session }`)
+```js
+// Both of the below work!
+
+function get(sid) {
+  return promiseGetFn(sid)
+}
+
+function get(sid, done) {
+  cbGetFn(sid, done);
+}
+```
 
 ## Contributing
 

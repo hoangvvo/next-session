@@ -1,12 +1,10 @@
-import { SessionStore, SessionData } from '../types';
-import { EventEmitter } from 'events';
-const MemoryStoreSession = {};
-
+import { EventEmitter } from "events";
+import { SessionStore, SessionData } from "../types";
 export default class MemoryStore extends EventEmitter implements SessionStore {
-  sessions: Record<string, string>;
+  public sessions: Record<string, string> = {};
+
   constructor() {
     super();
-    this.sessions = MemoryStoreSession;
   }
 
   get(sid: string): Promise<SessionData | null> {
@@ -24,7 +22,7 @@ export default class MemoryStore extends EventEmitter implements SessionStore {
         Date.now() < session.cookie.expires.getTime()
       ) {
         //  check expires before returning
-        return Promise.resolve(session as SessionData);
+        return Promise.resolve(session);
       }
 
       self.destroy(sid);
@@ -52,12 +50,7 @@ export default class MemoryStore extends EventEmitter implements SessionStore {
   }
 
   all() {
-    const arr = [];
-    const keys = Object.keys(this.sessions);
-    for (let i = 0, len = keys.length; i < len; i += 1) {
-      arr.push(this.sessions[keys[i]]);
-    }
-    return Promise.resolve(arr);
+    return Promise.resolve(Object.values(this.sessions));
   }
 
   destroy(sid: string) {

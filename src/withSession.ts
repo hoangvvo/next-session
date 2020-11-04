@@ -7,9 +7,9 @@ import {
   NextApiResponse,
   NextComponentType,
 } from 'next';
+
 import { applySession } from './core';
-import { Options } from './types';
-import { ServerResponse, IncomingMessage } from 'http';
+import { Options, SessionData } from './types';
 
 function getDisplayName(WrappedComponent: NextComponentType<any>) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component';
@@ -31,7 +31,11 @@ export default function withSession<T = {}>(
       req: NextApiRequest,
       res: NextApiResponse
     ) {
-      await applySession(req, res, options);
+      await applySession(
+        req as NextApiRequest & { session: SessionData },
+        res,
+        options
+      );
       return handler(req, res);
     };
 
@@ -46,8 +50,10 @@ export default function withSession<T = {}>(
       // @ts-ignore
       if (typeof window === 'undefined') {
         await applySession(
-          pageCtx.req as IncomingMessage,
-          pageCtx.res as ServerResponse,
+          pageCtx.req as NonNullable<NextPageContext['req']> & {
+            session: SessionData;
+          },
+          pageCtx.res as NonNullable<NextPageContext['res']>,
           options
         );
       }

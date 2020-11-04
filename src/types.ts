@@ -1,19 +1,22 @@
-/// <reference path="./extendedRequest.d.ts" />
-import { IncomingMessage, ServerResponse } from 'http';
+import { Store as ExpressStore } from 'express-session';
 
 export type SessionData = {
   [key: string]: any;
+  id: string;
   cookie: SessionCookieData;
+  commit: () => Promise<void>;
+  destroy: () => Promise<void>;
+  isNew: boolean;
 };
 
 export interface SessionCookieData {
   path: string;
   maxAge: number | null;
+  secure: boolean;
   httpOnly: boolean;
   domain?: string | undefined;
-  sameSite?: boolean | 'lax' | 'strict' | 'none';
-  secure: boolean;
   expires?: Date;
+  sameSite?: boolean | 'lax' | 'strict' | 'none';
 }
 
 export abstract class SessionStore {
@@ -21,7 +24,16 @@ export abstract class SessionStore {
   abstract set: (sid: string, sess: SessionData) => Promise<void>;
   abstract destroy: (sid: string) => Promise<void>;
   abstract touch?: (sid: string, sess: SessionData) => Promise<void>;
+  on?: (event: string | symbol, listener: (...args: any[]) => void) => this;
+}
+
+export interface NormalizedSessionStore {
   [key: string]: any;
+  __get: (sid: string) => Promise<SessionData | null>;
+  __set: (sid: string, sess: SessionData) => Promise<void>;
+  __destroy: (sid: string) => Promise<void>;
+  __touch?: (sid: string, sess: SessionData) => Promise<void>;
+  __normalized: true,
 }
 
 export interface CookieOptions {
@@ -30,35 +42,17 @@ export interface CookieOptions {
   path?: string;
   domain?: string;
   sameSite?: boolean | 'lax' | 'strict' | 'none';
-  maxAge?: number;
+  maxAge?: number | null;
 }
 
 export interface Options {
   name?: string;
-  store?: SessionStore;
+  store?: SessionStore | ExpressStore;
   genid?: () => string;
   encode?: (rawSid: string) => string;
-  decode?: (encryptedSid: string) => string;
+  decode?: (encryptedSid: string) => string | null;
   rolling?: boolean;
   touchAfter?: number;
   cookie?: CookieOptions;
   autoCommit?: boolean;
 }
-
-export type SessionOptions = Pick<
-  Required<Options>,
-  | 'name'
-  | 'store'
-  | 'genid'
-  | 'rolling'
-  | 'touchAfter'
-  | 'cookie'
-  | 'autoCommit'
-> & {
-  encode?: (rawSid: string) => string;
-  decode?: (encryptedSid: string) => string;
-};
-
-export type Request = IncomingMessage;
-
-export type Response = ServerResponse;
