@@ -142,7 +142,7 @@ export async function applySession<T = {}>(
     genid: opts?.genid || nanoid,
     encode: opts?.encode,
     decode: opts?.decode,
-    touchAfter: opts?.touchAfter ? opts.touchAfter : 0,
+    touchAfter: opts?.touchAfter ? opts.touchAfter : -1,
     autoCommit:
       typeof opts?.autoCommit !== 'undefined' ? opts.autoCommit : true,
   };
@@ -163,8 +163,7 @@ export async function applySession<T = {}>(
 
   const destroy = async () => {
     await options.store.__destroy(req.session.id);
-    // This is a valid TS error, but considering its usage, it's fine.
-    // @ts-ignore
+    // @ts-ignore: This is a valid TS error, but considering its usage, it's fine.
     delete req.session;
   };
 
@@ -206,7 +205,7 @@ export async function applySession<T = {}>(
     ((req as any)[SESS_TOUCHED] = shouldTouch(
       req.session.cookie,
       options.touchAfter
-    ))
+    )) || req.session.isNew
   ) {
     req.session.cookie.expires = new Date(
       Date.now() + req.session.cookie.maxAge! * 1000

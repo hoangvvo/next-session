@@ -141,7 +141,7 @@ describe('applySession', () => {
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
   });
 
-  test('should always touch by default', async () => {
+  test('should not touch by default', async () => {
     const server = setUpServer(
       (req, res) => {
         req.session.hello = 'world';
@@ -153,14 +153,12 @@ describe('applySession', () => {
       }
     );
     const agent = request.agent(server);
-    await agent.post('/');
-    let originalExpires;
-    await agent.get('/').then((res) => {
-      originalExpires = res.text;
-    });
-    const res = await agent.get('/');
-    expect(res.text).not.toStrictEqual(originalExpires);
+    const res = (await agent.get('/'))
+    const originalExpires = res.text;
     expect(res.header).toHaveProperty('set-cookie');
+    const res2 = await agent.get('/');
+    expect(res2.text).toStrictEqual(originalExpires);
+    expect(res2.header).not.toHaveProperty('set-cookie');
   });
 
   test('should touch if lifetime > touchAfter', async () => {
