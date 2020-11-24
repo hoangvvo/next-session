@@ -28,6 +28,6 @@ expressSession.MemoryStore = CallbackMemoryStore;
 export { expressSession };
 
 export function promisifyStore(store: ExpressStore): ExpressStore {
-  console.warn('promisifyStore has been deprecated! You can simply remove it.');
+  console.warn('promisifyStore has been deprecated: express-session store still works without using this.');
   return store;
 }

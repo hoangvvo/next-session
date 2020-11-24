@@ -7,13 +7,12 @@ import {
   Options,
   SessionData,
   SessionStore,
-  SessionCookieData,
   NormalizedSessionStore,
 } from './types';
 
 type SessionOptions = Omit<
   Required<Options>,
-  'encode' | 'decode' | 'store' | 'cookie'
+  'encode' | 'decode' | 'store' | 'cookie' | 'rolling'
 > &
   Pick<Options, 'encode' | 'decode'> & {
     store: NormalizedSessionStore;
@@ -138,6 +137,13 @@ export async function applySession<T = {}>(
     autoCommit:
       typeof opts?.autoCommit !== 'undefined' ? opts.autoCommit : true,
   };
+
+  if (opts?.rolling) {
+    console.warn("The use of opts.rolling is deprecated. Setting this to `true` without opts.touchAfter will cause opts.touchAfter to become 0 (always)");
+    if (typeof opts.touchAfter === 'undefined') {
+      options.touchAfter = 0;
+    }
+  }
 
   let sessId =
     req.headers && req.headers.cookie

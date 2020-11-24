@@ -51,4 +51,8 @@ export interface Options {
   touchAfter?: number;
   cookie?: CookieOptions;
   autoCommit?: boolean;
+  /**
+   * @deprecated
+   */
+  rolling?: boolean;
 }

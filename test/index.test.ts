@@ -161,6 +161,27 @@ describe('applySession', () => {
     expect(res2.header).not.toHaveProperty('set-cookie');
   });
 
+  test('deprecation: should touch if rolling = true and touchAfter is not set', async () => {
+    const server = setUpServer(
+      (req, res) => {
+        req.session.hello = 'world';
+        res.end(`${req.session.cookie.expires?.valueOf()}`);
+      },
+      {
+        cookie: { maxAge: 60 * 60 * 24 },
+        rolling: true,
+        store: new MemoryStore(),
+      }
+    );
+    const agent = request.agent(server);
+    const res = (await agent.get('/'))
+    const originalExpires = res.text;
+    expect(res.header).toHaveProperty('set-cookie');
+    const res2 = await agent.get('/');
+    expect(res2.text).not.toStrictEqual(originalExpires);
+    expect(res2.header).toHaveProperty('set-cookie');
+  });
+
   test('should touch if lifetime > touchAfter', async () => {
     const sessionStore = new MemoryStore();
     let sessId: string = ''
