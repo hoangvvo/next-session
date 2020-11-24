@@ -8,15 +8,13 @@ export type SessionData = {
   isNew: boolean;
 };
 
-export interface SessionCookieData {
+export type SessionCookieData = {
   path: string;
-  maxAge: number | null;
   secure: boolean;
   httpOnly: boolean;
   domain?: string | undefined;
-  expires?: Date;
   sameSite?: boolean | 'lax' | 'strict' | 'none';
-}
+} & ({ maxAge: number, expires: Date } | { maxAge: null, expires?: undefined })
 
 export abstract class SessionStore {
   abstract get: (sid: string) => Promise<SessionData | null>;

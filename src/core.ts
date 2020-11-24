@@ -19,14 +19,6 @@ type SessionOptions = Omit<
     store: NormalizedSessionStore;
   };
 
-const shouldTouch = (cookie: SessionCookieData, touchAfter: number) => {
-  if (touchAfter === -1 || !cookie.maxAge) return false;
-  return (
-    cookie.maxAge * 1000 - (cookie.expires!.getTime() - Date.now()) >=
-    touchAfter
-  );
-};
-
 const stringify = (sess: SessionData) =>
   JSON.stringify(sess, (key, val) =>
     key === 'cookie' || key === 'isNew' || key === 'id' ? undefined : val
@@ -186,30 +178,36 @@ export async function applySession<T = {}>(
     req.session = {
       cookie: {
         path: opts?.cookie?.path || '/',
-        maxAge: opts?.cookie?.maxAge || null,
         httpOnly: opts?.cookie?.httpOnly || true,
         domain: opts?.cookie?.domain || undefined,
         sameSite: opts?.cookie?.sameSite,
         secure: opts?.cookie?.secure || false,
+        ...(opts?.cookie?.maxAge
+          ? { maxAge: opts.cookie.maxAge, expires: new Date() }
+          : { maxAge: null }),
       },
       commit,
       destroy,
       isNew: true,
       id: options.genid(),
     };
-    if (opts?.cookie?.maxAge) req.session.cookie.expires = new Date();
   }
 
-  // Extend session expiry
-  if (
-    ((req as any)[SESS_TOUCHED] = shouldTouch(
-      req.session.cookie,
-      options.touchAfter
-    )) || req.session.isNew
-  ) {
-    req.session.cookie.expires = new Date(
-      Date.now() + req.session.cookie.maxAge! * 1000
-    );
+  if (req.session.cookie.maxAge) {
+    if (
+      // Extend expires either if it is a new session
+      req.session.isNew ||
+      // or if touchAfter condition is satsified
+      (options.touchAfter !== -1 &&
+        ((req as any)[SESS_TOUCHED] =
+          req.session.cookie.maxAge * 1000 -
+            (req.session.cookie.expires.getTime() - Date.now()) >=
+          options.touchAfter))
+    ) {
+      req.session.cookie.expires = new Date(
+        Date.now() + req.session.cookie.maxAge * 1000
+      );
+    }
   }
 
   // autocommit
