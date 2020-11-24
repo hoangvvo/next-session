@@ -138,11 +138,9 @@ export async function applySession<T = {}>(
       typeof opts?.autoCommit !== 'undefined' ? opts.autoCommit : true,
   };
 
-  if (opts?.rolling) {
-    console.warn("The use of opts.rolling is deprecated. Setting this to `true` without opts.touchAfter will cause opts.touchAfter to become 0 (always)");
-    if (typeof opts.touchAfter === 'undefined') {
-      options.touchAfter = 0;
-    }
+  if (opts?.rolling && !('touchAfter' in opts)) {
+    console.warn("The use of opts.rolling is deprecated. Setting this to `true` without opts.touchAfter causes opts.touchAfter to be defaulted to `0` (always)");
+    options.touchAfter = 0;
   }
 
   let sessId =
