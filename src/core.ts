@@ -10,61 +10,43 @@ import {
   NormalizedSessionStore,
 } from './types';
 
-type SessionOptions = Omit<
-  Required<Options>,
-  'encode' | 'decode' | 'store' | 'cookie' | 'rolling'
-> &
-  Pick<Options, 'encode' | 'decode'> & {
-    store: NormalizedSessionStore;
-  };
-
 const stringify = (sess: SessionData) =>
-  JSON.stringify(sess, (key, val) =>
-    key === 'cookie' || key === 'isNew' || key === 'id' ? undefined : val
-  );
+  JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));
 
-const SESS_PREV = Symbol('session#prev');
 const SESS_TOUCHED = Symbol('session#touched');
 
 const commitHead = (
-  req: IncomingMessage & { session?: SessionData | null },
   res: ServerResponse,
-  options: SessionOptions
+  name: string,
+  session: SessionData | null,
+  encodeFn?: Options['encode']
 ) => {
-  if (res.headersSent || !req.session) return;
-  if (req.session.isNew || (req as any)[SESS_TOUCHED]) {
+  if (res.headersSent || !session) return;
+  if (session.isNew || (session as any)[SESS_TOUCHED]) {
     res.setHeader(
       'Set-Cookie',
-      serialize(
-        options.name,
-        options.encode ? options.encode(req.session.id) : req.session.id,
-        {
-          path: req.session.cookie.path,
-          httpOnly: req.session.cookie.httpOnly,
-          expires: req.session.cookie.expires,
-          domain: req.session.cookie.domain,
-          sameSite: req.session.cookie.sameSite,
-          secure: req.session.cookie.secure,
-        }
-      )
+      serialize(name, encodeFn ? encodeFn(session.id) : session.id, {
+        path: session.cookie.path,
+        httpOnly: session.cookie.httpOnly,
+        expires: session.cookie.expires,
+        domain: session.cookie.domain,
+        sameSite: session.cookie.sameSite,
+        secure: session.cookie.secure,
+      })
     );
   }
 };
 
 const save = async (
-  req: IncomingMessage & { session?: SessionData | null },
-  options: SessionOptions
+  store: NormalizedSessionStore,
+  session: SessionData | null
 ) => {
-  if (!req.session) return;
+  if (!session) return;
   const obj: SessionData = {} as any;
-  for (const key in req.session) {
-    if (!(key === ('isNew' || key === 'id'))) obj[key] = req.session[key];
+  for (const key in session) {
+    if (!(key === ('isNew' || key === 'id'))) obj[key] = session[key];
   }
-  if (stringify(req.session) !== (req as any)[SESS_PREV]) {
-    await options.store.__set(req.session.id, obj);
-  } else if ((req as any)[SESS_TOUCHED]) {
-    await options.store.__touch?.(req.session.id, obj);
-  }
+  return store.__set(session.id, obj);
 };
 
 function setupStore(
@@ -121,89 +103,88 @@ let memoryStore: MemoryStore;
 export async function applySession<T = {}>(
   req: IncomingMessage & { session: SessionData },
   res: ServerResponse,
-  opts?: Options
+  options: Options = {}
 ): Promise<void> {
   if (req.session) return;
 
-  const options: SessionOptions = {
-    name: opts?.name || 'sid',
-    store: setupStore(
-      opts?.store || (memoryStore = memoryStore || new MemoryStore())
-    ),
-    genid: opts?.genid || nanoid,
-    encode: opts?.encode,
-    decode: opts?.decode,
-    touchAfter: opts?.touchAfter ? opts.touchAfter : -1,
-    autoCommit:
-      typeof opts?.autoCommit !== 'undefined' ? opts.autoCommit : true,
-  };
+  const store: NormalizedSessionStore = setupStore(
+    options.store || (memoryStore = memoryStore || new MemoryStore())
+  );
 
-  if (opts?.rolling && !('touchAfter' in opts)) {
-    console.warn("The use of opts.rolling is deprecated. Setting this to `true` without opts.touchAfter causes opts.touchAfter to be defaulted to `0` (always)");
+  if (options.rolling && !('touchAfter' in options)) {
+    console.warn(
+      'The use of opts.rolling is deprecated. Setting this to `true` without opts.touchAfter causes opts.touchAfter to be defaulted to `0` (always)'
+    );
     options.touchAfter = 0;
   }
 
+  const name = options.name || 'sid';
+
   let sessId =
-    req.headers && req.headers.cookie
-      ? parse(req.headers.cookie)[options.name]
-      : null;
+    req.headers && req.headers.cookie ? parse(req.headers.cookie)[name] : null;
 
   if (sessId && options.decode) sessId = options.decode(sessId);
 
-  const sess = sessId ? await options.store.__get(sessId) : null;
+  const sess = sessId ? await store.__get(sessId) : null;
 
   const commit = async () => {
-    commitHead(req, res, options);
-    await save(req, options);
+    commitHead(res, name, req.session, options.encode);
+    await save(store, req.session);
   };
 
   const destroy = async () => {
-    await options.store.__destroy(req.session.id);
-    // @ts-ignore: This is a valid TS error, but considering its usage, it's fine.
-    delete req.session;
+    await store.__destroy(req.session.id);
+    // @ts-ignore: This is a valid TS error, but OK considering its usage.
+    req.session = null;
   };
 
   if (sess) {
-    (req as any)[SESS_PREV] = stringify(sess);
-    const { cookie, ...data } = sess;
+    req.session = sess;
+    req.session.commit = commit;
+    req.session.destroy = destroy;
+    req.session.isNew = false;
+    req.session.id = sessId!;
     // Some store return cookie.expires as string, convert it to Date
-    if (typeof cookie.expires === 'string')
-      cookie.expires = new Date(cookie.expires);
-    req.session = {
-      cookie,
-      commit,
-      destroy,
-      isNew: false,
-      id: sessId!,
-    };
-    for (const key in data) req.session[key] = data[key];
+    if (typeof req.session.cookie.expires === 'string')
+      req.session.cookie.expires = new Date(req.session.cookie.expires);
   } else {
-    (req as any)[SESS_PREV] = '{}';
     req.session = {
       cookie: {
-        path: opts?.cookie?.path || '/',
-        httpOnly: opts?.cookie?.httpOnly || true,
-        domain: opts?.cookie?.domain || undefined,
-        sameSite: opts?.cookie?.sameSite,
-        secure: opts?.cookie?.secure || false,
-        ...(opts?.cookie?.maxAge
-          ? { maxAge: opts.cookie.maxAge, expires: new Date() }
+        path: options.cookie?.path || '/',
+        httpOnly: options.cookie?.httpOnly || true,
+        domain: options.cookie?.domain || undefined,
+        sameSite: options.cookie?.sameSite,
+        secure: options.cookie?.secure || false,
+        ...(options.cookie?.maxAge
+          ? { maxAge: options.cookie.maxAge, expires: new Date() }
           : { maxAge: null }),
       },
       commit,
       destroy,
       isNew: true,
-      id: options.genid(),
+      id: (options.genid || nanoid)(),
     };
   }
+
+  // prevSessStr is used to compare the session later
+  // for touchability -- that is, we only touch the
+  // session if it has changed. This check is used
+  // in autoCommit mode only
+  const prevSessStr: string | undefined =
+    options.autoCommit !== false
+      ? req.session.isNew
+        ? '{}'
+        : stringify(req.session)
+      : undefined;
 
   if (req.session.cookie.maxAge) {
     if (
       // Extend expires either if it is a new session
       req.session.isNew ||
       // or if touchAfter condition is satsified
-      (options.touchAfter !== -1 &&
-        ((req as any)[SESS_TOUCHED] =
+      (typeof options.touchAfter === 'number' &&
+        options.touchAfter !== -1 &&
+        ((req.session as any)[SESS_TOUCHED] =
           req.session.cookie.maxAge * 1000 -
             (req.session.cookie.expires.getTime() - Date.now()) >=
           options.touchAfter))
@@ -214,20 +195,30 @@ export async function applySession<T = {}>(
     }
   }
 
-  // autocommit
-  if (options.autoCommit) {
+  // autocommit: We commit the header and save the session automatically
+  // by "proxying" res.writeHead and res.end methods. After committing, we
+  // call the original res.writeHead and res.end.
+  if (options.autoCommit !== false) {
     const oldWritehead = res.writeHead;
     res.writeHead = function resWriteHeadProxy(...args: any) {
-      commitHead(req, res, options);
+      commitHead(res, name, req.session, options.encode);
       return oldWritehead.apply(this, args);
     };
     const oldEnd = res.end;
     res.end = async function resEndProxy(...args: any) {
-      await save(req, options);
+      if (stringify(req.session) !== prevSessStr) {
+        await save(store, req.session);
+      } else if ((req as any)[SESS_TOUCHED]) {
+        const obj: SessionData = {} as any;
+        for (const key in req.session) {
+          if (!(key === ('isNew' || key === 'id'))) obj[key] = req.session[key];
+        }
+        await store.__touch?.(req.session.id, obj);
+      }
       oldEnd.apply(this, args);
     };
   }
 
   // Compat
-  (req as any).sessionStore = options.store;
+  (req as any).sessionStore = store;
 }
