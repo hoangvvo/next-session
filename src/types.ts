@@ -4,6 +4,7 @@ export type SessionData = {
   [key: string]: any;
   id: string;
   cookie: SessionCookieData;
+  commit: () => Promise<void>;
   destroy: () => Promise<void>;
   isNew: boolean;
 };
@@ -47,7 +48,7 @@ export interface Options {
   store?: SessionStore | ExpressStore;
   genid?: () => string;
   encode?: (rawSid: string) => string;
-  decode?: (encryptedSid: string) => string;
+  decode?: (encryptedSid: string) => string | null;
   touchAfter?: number;
   cookie?: CookieOptions;
   autoCommit?: boolean;
