@@ -74,7 +74,7 @@ describe('applySession', () => {
     expect(req.sessionStore).toBeInstanceOf(MemoryStore);
     const req2: any = {};
     await applySession(req2, res);
-    expect(req2.sessionStore).toBe(req.sessionStore)
+    expect(req2.sessionStore).toBe(req.sessionStore);
   });
 
   test('should do nothing if req.session is defined', async () => {
@@ -148,7 +148,7 @@ describe('applySession', () => {
       }
     );
     const agent = request.agent(server);
-    const res = (await agent.get('/'))
+    const res = await agent.get('/');
     const originalExpires = res.text;
     expect(res.header).toHaveProperty('set-cookie');
     const res2 = await agent.get('/');
@@ -169,7 +169,7 @@ describe('applySession', () => {
       }
     );
     const agent = request.agent(server);
-    const res = (await agent.get('/'))
+    const res = await agent.get('/');
     const originalExpires = res.text;
     expect(res.header).toHaveProperty('set-cookie');
     const res2 = await agent.get('/');
@@ -179,7 +179,7 @@ describe('applySession', () => {
 
   test('should touch if lifetime > touchAfter', async () => {
     const sessionStore = new MemoryStore();
-    let sessId: string = ''
+    let sessId: string = '';
     const server = setUpServer(
       (req, res) => {
         req.session.hello = 'world';
@@ -202,13 +202,15 @@ describe('applySession', () => {
     //  Shift expires 10 seconds to simulate 10 seconds time fly
     const sess = await sessionStore.get(sessId as string);
     // Force 10 sec back in the past for cookie to expire
-    sess!.cookie.expires! = new Date(sess!.cookie.expires!.valueOf() - 10 * 1000)
-    await sessionStore.set(sessId as string, sess!)
+    sess!.cookie.expires! = new Date(
+      sess!.cookie.expires!.valueOf() - 10 * 1000
+    );
+    await sessionStore.set(sessId as string, sess!);
 
     const res = await agent.get('/');
     expect(res.text).not.toStrictEqual(originalExpires);
     expect(res.header).toHaveProperty('set-cookie');
-  })
+  });
 
   test('should not touch if lifetime < touchAfter', async () => {
     const server = setUpServer(
@@ -285,21 +287,27 @@ describe('applySession', () => {
   });
 
   test('should define session.isNew that determines if session is new', async () => {
-    const server = setUpServer((req, res) => {
-      const isNew = req.session.isNew;
-      req.session.foo = 'bar';
-      res.end(String(isNew));
-    }, {store: new MemoryStore()});
+    const server = setUpServer(
+      (req, res) => {
+        const isNew = req.session.isNew;
+        req.session.foo = 'bar';
+        res.end(String(isNew));
+      },
+      { store: new MemoryStore() }
+    );
     const agent = request.agent(server);
     await agent.get('/').expect('true');
     await agent.get('/').expect('false');
   });
 
   test('should works with writeHead and autoCommit', async () => {
-    const server = setUpServer((req, res) => {
-      req.session.foo = 'bar';
-      res.writeHead(302, { Location: '/login' }).end();
-    }, {store: new MemoryStore()});
+    const server = setUpServer(
+      (req, res) => {
+        req.session.foo = 'bar';
+        res.writeHead(302, { Location: '/login' }).end();
+      },
+      { store: new MemoryStore() }
+    );
     await request(server)
       .post('/')
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
@@ -328,6 +336,31 @@ describe('applySession', () => {
     });
 
     expect(req.session.cookie.expires).toBeInstanceOf(Date);
+  });
+
+  test('should not override existing set-cookie', async () => {
+    // Single set-cookie
+    const server = setUpServer(
+      (req, res) => {
+        res.setHeader('Set-Cookie', 'test=test');
+        res.end();
+      },
+      { store: new MemoryStore() }
+    );
+    await request(server)
+      .post('/')
+      .then(({ header }) => expect(header['set-cookie']).toHaveLength(2));
+    // Multiple set-cookie
+    const server2 = setUpServer(
+      (req, res) => {
+        res.setHeader('Set-Cookie', ['test=test', 'test2=test2']);
+        res.end();
+      },
+      { store: new MemoryStore() }
+    );
+    await request(server2)
+      .post('/')
+      .then(({ header }) => expect(header['set-cookie']).toHaveLength(3));
   });
 });
 
@@ -451,7 +484,7 @@ describe('callback store', () => {
       .post('/')
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
     await agent.get('/').expect('2');
-  })
+  });
   it('should work (without touch)', async () => {
     const store = (new CbStore() as unknown) as ExpressStore;
     delete store.touch;
@@ -525,8 +558,8 @@ describe('MemoryStore', () => {
 
     const sess = await sessionStore.get(sessionId as string);
     // Force 10 sec back in the past for cookie to expire
-    sess!.cookie.expires! = new Date(sess!.cookie.expires!.valueOf() - 10000)
-    await sessionStore.set(sessionId as string, sess!)
+    sess!.cookie.expires! = new Date(sess!.cookie.expires!.valueOf() - 10000);
+    await sessionStore.set(sessionId as string, sess!);
 
     await agent.get('/').expect('0');
     //  Check in the store

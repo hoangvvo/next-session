@@ -23,8 +23,7 @@ const commitHead = (
 ) => {
   if (res.headersSent || !session) return;
   if (session.isNew || touched) {
-    res.setHeader(
-      'Set-Cookie',
+    const cookieArr = [
       serialize(name, encodeFn ? encodeFn(session.id) : session.id, {
         path: session.cookie.path,
         httpOnly: session.cookie.httpOnly,
@@ -32,8 +31,14 @@ const commitHead = (
         domain: session.cookie.domain,
         sameSite: session.cookie.sameSite,
         secure: session.cookie.secure,
-      })
-    );
+      }),
+    ];
+    const prevCookies = res.getHeader('set-cookie');
+    if (prevCookies) {
+      if (Array.isArray(prevCookies)) cookieArr.push(...prevCookies);
+      else cookieArr.push(prevCookies as string);
+    }
+    res.setHeader('set-cookie', cookieArr);
   }
 };
 
