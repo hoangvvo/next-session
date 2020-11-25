@@ -421,7 +421,7 @@ describe('Store', () => {
 describe('callback store', () => {
   it('should work', async () => {
     const server = setUpServer(defaultHandler, {
-      store: (new CbStore() as unknown) as ExpressStore
+      store: (new CbStore() as unknown) as ExpressStore,
     });
     const agent = request.agent(server);
     await agent
@@ -437,6 +437,21 @@ describe('callback store', () => {
       .expect('1')
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
   });
+  it('should work (with touch)', async () => {
+    const server = setUpServer(defaultHandler, {
+      store: (new CbStore() as unknown) as ExpressStore,
+      cookie: { maxAge: 100 },
+      touchAfter: 0,
+    });
+    const agent = request.agent(server);
+    await agent
+      .post('/')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+    await agent
+      .post('/')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+    await agent.get('/').expect('2');
+  })
   it('should work (without touch)', async () => {
     const store = (new CbStore() as unknown) as ExpressStore;
     delete store.touch;
