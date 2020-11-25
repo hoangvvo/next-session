@@ -15,7 +15,7 @@ export default function session(opts?: Options) {
     });
   }
   return (
-    req: IncomingMessage & { session: SessionData },
+    req: IncomingMessage & { session?: SessionData },
     res: ServerResponse,
     next: (err?: any) => void
   ) => {

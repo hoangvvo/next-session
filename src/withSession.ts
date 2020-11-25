@@ -9,7 +9,7 @@ import {
 } from 'next';
 
 import { applySession } from './core';
-import { Options, SessionData } from './types';
+import { Options } from './types';
 
 function getDisplayName(WrappedComponent: NextComponentType<any>) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component';
@@ -31,11 +31,7 @@ export default function withSession<T = {}>(
       req: NextApiRequest,
       res: NextApiResponse
     ) {
-      await applySession(
-        req as NextApiRequest & { session: SessionData },
-        res,
-        options
-      );
+      await applySession(req, res, options);
       return handler(req, res);
     };
 
@@ -49,17 +45,9 @@ export default function withSession<T = {}>(
     WithSession.getInitialProps = async (pageCtx: NextPageContext) => {
       // @ts-ignore
       if (typeof window === 'undefined') {
-        await applySession(
-          pageCtx.req as NonNullable<NextPageContext['req']> & {
-            session: SessionData;
-          },
-          pageCtx.res as NonNullable<NextPageContext['res']>,
-          options
-        );
+        await applySession(pageCtx.req!, pageCtx.res!, options);
       }
-      return (Page.getInitialProps as NonNullable<
-        NextComponentType['getInitialProps']
-      >)(pageCtx);
+      return Page.getInitialProps!(pageCtx);
     };
   }
   return WithSession;

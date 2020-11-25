@@ -4,13 +4,14 @@ import { Store as ExpressStore } from 'express-session';
 import { IncomingMessage, ServerResponse } from 'http';
 import MemoryStore from './store/memory';
 import {
+  Session,
   Options,
   SessionData,
   SessionStore,
   NormalizedSessionStore,
 } from './types';
 
-const stringify = (sess: SessionData) =>
+const stringify = (sess: SessionData | null | undefined) =>
   JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));
 
 const SESS_TOUCHED = Symbol('session#touched');
@@ -18,7 +19,7 @@ const SESS_TOUCHED = Symbol('session#touched');
 const commitHead = (
   res: ServerResponse,
   name: string,
-  session: SessionData | null,
+  session: SessionData | null | undefined,
   encodeFn?: Options['encode']
 ) => {
   if (res.headersSent || !session) return;
@@ -46,7 +47,7 @@ const prepareSession = (session: SessionData) => {
 
 const save = async (
   store: NormalizedSessionStore,
-  session: SessionData | null
+  session: SessionData | null | undefined
 ) => session && store.__set(session.id, prepareSession(session));
 
 function setupStore(
@@ -66,8 +67,9 @@ function setupStore(
 
   s.__get = function get(sid) {
     return new Promise((resolve, reject) => {
-      const done = (err: any, val: SessionData) =>
+      const done = (err: any, val: SessionData | null | undefined) =>
         err ? reject(err) : resolve(val);
+      // @ts-ignore: Certain differences between express-session type and ours
       const result = this.get(sid, done);
       if (result && typeof result.then === 'function')
         result.then(resolve, reject);
@@ -77,6 +79,7 @@ function setupStore(
   s.__set = function set(sid, sess) {
     return new Promise((resolve, reject) => {
       const done = (err: any) => (err ? reject(err) : resolve());
+      // @ts-ignore: Certain differences between express-session type and ours
       const result = this.set(sid, sess, done);
       if (result && typeof result.then === 'function')
         result.then(resolve, reject);
@@ -87,7 +90,8 @@ function setupStore(
     s.__touch = function touch(sid, sess) {
       return new Promise((resolve, reject) => {
         const done = (err: any) => (err ? reject(err) : resolve());
-        const result = this.touch(sid, sess, done);
+        // @ts-ignore: Certain differences between express-session type and ours
+        const result = this.touch!(sid, sess, done);
         if (result && typeof result.then === 'function')
           result.then(resolve, reject);
       });
@@ -101,7 +105,7 @@ function setupStore(
 let memoryStore: MemoryStore;
 
 export async function applySession<T = {}>(
-  req: IncomingMessage & { session: SessionData },
+  req: IncomingMessage & { session?: Session | null },
   res: ServerResponse,
   options: Options = {}
 ): Promise<void> {
@@ -123,26 +127,25 @@ export async function applySession<T = {}>(
 
   const name = options.name || 'sid';
 
-  let sessId =
-    req.headers && req.headers.cookie ? parse(req.headers.cookie)[name] : null;
-
-  if (sessId && options.decode) sessId = options.decode(sessId);
-
-  const sess = sessId ? await store.__get(sessId) : null;
-
   const commit = async () => {
     commitHead(res, name, req.session, options.encode);
     await save(store, req.session);
   };
 
   const destroy = async () => {
-    await store.__destroy(req.session.id);
-    // @ts-ignore: This is a valid TS error, but OK considering its usage.
+    await store.__destroy(req.session!.id);
     req.session = null;
   };
 
-  if (sess) {
-    req.session = sess;
+  let sessId =
+    req.headers && req.headers.cookie ? parse(req.headers.cookie)[name] : null;
+  if (sessId && options.decode) sessId = options.decode(sessId);
+
+  // Even though req.session as this point is not of type Session
+  // but SessionData, the missing keys will be added later
+  req.session = (sessId ? await store.__get(sessId) : null) as Session | null | undefined;
+
+  if (req.session) {
     req.session.commit = commit;
     req.session.destroy = destroy;
     req.session.isNew = false;
@@ -212,7 +215,7 @@ export async function applySession<T = {}>(
       if (stringify(req.session) !== prevSessStr) {
         await save(store, req.session);
       } else if ((req as any)[SESS_TOUCHED]) {
-        await store.__touch?.(req.session.id, prepareSession(req.session));
+        await store.__touch?.(req.session!.id, prepareSession(req.session!));
       }
       oldEnd.apply(this, args);
     };
