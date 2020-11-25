@@ -37,17 +37,17 @@ const commitHead = (
   }
 };
 
+const prepareSession = (session: SessionData) => {
+  const obj: SessionData = {} as any;
+  for (const key in session)
+    !(key === ('isNew' || key === 'id')) && (obj[key] = session[key]);
+  return obj;
+};
+
 const save = async (
   store: NormalizedSessionStore,
   session: SessionData | null
-) => {
-  if (!session) return;
-  const obj: SessionData = {} as any;
-  for (const key in session) {
-    if (!(key === ('isNew' || key === 'id'))) obj[key] = session[key];
-  }
-  return store.__set(session.id, obj);
-};
+) => session && store.__set(session.id, prepareSession(session));
 
 function setupStore(
   store: SessionStore | ExpressStore | NormalizedSessionStore
@@ -107,13 +107,16 @@ export async function applySession<T = {}>(
 ): Promise<void> {
   if (req.session) return;
 
+  // This allows both promised-based and callback-based store to work
   const store: NormalizedSessionStore = setupStore(
     options.store || (memoryStore = memoryStore || new MemoryStore())
   );
 
+  // compat: if rolling is `true`, user might have wanted to touch every time
+  // thus defaulting options.touchAfter to 0 instead of -1
   if (options.rolling && !('touchAfter' in options)) {
     console.warn(
-      'The use of opts.rolling is deprecated. Setting this to `true` without opts.touchAfter causes opts.touchAfter to be defaulted to `0` (always)'
+      'The use of options.rolling is deprecated. Setting this to `true` without options.touchAfter causes options.touchAfter to be defaulted to `0` (always)'
     );
     options.touchAfter = 0;
   }
@@ -209,11 +212,7 @@ export async function applySession<T = {}>(
       if (stringify(req.session) !== prevSessStr) {
         await save(store, req.session);
       } else if ((req as any)[SESS_TOUCHED]) {
-        const obj: SessionData = {} as any;
-        for (const key in req.session) {
-          if (!(key === ('isNew' || key === 'id'))) obj[key] = req.session[key];
-        }
-        await store.__touch?.(req.session.id, obj);
+        await store.__touch?.(req.session.id, prepareSession(req.session));
       }
       oldEnd.apply(this, args);
     };
