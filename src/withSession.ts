@@ -43,7 +43,6 @@ export default function withSession<T = {}>(
   WithSession.displayName = `withSession(${getDisplayName(Page)})`;
   if (Page.getInitialProps) {
     WithSession.getInitialProps = async (pageCtx: NextPageContext) => {
-      // @ts-ignore
       if (typeof window === 'undefined') {
         await applySession(pageCtx.req!, pageCtx.res!, options);
       }

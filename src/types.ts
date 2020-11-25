@@ -34,7 +34,7 @@ export type NormalizedSessionStore = {
   __destroy(sid: string): Promise<void>;
   __touch(sid: string, sess: SessionData): Promise<void>;
   __normalized: true;
-} & (SessionStore | ExpressStore)
+} & (SessionStore | ExpressStore);
 
 export interface Options {
   name?: string;

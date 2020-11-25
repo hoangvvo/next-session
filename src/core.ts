@@ -143,7 +143,10 @@ export async function applySession<T = {}>(
 
   // Even though req.session as this point is not of type Session
   // but SessionData, the missing keys will be added later
-  req.session = (sessId ? await store.__get(sessId) : null) as Session | null | undefined;
+  req.session = (sessId ? await store.__get(sessId) : null) as
+    | Session
+    | null
+    | undefined;
 
   if (req.session) {
     req.session.commit = commit;

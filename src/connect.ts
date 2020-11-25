@@ -1,5 +1,5 @@
 import { applySession } from './core';
-import { Options, SessionData } from './types';
+import { Options } from './types';
 import { IncomingMessage, ServerResponse } from 'http';
 
 let storeReady = true;
@@ -15,7 +15,7 @@ export default function session(opts?: Options) {
     });
   }
   return (
-    req: IncomingMessage & { session?: SessionData },
+    req: IncomingMessage,
     res: ServerResponse,
     next: (err?: any) => void
   ) => {
