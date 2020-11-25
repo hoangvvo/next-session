@@ -14,16 +14,15 @@ import {
 const stringify = (sess: SessionData | null | undefined) =>
   JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));
 
-const SESS_TOUCHED = Symbol('session#touched');
-
 const commitHead = (
   res: ServerResponse,
   name: string,
   session: SessionData | null | undefined,
+  touched: boolean,
   encodeFn?: Options['encode']
 ) => {
   if (res.headersSent || !session) return;
-  if (session.isNew || (session as any)[SESS_TOUCHED]) {
+  if (session.isNew || touched) {
     res.setHeader(
       'Set-Cookie',
       serialize(name, encodeFn ? encodeFn(session.id) : session.id, {
@@ -128,7 +127,7 @@ export async function applySession<T = {}>(
   const name = options.name || 'sid';
 
   const commit = async () => {
-    commitHead(res, name, req.session, options.encode);
+    commitHead(res, name, req.session, shouldTouch ,options.encode);
     await save(store, req.session);
   };
 
@@ -183,6 +182,8 @@ export async function applySession<T = {}>(
         : stringify(req.session)
       : undefined;
 
+  let shouldTouch = false
+
   if (req.session.cookie.maxAge) {
     if (
       // Extend expires either if it is a new session
@@ -190,7 +191,7 @@ export async function applySession<T = {}>(
       // or if touchAfter condition is satsified
       (typeof options.touchAfter === 'number' &&
         options.touchAfter !== -1 &&
-        ((req.session as any)[SESS_TOUCHED] =
+        (shouldTouch =
           req.session.cookie.maxAge * 1000 -
             (req.session.cookie.expires.getTime() - Date.now()) >=
           options.touchAfter))
@@ -207,14 +208,14 @@ export async function applySession<T = {}>(
   if (options.autoCommit !== false) {
     const oldWritehead = res.writeHead;
     res.writeHead = function resWriteHeadProxy(...args: any) {
-      commitHead(res, name, req.session, options.encode);
+      commitHead(res, name, req.session, shouldTouch, options.encode);
       return oldWritehead.apply(this, args);
     };
     const oldEnd = res.end;
     res.end = async function resEndProxy(...args: any) {
       if (stringify(req.session) !== prevSessStr) {
         await save(store, req.session);
-      } else if ((req as any)[SESS_TOUCHED] && store.__touch) {
+      } else if (req.session && shouldTouch && store.__touch) {
         await store.__touch(req.session!.id, prepareSession(req.session!));
       }
       oldEnd.apply(this, args);
