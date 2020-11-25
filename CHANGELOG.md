@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.4.0
+
+- Refactor, remove rolling option and fix unreliable tests (#283)
+- Avoid override set-cookie (#320)
+
 ## 3.3.2
 
 - Fix cookie expiry. (Fix #280)
