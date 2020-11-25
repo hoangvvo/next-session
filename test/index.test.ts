@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { createServer, RequestListener } from 'http';
 import request from 'supertest';
@@ -40,12 +41,6 @@ class CbStore {
 
   touch(sid: string, sess: SessionData, cb: (err: any) => void) {
     cb && cb(null);
-  }
-}
-
-declare module 'http' {
-  export interface IncomingMessage {
-    session: SessionData;
   }
 }
 

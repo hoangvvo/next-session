@@ -3,11 +3,8 @@ import {
   NextPage,
   NextPageContext,
   NextApiHandler,
-  NextApiRequest,
-  NextApiResponse,
   NextComponentType,
 } from 'next';
-
 import { applySession } from './core';
 import { Options } from './types';
 
@@ -27,13 +24,10 @@ export default function withSession<T = {}>(
 ): NextApiHandler | NextPage {
   // API Routes
   if (isNextApiHandler(handler))
-    return async function WithSession(
-      req: NextApiRequest,
-      res: NextApiResponse
-    ) {
+    return async function WithSession(req, res) {
       await applySession(req, res, options);
       return handler(req, res);
-    };
+    } as NextApiHandler;
 
   // Pages
   const Page = handler;

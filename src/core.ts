@@ -105,7 +105,7 @@ function setupStore(
 let memoryStore: MemoryStore;
 
 export async function applySession<T = {}>(
-  req: IncomingMessage & { session?: Session | null },
+  req: IncomingMessage & { session?: Session | null | undefined },
   res: ServerResponse,
   options: Options = {}
 ): Promise<void> {
@@ -141,12 +141,9 @@ export async function applySession<T = {}>(
     req.headers && req.headers.cookie ? parse(req.headers.cookie)[name] : null;
   if (sessId && options.decode) sessId = options.decode(sessId);
 
-  // Even though req.session as this point is not of type Session
-  // but SessionData, the missing keys will be added later
-  req.session = (sessId ? await store.__get(sessId) : null) as
-    | Session
-    | null
-    | undefined;
+  // @ts-ignore: req.session as this point is not of type Session
+  // but SessionData, but the missing keys will be added later
+  req.session = (sessId ? await store.__get(sessId) : null);
 
   if (req.session) {
     req.session.commit = commit;
@@ -217,8 +214,8 @@ export async function applySession<T = {}>(
     res.end = async function resEndProxy(...args: any) {
       if (stringify(req.session) !== prevSessStr) {
         await save(store, req.session);
-      } else if ((req as any)[SESS_TOUCHED]) {
-        await store.__touch?.(req.session!.id, prepareSession(req.session!));
+      } else if ((req as any)[SESS_TOUCHED] && store.__touch) {
+        await store.__touch(req.session!.id, prepareSession(req.session!));
       }
       oldEnd.apply(this, args);
     };
