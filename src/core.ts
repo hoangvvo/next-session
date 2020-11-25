@@ -127,7 +127,7 @@ export async function applySession<T = {}>(
   const name = options.name || 'sid';
 
   const commit = async () => {
-    commitHead(res, name, req.session, shouldTouch ,options.encode);
+    commitHead(res, name, req.session, shouldTouch, options.encode);
     await save(store, req.session);
   };
 
@@ -142,7 +142,7 @@ export async function applySession<T = {}>(
 
   // @ts-ignore: req.session as this point is not of type Session
   // but SessionData, but the missing keys will be added later
-  req.session = (sessId ? await store.__get(sessId) : null);
+  req.session = sessId ? await store.__get(sessId) : null;
 
   if (req.session) {
     req.session.commit = commit;
@@ -182,7 +182,7 @@ export async function applySession<T = {}>(
         : stringify(req.session)
       : undefined;
 
-  let shouldTouch = false
+  let shouldTouch = false;
 
   if (req.session.cookie.maxAge) {
     if (
