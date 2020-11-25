@@ -3,13 +3,10 @@ import {
   NextPage,
   NextPageContext,
   NextApiHandler,
-  NextApiRequest,
-  NextApiResponse,
   NextComponentType,
 } from 'next';
-
 import { applySession } from './core';
-import { Options, SessionData } from './types';
+import { Options } from './types';
 
 function getDisplayName(WrappedComponent: NextComponentType<any>) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component';
@@ -27,17 +24,10 @@ export default function withSession<T = {}>(
 ): NextApiHandler | NextPage {
   // API Routes
   if (isNextApiHandler(handler))
-    return async function WithSession(
-      req: NextApiRequest,
-      res: NextApiResponse
-    ) {
-      await applySession(
-        req as NextApiRequest & { session: SessionData },
-        res,
-        options
-      );
+    return async function WithSession(req, res) {
+      await applySession(req, res, options);
       return handler(req, res);
-    };
+    } as NextApiHandler;
 
   // Pages
   const Page = handler;
@@ -47,19 +37,10 @@ export default function withSession<T = {}>(
   WithSession.displayName = `withSession(${getDisplayName(Page)})`;
   if (Page.getInitialProps) {
     WithSession.getInitialProps = async (pageCtx: NextPageContext) => {
-      // @ts-ignore
       if (typeof window === 'undefined') {
-        await applySession(
-          pageCtx.req as NonNullable<NextPageContext['req']> & {
-            session: SessionData;
-          },
-          pageCtx.res as NonNullable<NextPageContext['res']>,
-          options
-        );
+        await applySession(pageCtx.req!, pageCtx.res!, options);
       }
-      return (Page.getInitialProps as NonNullable<
-        NextComponentType['getInitialProps']
-      >)(pageCtx);
+      return Page.getInitialProps!(pageCtx);
     };
   }
   return WithSession;

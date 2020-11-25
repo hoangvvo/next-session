@@ -4,78 +4,50 @@ import { Store as ExpressStore } from 'express-session';
 import { IncomingMessage, ServerResponse } from 'http';
 import MemoryStore from './store/memory';
 import {
+  Session,
   Options,
   SessionData,
   SessionStore,
-  SessionCookieData,
   NormalizedSessionStore,
 } from './types';
 
-type SessionOptions = Omit<
-  Required<Options>,
-  'encode' | 'decode' | 'store' | 'cookie'
-> &
-  Pick<Options, 'encode' | 'decode'> & {
-    store: NormalizedSessionStore;
-  };
-
-const shouldTouch = (cookie: SessionCookieData, touchAfter: number) => {
-  if (touchAfter === -1 || !cookie.maxAge) return false;
-  return (
-    cookie.maxAge * 1000 - (cookie.expires!.getTime() - Date.now()) >=
-    touchAfter
-  );
-};
-
-const stringify = (sess: SessionData) =>
-  JSON.stringify(sess, (key, val) =>
-    key === 'cookie' || key === 'isNew' || key === 'id' ? undefined : val
-  );
-
-const SESS_PREV = Symbol('session#prev');
-const SESS_TOUCHED = Symbol('session#touched');
+const stringify = (sess: SessionData | null | undefined) =>
+  JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));
 
 const commitHead = (
-  req: IncomingMessage & { session?: SessionData | null },
   res: ServerResponse,
-  options: SessionOptions
+  name: string,
+  session: SessionData | null | undefined,
+  touched: boolean,
+  encodeFn?: Options['encode']
 ) => {
-  if (res.headersSent || !req.session) return;
-  if (req.session.isNew || (options.rolling && (req as any)[SESS_TOUCHED])) {
+  if (res.headersSent || !session) return;
+  if (session.isNew || touched) {
     res.setHeader(
       'Set-Cookie',
-      serialize(
-        options.name,
-        options.encode ? options.encode(req.session.id) : req.session.id,
-        {
-          path: req.session.cookie.path,
-          httpOnly: req.session.cookie.httpOnly,
-          expires: req.session.cookie.expires,
-          domain: req.session.cookie.domain,
-          sameSite: req.session.cookie.sameSite,
-          secure: req.session.cookie.secure,
-        }
-      )
+      serialize(name, encodeFn ? encodeFn(session.id) : session.id, {
+        path: session.cookie.path,
+        httpOnly: session.cookie.httpOnly,
+        expires: session.cookie.expires,
+        domain: session.cookie.domain,
+        sameSite: session.cookie.sameSite,
+        secure: session.cookie.secure,
+      })
     );
   }
 };
 
-const save = async (
-  req: IncomingMessage & { session?: SessionData | null },
-  options: SessionOptions
-) => {
-  if (!req.session) return;
+const prepareSession = (session: SessionData) => {
   const obj: SessionData = {} as any;
-  for (const key in req.session) {
-    if (!(key === ('isNew' || key === 'id'))) obj[key] = req.session[key];
-  }
-
-  if (stringify(req.session) !== (req as any)[SESS_PREV]) {
-    await options.store.__set(req.session.id, obj);
-  } else if ((req as any)[SESS_TOUCHED]) {
-    await options.store.__touch?.(req.session.id, obj);
-  }
+  for (const key in session)
+    !(key === ('isNew' || key === 'id')) && (obj[key] = session[key]);
+  return obj;
 };
+
+const save = async (
+  store: NormalizedSessionStore,
+  session: SessionData | null | undefined
+) => session && store.__set(session.id, prepareSession(session));
 
 function setupStore(
   store: SessionStore | ExpressStore | NormalizedSessionStore
@@ -94,8 +66,9 @@ function setupStore(
 
   s.__get = function get(sid) {
     return new Promise((resolve, reject) => {
-      const done = (err: any, val: SessionData) =>
+      const done = (err: any, val: SessionData | null | undefined) =>
         err ? reject(err) : resolve(val);
+      // @ts-ignore: Certain differences between express-session type and ours
       const result = this.get(sid, done);
       if (result && typeof result.then === 'function')
         result.then(resolve, reject);
@@ -105,6 +78,7 @@ function setupStore(
   s.__set = function set(sid, sess) {
     return new Promise((resolve, reject) => {
       const done = (err: any) => (err ? reject(err) : resolve());
+      // @ts-ignore: Certain differences between express-session type and ours
       const result = this.set(sid, sess, done);
       if (result && typeof result.then === 'function')
         result.then(resolve, reject);
@@ -115,7 +89,8 @@ function setupStore(
     s.__touch = function touch(sid, sess) {
       return new Promise((resolve, reject) => {
         const done = (err: any) => (err ? reject(err) : resolve());
-        const result = this.touch(sid, sess, done);
+        // @ts-ignore: Certain differences between express-session type and ours
+        const result = this.touch!(sid, sess, done);
         if (result && typeof result.then === 'function')
           result.then(resolve, reject);
       });
@@ -129,105 +104,124 @@ function setupStore(
 let memoryStore: MemoryStore;
 
 export async function applySession<T = {}>(
-  req: IncomingMessage & { session: SessionData },
+  req: IncomingMessage & { session?: Session | null | undefined },
   res: ServerResponse,
-  opts?: Options
+  options: Options = {}
 ): Promise<void> {
   if (req.session) return;
 
-  const options: SessionOptions = {
-    name: opts?.name || 'sid',
-    store: setupStore(
-      opts?.store || (memoryStore = memoryStore || new MemoryStore())
-    ),
-    genid: opts?.genid || nanoid,
-    encode: opts?.encode,
-    decode: opts?.decode,
-    rolling: opts?.rolling || false,
-    touchAfter: opts?.touchAfter ? opts.touchAfter : 0,
-    autoCommit:
-      typeof opts?.autoCommit !== 'undefined' ? opts.autoCommit : true,
-  };
+  // This allows both promised-based and callback-based store to work
+  const store: NormalizedSessionStore = setupStore(
+    options.store || (memoryStore = memoryStore || new MemoryStore())
+  );
 
-  let sessId =
-    req.headers && req.headers.cookie
-      ? parse(req.headers.cookie)[options.name]
-      : null;
+  // compat: if rolling is `true`, user might have wanted to touch every time
+  // thus defaulting options.touchAfter to 0 instead of -1
+  if (options.rolling && !('touchAfter' in options)) {
+    console.warn(
+      'The use of options.rolling is deprecated. Setting this to `true` without options.touchAfter causes options.touchAfter to be defaulted to `0` (always)'
+    );
+    options.touchAfter = 0;
+  }
 
-  if (sessId && options.decode) sessId = options.decode(sessId);
-
-  const sess = sessId ? await options.store.__get(sessId) : null;
+  const name = options.name || 'sid';
 
   const commit = async () => {
-    commitHead(req, res, options);
-    await save(req, options);
+    commitHead(res, name, req.session, shouldTouch, options.encode);
+    await save(store, req.session);
   };
 
   const destroy = async () => {
-    await options.store.__destroy(req.session.id);
-    // This is a valid TS error, but considering its usage, it's fine.
-    // @ts-ignore
-    delete req.session;
+    await store.__destroy(req.session!.id);
+    req.session = null;
   };
 
-  if (sess) {
-    (req as any)[SESS_PREV] = stringify(sess);
-    const { cookie, ...data } = sess;
-    if (typeof cookie.expires === 'string')
-      cookie.expires = new Date(cookie.expires);
-    req.session = {
-      cookie,
-      commit,
-      destroy,
-      isNew: false,
-      id: sessId!,
-    };
-    for (const key in data) req.session[key] = data[key];
+  let sessId =
+    req.headers && req.headers.cookie ? parse(req.headers.cookie)[name] : null;
+  if (sessId && options.decode) sessId = options.decode(sessId);
+
+  // @ts-ignore: req.session as this point is not of type Session
+  // but SessionData, but the missing keys will be added later
+  req.session = sessId ? await store.__get(sessId) : null;
+
+  if (req.session) {
+    req.session.commit = commit;
+    req.session.destroy = destroy;
+    req.session.isNew = false;
+    req.session.id = sessId!;
+    // Some store return cookie.expires as string, convert it to Date
+    if (typeof req.session.cookie.expires === 'string')
+      req.session.cookie.expires = new Date(req.session.cookie.expires);
   } else {
-    (req as any)[SESS_PREV] = '{}';
     req.session = {
       cookie: {
-        path: opts?.cookie?.path || '/',
-        maxAge: opts?.cookie?.maxAge || null,
-        httpOnly: opts?.cookie?.httpOnly || true,
-        domain: opts?.cookie?.domain || undefined,
-        sameSite: opts?.cookie?.sameSite,
-        secure: opts?.cookie?.secure || false,
+        path: options.cookie?.path || '/',
+        httpOnly: options.cookie?.httpOnly || true,
+        domain: options.cookie?.domain || undefined,
+        sameSite: options.cookie?.sameSite,
+        secure: options.cookie?.secure || false,
+        ...(options.cookie?.maxAge
+          ? { maxAge: options.cookie.maxAge, expires: new Date() }
+          : { maxAge: null }),
       },
       commit,
       destroy,
       isNew: true,
-      id: options.genid(),
+      id: (options.genid || nanoid)(),
     };
-    if (opts?.cookie?.maxAge) req.session.cookie.expires = new Date();
   }
 
-  // Extend session expiry
-  if (
-    ((req as any)[SESS_TOUCHED] = shouldTouch(
-      req.session.cookie,
-      options.touchAfter
-    ))
-  ) {
-    req.session.cookie.expires = new Date(
-      Date.now() + req.session.cookie.maxAge! * 1000
-    );
+  // prevSessStr is used to compare the session later
+  // for touchability -- that is, we only touch the
+  // session if it has changed. This check is used
+  // in autoCommit mode only
+  const prevSessStr: string | undefined =
+    options.autoCommit !== false
+      ? req.session.isNew
+        ? '{}'
+        : stringify(req.session)
+      : undefined;
+
+  let shouldTouch = false;
+
+  if (req.session.cookie.maxAge) {
+    if (
+      // Extend expires either if it is a new session
+      req.session.isNew ||
+      // or if touchAfter condition is satsified
+      (typeof options.touchAfter === 'number' &&
+        options.touchAfter !== -1 &&
+        (shouldTouch =
+          req.session.cookie.maxAge * 1000 -
+            (req.session.cookie.expires.getTime() - Date.now()) >=
+          options.touchAfter))
+    ) {
+      req.session.cookie.expires = new Date(
+        Date.now() + req.session.cookie.maxAge * 1000
+      );
+    }
   }
 
-  // autocommit
-  if (options.autoCommit) {
+  // autocommit: We commit the header and save the session automatically
+  // by "proxying" res.writeHead and res.end methods. After committing, we
+  // call the original res.writeHead and res.end.
+  if (options.autoCommit !== false) {
     const oldWritehead = res.writeHead;
     res.writeHead = function resWriteHeadProxy(...args: any) {
-      commitHead(req, res, options);
+      commitHead(res, name, req.session, shouldTouch, options.encode);
       return oldWritehead.apply(this, args);
     };
     const oldEnd = res.end;
     res.end = async function resEndProxy(...args: any) {
-      await save(req, options);
+      if (stringify(req.session) !== prevSessStr) {
+        await save(store, req.session);
+      } else if (req.session && shouldTouch && store.__touch) {
+        await store.__touch(req.session!.id, prepareSession(req.session!));
+      }
       oldEnd.apply(this, args);
     };
   }
 
   // Compat
-  (req as any).sessionStore = options.store;
+  (req as any).sessionStore = store;
 }
