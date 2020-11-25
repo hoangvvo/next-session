@@ -38,16 +38,7 @@ export default class MemoryStore extends EventEmitter implements SessionStore {
   }
 
   touch(sid: string, session: SessionData) {
-    return this.get(sid).then((sess) => {
-      if (sess) {
-        const newSess = {
-          ...sess,
-          cookie: session.cookie,
-        };
-        return this.set(sid, newSess);
-      }
-      return undefined;
-    });
+    return this.set(sid, session);
   }
 
   all() {

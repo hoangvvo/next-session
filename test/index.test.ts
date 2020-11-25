@@ -437,6 +437,25 @@ describe('callback store', () => {
       .expect('1')
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
   });
+  it('should work (without touch)', async () => {
+    const store = (new CbStore() as unknown) as ExpressStore;
+    delete store.touch;
+    const server = setUpServer(defaultHandler, { store });
+    expect(store).not.toHaveProperty('__touch');
+    const agent = request.agent(server);
+    await agent
+      .post('/')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+    await agent
+      .post('/')
+      .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+    await agent.get('/').expect('2');
+    await agent.delete('/');
+    await await agent
+      .post('/')
+      .expect('1')
+      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+  });
 });
 
 describe('promisifyStore', () => {
