@@ -51,6 +51,8 @@ export const config = {
 
 #### `{ session }`
 
+**note:** To use the session in more than one route, consider calling `session()` once and exporting it as a variable (similar to `mySession` in below example) to avoid a maxListenersExceeded memory leak warning.
+
 ```javascript
 import { session } from 'next-session';
 import nextConnect from 'next-connect';
