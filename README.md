@@ -51,12 +51,16 @@ export const config = {
 
 #### `{ session }`
 
+**Note:** If you intend to call `session()` in multiple places, consider doing it only once and exporting it for elsewhere to avoid exceeded listeners.
+
 ```javascript
 import { session } from 'next-session';
 import nextConnect from 'next-connect';
 
+const mySession = session({ ...options });
+
 const handler = nextConnect()
-  .use(session({ ...options }))
+  .use(mySession)
   .all(() => {
     req.session.views = req.session.views ? req.session.views + 1 : 1;
     res.send(
