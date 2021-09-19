@@ -215,9 +215,9 @@ export async function applySession<T = {}>(
     res.end = function resEndProxy(...args: any) {
       const onSuccess = () => oldEnd.apply(this, args);
       if (stringify(req.session) !== prevSessStr) {
-        save(store, req.session).then(onSuccess);
+        save(store, req.session).finally(onSuccess);
       } else if (req.session && shouldTouch && store.__touch) {
-        store.__touch(req.session!.id, prepareSession(req.session!)).then(onSuccess);
+        store.__touch(req.session!.id, prepareSession(req.session!)).finally(onSuccess);
       } else {
         onSuccess();
       }
