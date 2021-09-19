@@ -28,13 +28,6 @@ export abstract class SessionStore {
   on?(event: string | symbol, listener: (...args: any[]) => void): this;
 }
 
-export type NormalizedSessionStore = {
-  __get(sid: string): Promise<SessionData | null | undefined>;
-  __set(sid: string, sess: SessionData): Promise<void>;
-  __destroy(sid: string): Promise<void>;
-  __touch(sid: string, sess: SessionData): Promise<void>;
-} & (SessionStore | ExpressStore);
-
 export interface Options {
   name?: string;
   store?: SessionStore | ExpressStore;

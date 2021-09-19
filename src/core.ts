@@ -1,25 +1,19 @@
-import { parse, serialize } from 'cookie';
-import { Store as ExpressStore } from 'express-session';
-import { IncomingMessage, ServerResponse } from 'http';
-import { nanoid } from 'nanoid';
-import MemoryStore from './store/memory';
-import {
-  NormalizedSessionStore,
-  Options,
-  Session,
-  SessionData,
-  SessionStore
-} from './types';
+import { parse, serialize } from "cookie";
+import { Store as ExpressStore } from "express-session";
+import { IncomingMessage, ServerResponse } from "http";
+import { nanoid } from "nanoid";
+import MemoryStore from "./store/memory";
+import { Options, Session, SessionData, SessionStore } from "./types";
 
 const stringify = (sess: SessionData | null | undefined) =>
-  JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));
+  JSON.stringify(sess, (key, val) => (key === "cookie" ? undefined : val));
 
 const commitHead = (
   res: ServerResponse,
   name: string,
   session: SessionData | null | undefined,
   touched: boolean,
-  encodeFn?: Options['encode']
+  encodeFn?: Options["encode"]
 ) => {
   if (res.headersSent || !session) return;
   if (session.isNew || touched) {
@@ -33,76 +27,63 @@ const commitHead = (
         secure: session.cookie.secure,
       }),
     ];
-    const prevCookies = res.getHeader('set-cookie');
+    const prevCookies = res.getHeader("set-cookie");
     if (prevCookies) {
       if (Array.isArray(prevCookies)) cookieArr.push(...prevCookies);
       else cookieArr.push(prevCookies as string);
     }
-    res.setHeader('set-cookie', cookieArr);
+    res.setHeader("set-cookie", cookieArr);
   }
 };
 
 const prepareSession = (session: SessionData) => {
   const obj: SessionData = {} as any;
   for (const key in session)
-    !(key === ('isNew' || key === 'id')) && (obj[key] = session[key]);
+    !(key === ("isNew" || key === "id")) && (obj[key] = session[key]);
   return obj;
 };
 
+const compatLayer = {
+  destroy(s: ExpressStore | SessionStore, sid: string) {
+    return new Promise<void>((resolve, reject) => {
+      const result = s.destroy(sid, (err) => (err ? reject(err) : resolve()));
+      if (result && typeof result.then === "function")
+        result.then(resolve, reject);
+    });
+  },
+  get(s: ExpressStore | SessionStore, sid: string) {
+    return new Promise<SessionData | null | undefined>((resolve, reject) => {
+      const result = s.get(sid, (err, val) =>
+        // @ts-ignore: Compat diff
+        err ? reject(err) : resolve(val)
+      );
+      if (result && typeof result.then === "function")
+        result.then(resolve, reject);
+    });
+  },
+  set(s: ExpressStore | SessionStore, sid: string, sess: SessionData) {
+    return new Promise<void>((resolve, reject) => {
+      // @ts-ignore: Compat diff
+      const result = s.set(sid, sess, (err) => (err ? reject(err) : resolve()));
+      if (result && typeof result.then === "function")
+        result.then(resolve, reject);
+    });
+  },
+  touch(s: ExpressStore | SessionStore, sid: string, sess: SessionData) {
+    return new Promise<void>((resolve, reject) => {
+      const done = (err: any) => (err ? reject(err) : resolve());
+      // @ts-ignore: Compat diff
+      const result = s.touch!(sid, sess, done);
+      if (result && typeof result.then === "function")
+        result.then(resolve, reject);
+    });
+  },
+};
+
 const save = async (
-  store: NormalizedSessionStore,
+  store: SessionStore | ExpressStore,
   session: SessionData | null | undefined
-) => session && store.__set(session.id, prepareSession(session));
-
-function setupStore(
-  store: SessionStore | ExpressStore | NormalizedSessionStore
-) {
-  if ('__get' in store) return store;
-  const s = store as unknown as NormalizedSessionStore;
-
-  s.__destroy = function destroy(sid) {
-    return new Promise((resolve, reject) => {
-      const done = (err: any) => (err ? reject(err) : resolve());
-      const result = this.destroy(sid, done);
-      if (result && typeof result.then === 'function')
-        result.then(resolve, reject);
-    });
-  };
-
-  s.__get = function get(sid) {
-    return new Promise((resolve, reject) => {
-      const done = (err: any, val: SessionData | null | undefined) =>
-        err ? reject(err) : resolve(val);
-      // @ts-ignore: Certain differences between express-session type and ours
-      const result = this.get(sid, done);
-      if (result && typeof result.then === 'function')
-        result.then(resolve, reject);
-    });
-  };
-
-  s.__set = function set(sid, sess) {
-    return new Promise((resolve, reject) => {
-      const done = (err: any) => (err ? reject(err) : resolve());
-      // @ts-ignore: Certain differences between express-session type and ours
-      const result = this.set(sid, sess, done);
-      if (result && typeof result.then === 'function')
-        result.then(resolve, reject);
-    });
-  };
-
-  if (store.touch) {
-    s.__touch = function touch(sid, sess) {
-      return new Promise((resolve, reject) => {
-        const done = (err: any) => (err ? reject(err) : resolve());
-        // @ts-ignore: Certain differences between express-session type and ours
-        const result = this.touch!(sid, sess, done);
-        if (result && typeof result.then === 'function')
-          result.then(resolve, reject);
-      });
-    };
-  }
-  return s;
-}
+) => session && compatLayer.set(store, session.id, prepareSession(session));
 
 let memoryStore: MemoryStore;
 
@@ -113,21 +94,21 @@ export async function applySession<T = {}>(
 ): Promise<void> {
   if (req.session) return;
 
-  // This allows both promised-based and callback-based store to work
-  const store: NormalizedSessionStore = setupStore(
-    options.store || (memoryStore = memoryStore || new MemoryStore())
-  );
+  const store =
+    options.store || (memoryStore = memoryStore || new MemoryStore());
 
+  // Compat
+  (req as any).sessionStore = store;
   // compat: if rolling is `true`, user might have wanted to touch every time
   // thus defaulting options.touchAfter to 0 instead of -1
-  if (options.rolling && !('touchAfter' in options)) {
+  if (options.rolling && !("touchAfter" in options)) {
     console.warn(
-      'The use of options.rolling is deprecated. Setting this to `true` without options.touchAfter causes options.touchAfter to be defaulted to `0` (always)'
+      "The use of options.rolling is deprecated. Setting this to `true` without options.touchAfter causes options.touchAfter to be defaulted to `0` (always)"
     );
     options.touchAfter = 0;
   }
 
-  const name = options.name || 'sid';
+  const name = options.name || "sid";
 
   const commit = async () => {
     commitHead(res, name, req.session, shouldTouch, options.encode);
@@ -135,7 +116,7 @@ export async function applySession<T = {}>(
   };
 
   const destroy = async () => {
-    await store.__destroy(req.session!.id);
+    await compatLayer.destroy(store, req.session!.id);
     req.session = null;
   };
 
@@ -145,7 +126,7 @@ export async function applySession<T = {}>(
 
   // @ts-ignore: req.session as this point is not of type Session
   // but SessionData, but the missing keys will be added later
-  req.session = sessId ? await store.__get(sessId) : null;
+  req.session = sessId ? await compatLayer.get(store, sessId) : null;
 
   if (req.session) {
     req.session.commit = commit;
@@ -153,12 +134,12 @@ export async function applySession<T = {}>(
     req.session.isNew = false;
     req.session.id = sessId!;
     // Some store return cookie.expires as string, convert it to Date
-    if (typeof req.session.cookie.expires === 'string')
+    if (typeof req.session.cookie.expires === "string")
       req.session.cookie.expires = new Date(req.session.cookie.expires);
   } else {
     req.session = {
       cookie: {
-        path: options.cookie?.path || '/',
+        path: options.cookie?.path || "/",
         httpOnly: options.cookie?.httpOnly || true,
         domain: options.cookie?.domain || undefined,
         sameSite: options.cookie?.sameSite,
@@ -181,7 +162,7 @@ export async function applySession<T = {}>(
   const prevSessStr: string | undefined =
     options.autoCommit !== false
       ? req.session.isNew
-        ? '{}'
+        ? "{}"
         : stringify(req.session)
       : undefined;
 
@@ -192,7 +173,7 @@ export async function applySession<T = {}>(
       // Extend expires either if it is a new session
       req.session.isNew ||
       // or if touchAfter condition is satsified
-      (typeof options.touchAfter === 'number' &&
+      (typeof options.touchAfter === "number" &&
         options.touchAfter !== -1 &&
         (shouldTouch =
           req.session.cookie.maxAge * 1000 -
@@ -219,16 +200,13 @@ export async function applySession<T = {}>(
       const onSuccess = () => oldEnd.apply(this, args);
       if (stringify(req.session) !== prevSessStr) {
         save(store, req.session).finally(onSuccess);
-      } else if (req.session && shouldTouch && store.__touch) {
-        store
-          .__touch(req.session!.id, prepareSession(req.session!))
+      } else if (req.session && shouldTouch && store.touch) {
+        compatLayer
+          .touch(store, req.session!.id, prepareSession(req.session!))
           .finally(onSuccess);
       } else {
         onSuccess();
       }
     };
   }
-
-  // Compat
-  (req as any).sessionStore = store;
 }
