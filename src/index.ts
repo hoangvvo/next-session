@@ -4,4 +4,3 @@ export { applySession } from './core';
 export { default as MemoryStore } from './store/memory';
 export { Options, SessionCookieData, SessionData, SessionStore } from './types';
 export { default as withSession } from './withSession';
-

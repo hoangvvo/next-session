@@ -1,19 +1,19 @@
-import { parse, serialize } from "cookie";
-import { Store as ExpressStore } from "express-session";
-import { IncomingMessage, ServerResponse } from "http";
-import { nanoid } from "nanoid";
-import MemoryStore from "./store/memory";
-import { Options, Session, SessionData, SessionStore } from "./types";
+import { parse, serialize } from 'cookie';
+import { Store as ExpressStore } from 'express-session';
+import { IncomingMessage, ServerResponse } from 'http';
+import { nanoid } from 'nanoid';
+import MemoryStore from './store/memory';
+import { Options, Session, SessionData, SessionStore } from './types';
 
 const stringify = (sess: SessionData | null | undefined) =>
-  JSON.stringify(sess, (key, val) => (key === "cookie" ? undefined : val));
+  JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));
 
 const commitHead = (
   res: ServerResponse,
   name: string,
   session: SessionData | null | undefined,
   touched: boolean,
-  encodeFn?: Options["encode"]
+  encodeFn?: Options['encode']
 ) => {
   if (res.headersSent || !session) return;
   if (session.isNew || touched) {
@@ -27,19 +27,19 @@ const commitHead = (
         secure: session.cookie.secure,
       }),
     ];
-    const prevCookies = res.getHeader("set-cookie");
+    const prevCookies = res.getHeader('set-cookie');
     if (prevCookies) {
       if (Array.isArray(prevCookies)) cookieArr.push(...prevCookies);
       else cookieArr.push(prevCookies as string);
     }
-    res.setHeader("set-cookie", cookieArr);
+    res.setHeader('set-cookie', cookieArr);
   }
 };
 
 const prepareSession = (session: SessionData) => {
   const obj: SessionData = {} as any;
   for (const key in session)
-    !(key === ("isNew" || key === "id")) && (obj[key] = session[key]);
+    !(key === ('isNew' || key === 'id')) && (obj[key] = session[key]);
   return obj;
 };
 
@@ -47,7 +47,7 @@ const compatLayer = {
   destroy(s: ExpressStore | SessionStore, sid: string) {
     return new Promise<void>((resolve, reject) => {
       const result = s.destroy(sid, (err) => (err ? reject(err) : resolve()));
-      if (result && typeof result.then === "function")
+      if (result && typeof result.then === 'function')
         result.then(resolve, reject);
     });
   },
@@ -57,7 +57,7 @@ const compatLayer = {
         // @ts-ignore: Compat diff
         err ? reject(err) : resolve(val)
       );
-      if (result && typeof result.then === "function")
+      if (result && typeof result.then === 'function')
         result.then(resolve, reject);
     });
   },
@@ -65,7 +65,7 @@ const compatLayer = {
     return new Promise<void>((resolve, reject) => {
       // @ts-ignore: Compat diff
       const result = s.set(sid, sess, (err) => (err ? reject(err) : resolve()));
-      if (result && typeof result.then === "function")
+      if (result && typeof result.then === 'function')
         result.then(resolve, reject);
     });
   },
@@ -74,7 +74,7 @@ const compatLayer = {
       const done = (err: any) => (err ? reject(err) : resolve());
       // @ts-ignore: Compat diff
       const result = s.touch!(sid, sess, done);
-      if (result && typeof result.then === "function")
+      if (result && typeof result.then === 'function')
         result.then(resolve, reject);
     });
   },
@@ -101,14 +101,14 @@ export async function applySession<T = {}>(
   (req as any).sessionStore = store;
   // compat: if rolling is `true`, user might have wanted to touch every time
   // thus defaulting options.touchAfter to 0 instead of -1
-  if (options.rolling && !("touchAfter" in options)) {
+  if (options.rolling && !('touchAfter' in options)) {
     console.warn(
-      "The use of options.rolling is deprecated. Setting this to `true` without options.touchAfter causes options.touchAfter to be defaulted to `0` (always)"
+      'The use of options.rolling is deprecated. Setting this to `true` without options.touchAfter causes options.touchAfter to be defaulted to `0` (always)'
     );
     options.touchAfter = 0;
   }
 
-  const name = options.name || "sid";
+  const name = options.name || 'sid';
 
   const commit = async () => {
     commitHead(res, name, req.session, shouldTouch, options.encode);
@@ -134,12 +134,12 @@ export async function applySession<T = {}>(
     req.session.isNew = false;
     req.session.id = sessId!;
     // Some store return cookie.expires as string, convert it to Date
-    if (typeof req.session.cookie.expires === "string")
+    if (typeof req.session.cookie.expires === 'string')
       req.session.cookie.expires = new Date(req.session.cookie.expires);
   } else {
     req.session = {
       cookie: {
-        path: options.cookie?.path || "/",
+        path: options.cookie?.path || '/',
         httpOnly: options.cookie?.httpOnly || true,
         domain: options.cookie?.domain || undefined,
         sameSite: options.cookie?.sameSite,
@@ -162,7 +162,7 @@ export async function applySession<T = {}>(
   const prevSessStr: string | undefined =
     options.autoCommit !== false
       ? req.session.isNew
-        ? "{}"
+        ? '{}'
         : stringify(req.session)
       : undefined;
 
@@ -173,7 +173,7 @@ export async function applySession<T = {}>(
       // Extend expires either if it is a new session
       req.session.isNew ||
       // or if touchAfter condition is satsified
-      (typeof options.touchAfter === "number" &&
+      (typeof options.touchAfter === 'number' &&
         options.touchAfter !== -1 &&
         (shouldTouch =
           req.session.cookie.maxAge * 1000 -
