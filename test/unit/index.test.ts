@@ -13,9 +13,9 @@ import {
   session,
   SessionData,
   withSession
-} from '../src';
-import MemoryStore from '../src/store/memory';
-import { Options } from '../src/types';
+} from '../../src';
+import MemoryStore from '../../src/store/memory';
+import { Options } from '../../src/types';
 const signature = require('cookie-signature');
 const { parse: parseCookie } = require('cookie');
 

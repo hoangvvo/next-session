@@ -1,9 +1,8 @@
-import { withSession, MemoryStore } from '../../../../../dist';
-import { NextApiRequest, NextApiResponse } from 'next';
+import { MemoryStore, withSession } from '../../../../../dist';
 
 const store = new MemoryStore();
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req, res) {
   if (req.method === 'GET')
     req.session.views = req.session.views ? req.session.views + 1 : 1;
   if (req.method === 'DELETE') await req.session.destroy();

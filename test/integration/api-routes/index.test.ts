@@ -1,23 +1,26 @@
-import request from 'supertest';
-import { nextBuild, startApp, stopApp } from '../next-test-utils';
+import fs from 'fs';
 import { Server } from 'http';
 import { AddressInfo } from 'net';
+import path from 'path';
+import request from 'supertest';
+import { nextBuild, nextServer, startApp, stopApp } from '../next-test-utils';
 
 const appDir = __dirname;
 let server: Server;
 let agent: request.SuperTest<request.Test>;
 let base: string;
 
-// eslint-disable-next-line no-undef
-jasmine.DEFAULT_TIMEOUT_INTERVAL = 1000 * 30;
+fs.rmSync(path.join(appDir, '.next'), { force: true, recursive: true });
+
+jest.setTimeout(1000 * 30);
 
 beforeAll(async () => {
   await nextBuild(appDir);
-  server = await startApp({
+  const app = nextServer({
     dir: appDir,
     dev: false,
-    quiet: true,
   });
+  server = await startApp(app);
   const appPort = (server.address() as AddressInfo).port;
   base = `http://localhost:${appPort}`;
 });
