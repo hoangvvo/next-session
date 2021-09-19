@@ -15,9 +15,9 @@ import {
   session,
   SessionData,
   withSession
-} from '../../src/index.js';
-import MemoryStore from '../../src/store/memory.js';
-import { Options } from '../../src/types.js';
+} from '../../src/index';
+import MemoryStore from '../../src/store/memory';
+import { Options } from '../../src/types';
 
 class CbStore {
   sessions: Record<string, any> = {};

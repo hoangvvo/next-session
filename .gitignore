@@ -69,3 +69,5 @@ lib/
 
 # package-lock
 package-lock.json
+
+test/**/yarn.lock
