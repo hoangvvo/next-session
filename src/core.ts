@@ -1,14 +1,11 @@
 import { parse, serialize } from 'cookie';
-import { nanoid } from 'nanoid';
 import { Store as ExpressStore } from 'express-session';
 import { IncomingMessage, ServerResponse } from 'http';
+import { nanoid } from 'nanoid';
 import MemoryStore from './store/memory';
 import {
-  Session,
-  Options,
-  SessionData,
-  SessionStore,
-  NormalizedSessionStore,
+  NormalizedSessionStore, Options, Session, SessionData,
+  SessionStore
 } from './types';
 
 const stringify = (sess: SessionData | null | undefined) =>
@@ -57,7 +54,7 @@ const save = async (
 function setupStore(
   store: SessionStore | ExpressStore | NormalizedSessionStore
 ) {
-  if ('__normalized' in store) return store;
+  if ('__get' in store) return store;
   const s = (store as unknown) as NormalizedSessionStore;
 
   s.__destroy = function destroy(sid) {
@@ -101,8 +98,6 @@ function setupStore(
       });
     };
   }
-
-  s.__normalized = true;
   return s;
 }
 
