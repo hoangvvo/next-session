@@ -1,10 +1,10 @@
-import { createElement } from 'react';
 import {
-  NextPage,
-  NextPageContext,
   NextApiHandler,
   NextComponentType,
+  NextPage,
+  NextPageContext
 } from 'next';
+import { createElement } from 'react';
 import { applySession } from './core';
 import { Options } from './types';
 

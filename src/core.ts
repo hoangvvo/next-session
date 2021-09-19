@@ -1,14 +1,14 @@
 import { parse, serialize } from 'cookie';
-import { nanoid } from 'nanoid';
 import { Store as ExpressStore } from 'express-session';
 import { IncomingMessage, ServerResponse } from 'http';
+import { nanoid } from 'nanoid';
 import MemoryStore from './store/memory';
 import {
-  Session,
-  Options,
-  SessionData,
-  SessionStore,
   NormalizedSessionStore,
+  Options,
+  Session,
+  SessionData,
+  SessionStore
 } from './types';
 
 const stringify = (sess: SessionData | null | undefined) =>
@@ -57,8 +57,8 @@ const save = async (
 function setupStore(
   store: SessionStore | ExpressStore | NormalizedSessionStore
 ) {
-  if ('__normalized' in store) return store;
-  const s = (store as unknown) as NormalizedSessionStore;
+  if ('__get' in store) return store;
+  const s = store as unknown as NormalizedSessionStore;
 
   s.__destroy = function destroy(sid) {
     return new Promise((resolve, reject) => {
@@ -101,8 +101,6 @@ function setupStore(
       });
     };
   }
-
-  s.__normalized = true;
   return s;
 }
 
@@ -217,13 +215,17 @@ export async function applySession<T = {}>(
       return oldWritehead.apply(this, args);
     };
     const oldEnd = res.end;
-    res.end = async function resEndProxy(...args: any) {
+    res.end = function resEndProxy(...args: any) {
+      const onSuccess = () => oldEnd.apply(this, args);
       if (stringify(req.session) !== prevSessStr) {
-        await save(store, req.session);
+        save(store, req.session).finally(onSuccess);
       } else if (req.session && shouldTouch && store.__touch) {
-        await store.__touch(req.session!.id, prepareSession(req.session!));
+        store
+          .__touch(req.session!.id, prepareSession(req.session!))
+          .finally(onSuccess);
+      } else {
+        onSuccess();
       }
-      oldEnd.apply(this, args);
     };
   }
 

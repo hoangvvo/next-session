@@ -1,22 +1,21 @@
 // @ts-nocheck
-import React from 'react';
-import { createServer, RequestListener } from 'http';
-import request from 'supertest';
 import EventEmitter from 'events';
+import { Store as ExpressStore } from 'express-session';
+import { createServer, IncomingMessage, RequestListener } from 'http';
+import { NextApiHandler, NextComponentType, NextPage } from 'next';
+import React from 'react';
+import request from 'supertest';
 import { parse } from 'url';
 import {
   applySession,
+  expressSession,
   promisifyStore,
-  withSession,
   session,
   SessionData,
-  expressSession,
+  withSession
 } from '../src';
-import { Options } from '../src/types';
 import MemoryStore from '../src/store/memory';
-import { Store as ExpressStore } from 'express-session';
-import { IncomingMessage } from 'http';
-import { NextPage, NextApiHandler, NextComponentType } from 'next';
+import { Options } from '../src/types';
 const signature = require('cookie-signature');
 const { parse: parseCookie } = require('cookie');
 
@@ -362,14 +361,20 @@ describe('applySession', () => {
       .post('/')
       .then(({ header }) => expect(header['set-cookie']).toHaveLength(3));
   });
+
+  test('should not makes res.end a promise', async () => {
+    const request: any = {};
+    const response: any = { writeHead: () => null, end: () => null };
+    await applySession(request, response);
+    expect(response.end()).toBeUndefined();
+  });
 });
 
 describe('withSession', () => {
   // FIXME: Replace with integration test
   test('works with API Routes', async () => {
     const request: any = {};
-    const response: any = { end: () => null };
-    // eslint-disable-next-line no-unused-vars
+    const response: any = { writeHead: () => null, end: () => null };
     function handler(req: any, res: any) {
       return req.session;
     }
@@ -387,9 +392,11 @@ describe('withSession', () => {
     };
     const ctx = { req: { headers: { cookie: '' } }, res: {} };
     expect(
-      await ((withSession(Page) as NextPage).getInitialProps as NonNullable<
-        NextComponentType['getInitialProps']
-      >)(ctx as any)
+      await (
+        (withSession(Page) as NextPage).getInitialProps as NonNullable<
+          NextComponentType['getInitialProps']
+        >
+      )(ctx as any)
     ).toBeTruthy();
   });
 
@@ -407,7 +414,7 @@ describe('connect middleware', () => {
   // FIXME: Replace with integration test
   test('works as middleware', async () => {
     const request: any = {};
-    const response: any = { end: () => null };
+    const response: any = { writeHead: () => null, end: () => null };
     await new Promise((resolve) => {
       session()(request, response, resolve);
     });
@@ -454,7 +461,7 @@ describe('Store', () => {
 describe('callback store', () => {
   it('should work', async () => {
     const server = setUpServer(defaultHandler, {
-      store: (new CbStore() as unknown) as ExpressStore,
+      store: new CbStore() as unknown as ExpressStore,
     });
     const agent = request.agent(server);
     await agent
@@ -472,7 +479,7 @@ describe('callback store', () => {
   });
   it('should work (with touch)', async () => {
     const server = setUpServer(defaultHandler, {
-      store: (new CbStore() as unknown) as ExpressStore,
+      store: new CbStore() as unknown as ExpressStore,
       cookie: { maxAge: 100 },
       touchAfter: 0,
     });
@@ -486,7 +493,7 @@ describe('callback store', () => {
     await agent.get('/').expect('2');
   });
   it('should work (without touch)', async () => {
-    const store = (new CbStore() as unknown) as ExpressStore;
+    const store = new CbStore() as unknown as ExpressStore;
     delete store.touch;
     const server = setUpServer(defaultHandler, { store });
     expect(store).not.toHaveProperty('__touch');
@@ -509,7 +516,7 @@ describe('callback store', () => {
 describe('promisifyStore', () => {
   test('should returns the store itself (with console.warn)', async () => {
     const store = new CbStore();
-    expect(promisifyStore((store as unknown) as ExpressStore)).toBe(store);
+    expect(promisifyStore(store as unknown as ExpressStore)).toBe(store);
   });
 });
 
