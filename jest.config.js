@@ -4,5 +4,10 @@ module.exports = {
   collectCoverage: true,
   collectCoverageFrom: ['src/**/*'],
   testMatch: ['**/*.test.ts'],
-  bail: true
+  bail: true,
+  globals: {
+    'ts-jest': {
+      diagnostics: false
+    }
+  }
 };

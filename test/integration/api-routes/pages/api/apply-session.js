@@ -1,9 +1,8 @@
 import { applySession, MemoryStore } from '../../../../../dist';
-import { NextApiRequest, NextApiResponse } from 'next';
 
 const store = new MemoryStore();
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req, res) {
   await applySession(req, res, { name: 'apply-session', store });
   if (req.method === 'GET')
     req.session.views = req.session.views ? req.session.views + 1 : 1;
