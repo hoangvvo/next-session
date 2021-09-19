@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { parse as parseCookie } from 'cookie';
+import signature from 'cookie-signature';
 import EventEmitter from 'events';
 import { Store as ExpressStore } from 'express-session';
 import { createServer, IncomingMessage, RequestListener } from 'http';
@@ -13,11 +15,9 @@ import {
   session,
   SessionData,
   withSession
-} from '../../src';
+} from '../../src/index';
 import MemoryStore from '../../src/store/memory';
 import { Options } from '../../src/types';
-const signature = require('cookie-signature');
-const { parse: parseCookie } = require('cookie');
 
 class CbStore {
   sessions: Record<string, any> = {};

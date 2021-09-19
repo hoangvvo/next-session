@@ -1,10 +1,13 @@
+import { jest } from '@jest/globals';
 import fs from 'fs';
 import { Server } from 'http';
 import { AddressInfo } from 'net';
 import path from 'path';
 import request from 'supertest';
+import { fileURLToPath } from 'url';
 import { nextBuild, nextServer, startApp, stopApp } from '../next-test-utils';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appDir = __dirname;
 let server: Server;
 let agent: request.SuperTest<request.Test>;

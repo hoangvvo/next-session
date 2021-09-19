@@ -1,5 +1,5 @@
+import { MemoryStore, withSession } from 'next-session';
 import React from 'react';
-import { MemoryStore, withSession } from '../../../../dist';
 
 const store = new MemoryStore();
 

@@ -7,9 +7,10 @@ import {
   unlinkSync,
   writeFileSync
 } from 'fs'
-import { writeFile } from 'fs-extra'
-import getPort from 'get-port'
+// import { writeFile } from 'fs-extra'
+// import getPort from 'get-port'
 import http from 'http'
+import { createRequire } from 'module'
 // `next` here is the symlink in `test/node_modules/next` which points to the root directory.
 // This is done so that requiring from `next` works.
 // The reason we don't import the relative path `../../dist/<etc>` is that it would lead to inconsistent module singletons
@@ -23,11 +24,7 @@ import treeKill from 'tree-kill'
 export const nextServer = server
 export const pkg = _pkg
 
-// polyfill Object.fromEntries for the test/integration/relay-analytics tests
-// on node 10, this can be removed after we no longer support node 10
-if (!Object.fromEntries) {
-  Object.fromEntries = require('core-js/features/object/from-entries')
-}
+const require = createRequire(import.meta.url);
 
 export function initNextServerScript(
   scriptPath,
@@ -114,9 +111,9 @@ export function fetchViaHTTP(appPort, pathname, query, opts) {
   return fetch(getFullUrl(appPort, url), opts)
 }
 
-export function findPort() {
-  return getPort()
-}
+// export function findPort() {
+//   return getPort()
+// }
 
 export function runNextCommand(argv, options = {}) {
   const nextDir = path.dirname(require.resolve('next/package'))
@@ -662,17 +659,17 @@ export function getPagesManifest(dir) {
   return readJson(path.join(dir, '.next/serverless/pages-manifest.json'))
 }
 
-export function updatePagesManifest(dir, content) {
-  const serverFile = path.join(dir, '.next/server/pages-manifest.json')
+// export function updatePagesManifest(dir, content) {
+//   const serverFile = path.join(dir, '.next/server/pages-manifest.json')
 
-  if (existsSync(serverFile)) {
-    return writeFile(serverFile, content)
-  }
-  return writeFile(
-    path.join(dir, '.next/serverless/pages-manifest.json'),
-    content
-  )
-}
+//   if (existsSync(serverFile)) {
+//     return writeFile(serverFile, content)
+//   }
+//   return writeFile(
+//     path.join(dir, '.next/serverless/pages-manifest.json'),
+//     content
+//   )
+// }
 
 export function getPageFileFromPagesManifest(dir, page) {
   const pagesManifest = getPagesManifest(dir)

@@ -1,4 +1,4 @@
-import { MemoryStore, withSession } from '../../../../../dist';
+import { MemoryStore, withSession } from 'next-session';
 
 const store = new MemoryStore();
 

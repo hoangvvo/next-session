@@ -1,13 +1,16 @@
-module.exports = {
+export default {
   preset: 'ts-jest',
   testEnvironment: 'node',
   collectCoverage: true,
   collectCoverageFrom: ['src/**/*'],
-  testMatch: ['**/*.test.ts'],
+  testMatch: ['**/test/**/*.test.ts'],
   bail: true,
+  extensionsToTreatAsEsm: ['.ts'],
+  resolver: 'ts-jest-resolver',
   globals: {
     'ts-jest': {
-      diagnostics: false
+      diagnostics: false,
+      useESM: true,
     }
   }
 };
