@@ -1,5 +1,7 @@
+import fs from 'fs';
 import { Server } from 'http';
 import { AddressInfo } from 'net';
+import path from 'path';
 import request from 'supertest';
 import { nextBuild, nextServer, startApp, stopApp } from '../next-test-utils';
 
@@ -8,6 +10,8 @@ let server: Server;
 let agent: request.SuperTest<request.Test>;
 let base: string;
 
+fs.rmSync(path.join(appDir, '.next'), { force: true, recursive: true });
+
 jest.setTimeout(1000 * 30);
 
 beforeAll(async () => {
@@ -15,7 +19,7 @@ beforeAll(async () => {
   const app = nextServer({
     dir: appDir,
     dev: false,
-  })
+  });
   server = await startApp(app);
   const appPort = (server.address() as AddressInfo).port;
   base = `http://localhost:${appPort}`;
