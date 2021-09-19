@@ -1,12 +1,7 @@
-import { EventEmitter } from 'events';
 import { SessionData, SessionStore } from '../types';
 
-export default class MemoryStore extends EventEmitter implements SessionStore {
+export default class MemoryStore implements SessionStore {
   public sessions: Record<string, string> = {};
-
-  constructor() {
-    super();
-  }
 
   get(sid: string): Promise<SessionData | null> {
     const self = this;

@@ -1,4 +1,4 @@
-import { Store as ExpressStore } from 'express-session';
+import { Store as ExpressStore } from "express-session";
 
 export type SessionData = {
   [key: string]: any;
@@ -17,7 +17,7 @@ export type SessionCookieData = {
   secure: boolean;
   httpOnly: boolean;
   domain?: string | undefined;
-  sameSite?: boolean | 'lax' | 'strict' | 'none';
+  sameSite?: boolean | "lax" | "strict" | "none";
 } & ({ maxAge: number; expires: Date } | { maxAge: null; expires?: undefined });
 
 export abstract class SessionStore {
@@ -25,7 +25,6 @@ export abstract class SessionStore {
   abstract set(sid: string, sess: SessionData): Promise<void>;
   abstract destroy(sid: string): Promise<void>;
   abstract touch?(sid: string, sess: SessionData): Promise<void>;
-  on?(event: string | symbol, listener: (...args: any[]) => void): this;
 }
 
 export interface Options {
@@ -40,7 +39,7 @@ export interface Options {
     httpOnly?: boolean;
     path?: string;
     domain?: string;
-    sameSite?: boolean | 'lax' | 'strict' | 'none';
+    sameSite?: boolean | "lax" | "strict" | "none";
     maxAge?: number | null;
   };
   autoCommit?: boolean;

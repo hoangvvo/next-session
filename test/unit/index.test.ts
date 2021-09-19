@@ -12,7 +12,7 @@ import {
   promisifyStore,
   session,
   SessionData,
-  withSession
+  withSession,
 } from '../../src';
 import MemoryStore from '../../src/store/memory';
 import { Options } from '../../src/types';
@@ -419,24 +419,6 @@ describe('connect middleware', () => {
       session()(request, response, resolve);
     });
     expect(request.session).toBeTruthy();
-  });
-
-  test('respects storeReady', async () => {
-    const store = new MemoryStore();
-    const server = setUpServer(defaultHandler, false, async (req, res) => {
-      await new Promise((resolve) => {
-        session({ store })(req, res, resolve);
-      });
-    });
-    await request(server).get('/');
-    store.emit('disconnect');
-    await request(server)
-      .get('/')
-      .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
-    store.emit('connect');
-    await request(server)
-      .get('/')
-      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
   });
 });
 

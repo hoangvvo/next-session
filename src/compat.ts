@@ -3,20 +3,18 @@ import { Store as ExpressStore } from 'express-session';
 import { callbackify, inherits } from 'util';
 import MemoryStore from './store/memory';
 
+// no-op for compat
+function expressSession(options?: any): any {}
+
 function CompatibleStore() {
   // @ts-ignore
   EventEmitter.call(this);
 }
 inherits(CompatibleStore, EventEmitter);
-
-// no-op for compat
-function expressSession(options?: any): any {}
-
 expressSession.Store = CompatibleStore;
 
 function CallbackMemoryStore() {}
 inherits(CallbackMemoryStore, CompatibleStore);
-
 CallbackMemoryStore.prototype.get = callbackify(MemoryStore.prototype.get);
 CallbackMemoryStore.prototype.set = callbackify(MemoryStore.prototype.set);
 CallbackMemoryStore.prototype.destroy = callbackify(
