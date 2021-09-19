@@ -212,13 +212,15 @@ export async function applySession<T = {}>(
       return oldWritehead.apply(this, args);
     };
     const oldEnd = res.end;
-    res.end = async function resEndProxy(...args: any) {
+    res.end = function resEndProxy(...args: any) {
+      const onSuccess = () => oldEnd.apply(this, args);
       if (stringify(req.session) !== prevSessStr) {
-        await save(store, req.session);
+        save(store, req.session).then(onSuccess);
       } else if (req.session && shouldTouch && store.__touch) {
-        await store.__touch(req.session!.id, prepareSession(req.session!));
+        store.__touch(req.session!.id, prepareSession(req.session!)).then(onSuccess);
+      } else {
+        onSuccess();
       }
-      oldEnd.apply(this, args);
     };
   }
 
