@@ -4,7 +4,10 @@ import { IncomingMessage, ServerResponse } from 'http';
 import { nanoid } from 'nanoid';
 import MemoryStore from './store/memory';
 import {
-  NormalizedSessionStore, Options, Session, SessionData,
+  NormalizedSessionStore,
+  Options,
+  Session,
+  SessionData,
   SessionStore
 } from './types';
 
@@ -55,7 +58,7 @@ function setupStore(
   store: SessionStore | ExpressStore | NormalizedSessionStore
 ) {
   if ('__get' in store) return store;
-  const s = (store as unknown) as NormalizedSessionStore;
+  const s = store as unknown as NormalizedSessionStore;
 
   s.__destroy = function destroy(sid) {
     return new Promise((resolve, reject) => {
@@ -217,7 +220,9 @@ export async function applySession<T = {}>(
       if (stringify(req.session) !== prevSessStr) {
         save(store, req.session).finally(onSuccess);
       } else if (req.session && shouldTouch && store.__touch) {
-        store.__touch(req.session!.id, prepareSession(req.session!)).finally(onSuccess);
+        store
+          .__touch(req.session!.id, prepareSession(req.session!))
+          .finally(onSuccess);
       } else {
         onSuccess();
       }

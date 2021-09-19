@@ -1,6 +1,6 @@
-import { callbackify, inherits } from 'util';
 import { EventEmitter } from 'events';
 import { Store as ExpressStore } from 'express-session';
+import { callbackify, inherits } from 'util';
 import MemoryStore from './store/memory';
 
 function CompatibleStore() {

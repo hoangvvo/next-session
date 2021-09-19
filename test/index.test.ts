@@ -7,8 +7,12 @@ import React from 'react';
 import request from 'supertest';
 import { parse } from 'url';
 import {
-  applySession, expressSession, promisifyStore, session,
-  SessionData, withSession
+  applySession,
+  expressSession,
+  promisifyStore,
+  session,
+  SessionData,
+  withSession
 } from '../src';
 import MemoryStore from '../src/store/memory';
 import { Options } from '../src/types';
@@ -361,9 +365,9 @@ describe('applySession', () => {
   test('should not makes res.end a promise', async () => {
     const request: any = {};
     const response: any = { writeHead: () => null, end: () => null };
-    await applySession(request, response)
+    await applySession(request, response);
     expect(response.end()).toBeUndefined();
-  })
+  });
 });
 
 describe('withSession', () => {
@@ -388,9 +392,11 @@ describe('withSession', () => {
     };
     const ctx = { req: { headers: { cookie: '' } }, res: {} };
     expect(
-      await ((withSession(Page) as NextPage).getInitialProps as NonNullable<
-        NextComponentType['getInitialProps']
-      >)(ctx as any)
+      await (
+        (withSession(Page) as NextPage).getInitialProps as NonNullable<
+          NextComponentType['getInitialProps']
+        >
+      )(ctx as any)
     ).toBeTruthy();
   });
 
@@ -455,7 +461,7 @@ describe('Store', () => {
 describe('callback store', () => {
   it('should work', async () => {
     const server = setUpServer(defaultHandler, {
-      store: (new CbStore() as unknown) as ExpressStore,
+      store: new CbStore() as unknown as ExpressStore,
     });
     const agent = request.agent(server);
     await agent
@@ -473,7 +479,7 @@ describe('callback store', () => {
   });
   it('should work (with touch)', async () => {
     const server = setUpServer(defaultHandler, {
-      store: (new CbStore() as unknown) as ExpressStore,
+      store: new CbStore() as unknown as ExpressStore,
       cookie: { maxAge: 100 },
       touchAfter: 0,
     });
@@ -487,7 +493,7 @@ describe('callback store', () => {
     await agent.get('/').expect('2');
   });
   it('should work (without touch)', async () => {
-    const store = (new CbStore() as unknown) as ExpressStore;
+    const store = new CbStore() as unknown as ExpressStore;
     delete store.touch;
     const server = setUpServer(defaultHandler, { store });
     expect(store).not.toHaveProperty('__touch');
@@ -510,7 +516,7 @@ describe('callback store', () => {
 describe('promisifyStore', () => {
   test('should returns the store itself (with console.warn)', async () => {
     const store = new CbStore();
-    expect(promisifyStore((store as unknown) as ExpressStore)).toBe(store);
+    expect(promisifyStore(store as unknown as ExpressStore)).toBe(store);
   });
 });
 
