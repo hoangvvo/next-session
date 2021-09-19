@@ -290,6 +290,9 @@ function get(sid, done) {
 }
 ```
 
+Refer to [MemoryStore](https://github.com/hoangvvo/next-session/blob/master/src/store/memory.ts)
+or the type of [SessionStore](https://github.com/hoangvvo/next-session/blob/master/src/types.ts#L23-L29).
+
 ## Contributing
 
 Please see my [contributing.md](CONTRIBUTING.md).
