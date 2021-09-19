@@ -15,7 +15,6 @@ beforeAll(async () => {
   const app = nextServer({
     dir: appDir,
     dev: false,
-    quiet: true,
   })
   server = await startApp(app);
   const appPort = (server.address() as AddressInfo).port;
