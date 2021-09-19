@@ -2,8 +2,8 @@ import { parse, serialize } from 'cookie';
 import { Store as ExpressStore } from 'express-session';
 import { IncomingMessage, ServerResponse } from 'http';
 import { nanoid } from 'nanoid';
-import MemoryStore from './store/memory';
-import { Options, Session, SessionData, SessionStore } from './types';
+import MemoryStore from './store/memory.js';
+import { Options, Session, SessionData, SessionStore } from './types.js';
 
 const stringify = (sess: SessionData | null | undefined) =>
   JSON.stringify(sess, (key, val) => (key === 'cookie' ? undefined : val));

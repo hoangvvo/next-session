@@ -1,6 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { applySession } from './core';
-import { Options } from './types';
+import { applySession } from './core.js';
+import { Options } from './types.js';
 
 let storeReady = true;
 

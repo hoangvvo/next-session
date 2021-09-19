@@ -5,8 +5,8 @@ import {
   NextPageContext
 } from 'next';
 import { createElement } from 'react';
-import { applySession } from './core';
-import { Options } from './types';
+import { applySession } from './core.js';
+import { Options } from './types.js';
 
 function getDisplayName(WrappedComponent: NextComponentType<any>) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component';

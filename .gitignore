@@ -65,6 +65,7 @@ typings/
 
 # babel build
 dist/
+lib/
 
 # package-lock
 package-lock.json

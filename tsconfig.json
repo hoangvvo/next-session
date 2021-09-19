@@ -1,14 +1,13 @@
 
 {
   "compilerOptions": {
-    "lib": ["es2018"],
-    "module": "commonjs",
-    "target": "es2018",
+    "lib": ["ES2019"],
+    "target": "ES2019",
     "jsx": "react",
     "strict": true,
-    "declaration": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "moduleResolution": "Node"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { SessionData, SessionStore } from '../types';
+import { SessionData, SessionStore } from '../types.js';
 
 export default class MemoryStore extends EventEmitter implements SessionStore {
   public sessions: Record<string, string> = {};
