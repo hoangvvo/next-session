@@ -176,25 +176,25 @@ await applySession(req, res, options);
 
 `next-session` accepts the properties below.
 
-| options         | description                                                                                                            | default                                  |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| name            | The name of the cookie to be read from the request and set to the response.                                            | `sid`                                    |
-| store           | The session store instance to be used.                                                                                 | `MemoryStore`                            |
-| genid           | The function that generates a string for a new session ID.                                                             | [`nanoid`](https://github.com/ai/nanoid) |
-| encode          | Transforms session ID before setting cookie. It takes the raw session ID and returns the decoded/decrypted session ID. | undefined                                |
-| decode          | Transforms session ID back while getting from cookie. It should return the encoded/encrypted session ID                | undefined                                |
-| touchAfter      | Only touch after an amount of time. Disabled by default or if set to `-1`. See [touchAfter](#touchAfter).              | `-1` (Disabled)                          |
-| autoCommit      | Automatically commit session. Disable this if you want to manually `session.commit()`                                  | `true`                                   |
-| cookie.secure   | Specifies the boolean value for the **Secure** `Set-Cookie` attribute.                                                 | `false`                                  |
-| cookie.httpOnly | Specifies the boolean value for the **httpOnly** `Set-Cookie` attribute.                                               | `true`                                   |
-| cookie.path     | Specifies the value for the **Path** `Set-Cookie` attribute.                                                           | `/`                                      |
-| cookie.domain   | Specifies the value for the **Domain** `Set-Cookie` attribute.                                                         | unset                                    |
-| cookie.sameSite | Specifies the value for the **SameSite** `Set-Cookie` attribute.                                                       | unset                                    |
-| cookie.maxAge   | **(in seconds)** Specifies the value for the **Max-Age** `Set-Cookie` attribute.                                       | unset (Browser session)                  |
+| options         | description                                                                                                                                      | default                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| name            | The name of the cookie to be read from the request and set to the response.                                                                      | `sid`                                    |
+| store           | The session store instance to be used.                                                                                                           | `MemoryStore`                            |
+| genid           | The function that generates a string for a new session ID.                                                                                       | [`nanoid`](https://github.com/ai/nanoid) |
+| encode          | Transforms session ID before setting cookie. It takes the raw session ID and returns the decoded/decrypted session ID.                           | undefined                                |
+| decode          | Transforms session ID back while getting from cookie. It should return the encoded/encrypted session ID                                          | undefined                                |
+| touchAfter      | Only touch after an amount of time **(in miliseconds)** since last access. Disabled by default or if set to `-1`. See [touchAfter](#touchAfter). | `-1` (Disabled)                          |
+| autoCommit      | Automatically commit session. Disable this if you want to manually `session.commit()`                                                            | `true`                                   |
+| cookie.secure   | Specifies the boolean value for the **Secure** `Set-Cookie` attribute.                                                                           | `false`                                  |
+| cookie.httpOnly | Specifies the boolean value for the **httpOnly** `Set-Cookie` attribute.                                                                         | `true`                                   |
+| cookie.path     | Specifies the value for the **Path** `Set-Cookie` attribute.                                                                                     | `/`                                      |
+| cookie.domain   | Specifies the value for the **Domain** `Set-Cookie` attribute.                                                                                   | unset                                    |
+| cookie.sameSite | Specifies the value for the **SameSite** `Set-Cookie` attribute.                                                                                 | unset                                    |
+| cookie.maxAge   | **(in seconds)** Specifies the value for the **Max-Age** `Set-Cookie` attribute.                                                                 | unset (Browser session)                  |
 
 ### touchAfter
 
-Touching refers to the extension of session lifetime, both in browser (by modifying `Expires` attribute in [Set-Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie) header) and session store (using its respective method). This prevents the session from being expired after a while.
+Touching refers to the extension of session lifetime, both in browser (by modifying `Expires` attribute in [Set-Cookie](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie) header) and session store (using its respective method) upon access. This prevents the session from being expired after a while.
 
 In `autoCommit` mode (which is enabled by default), for optimization, a session is only touched, not saved, if it is not modified. The value of `touchAfter` allows you to skip touching if the session is still recent, thus, decreasing database load.
 
