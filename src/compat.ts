@@ -1,19 +1,18 @@
 import { EventEmitter } from 'events';
+import { Store as IExpressStore } from 'express-session';
 import { callbackify, inherits } from 'util';
 import MemoryStore from './store/memory';
 
 // no-op for compat
 function expressSession(options?: any): any {}
 
-function ExpressStore() {
-  // @ts-ignore
+function ExpressStore(this: IExpressStore) {
   EventEmitter.call(this);
 }
 inherits(ExpressStore, EventEmitter);
 expressSession.Store = ExpressStore;
 
-function CallbackMemoryStore() {
-  // @ts-ignore
+function CallbackMemoryStore(this: MemoryStore) {
   this.store = new Map();
 }
 inherits(CallbackMemoryStore, ExpressStore);

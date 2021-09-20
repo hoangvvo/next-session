@@ -1,9 +1,8 @@
-// @ts-nocheck
 import { parse as parseCookie } from 'cookie';
 import signature from 'cookie-signature';
 import EventEmitter from 'events';
 import { Store as ExpressStore } from 'express-session';
-import { createServer, IncomingMessage, RequestListener } from 'http';
+import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { NextApiHandler, NextComponentType, NextPage } from 'next';
 import React from 'react';
 import request from 'supertest';
@@ -16,9 +15,14 @@ import {
   withSession,
 } from '../../src';
 import MemoryStore from '../../src/store/memory';
-import { Options } from '../../src/types';
+import { Options, Session } from '../../src/types';
 
 const CbStore = expressSession.MemoryStore;
+
+type RequestListener = (
+  req: IncomingMessage & { session: Session },
+  res: ServerResponse
+) => void;
 
 const defaultHandler: RequestListener = async (req, res) => {
   if (req.method === 'POST') {
@@ -35,11 +39,13 @@ function setUpServer(
   options?: false | Options,
   prehandler?: RequestListener
 ) {
-  const server = createServer(async (req: IncomingMessage, res) => {
+  const server = createServer(async (req, res) => {
+    // @ts-ignore
     if (prehandler) await prehandler(req, res);
     if (options !== false) {
       await applySession(req as any, res, options);
     }
+    // @ts-ignore
     await handler(req, res);
   });
   return server;
@@ -228,7 +234,7 @@ describe('applySession', () => {
     const store = new MemoryStore();
 
     const decodeFn = (key: string) => (raw: string) =>
-      signature.unsign(raw.slice(2), key);
+      signature.unsign(raw.slice(2), key) || null;
     const encodeFn = (key: string) => (sessId: string) =>
       sessId && `s:${signature.sign(sessId, key)}`;
     const server = setUpServer(
@@ -422,7 +428,8 @@ describe('Store', () => {
 describe('callback store', () => {
   it('should work', async () => {
     const server = setUpServer(defaultHandler, {
-      store: new CbStore() as unknown as ExpressStore,
+      // @ts-ignore
+      store: new CbStore(),
     });
     const agent = request.agent(server);
     await agent
@@ -440,7 +447,8 @@ describe('callback store', () => {
   });
   it('should work (with touch)', async () => {
     const server = setUpServer(defaultHandler, {
-      store: new CbStore() as unknown as ExpressStore,
+      // @ts-ignore
+      store: new CbStore(),
       cookie: { maxAge: 100 },
       touchAfter: 0,
     });
@@ -454,7 +462,8 @@ describe('callback store', () => {
     await agent.get('/').expect('2');
   });
   it('should work (without touch)', async () => {
-    const store = new CbStore() as unknown as ExpressStore;
+    // @ts-ignore
+    const store = new CbStore();
     delete store.touch;
     const server = setUpServer(defaultHandler, { store });
     expect(store).not.toHaveProperty('__touch');
@@ -476,6 +485,7 @@ describe('callback store', () => {
 
 describe('promisifyStore', () => {
   test('should returns the store itself (with console.warn)', async () => {
+    // @ts-ignore
     const store = new CbStore();
     expect(promisifyStore(store as unknown as ExpressStore)).toBe(store);
   });
@@ -511,8 +521,7 @@ describe('MemoryStore', () => {
     expect(await sessionStore.get(sessionId as string)).toBeNull();
     //  Touch will return undefind
     expect(
-      // @ts-ignore
-      await sessionStore.touch(sessionId as string, sessionInstance)
+      await sessionStore.touch(sessionId as string, sessionInstance!)
     ).toBeUndefined();
   });
 });

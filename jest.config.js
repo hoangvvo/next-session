@@ -6,9 +6,4 @@ module.exports = {
   testMatch: ['**/*.test.ts'],
   bail: true,
   verbose: false,
-  globals: {
-    'ts-jest': {
-      diagnostics: false,
-    },
-  },
 };

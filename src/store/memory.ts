@@ -1,7 +1,7 @@
 import { SessionData, SessionStore } from '../types';
 
 export default class MemoryStore implements SessionStore {
-  private store = new Map<string, string>();
+  store = new Map<string, string>();
 
   async get(sid: string): Promise<SessionData | null> {
     const sess = this.store.get(sid);
