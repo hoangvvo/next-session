@@ -1,47 +1,36 @@
 import { SessionData, SessionStore } from '../types';
 
 export default class MemoryStore implements SessionStore {
-  public sessions: Record<string, string> = {};
+  private store = new Map<string, string>();
 
-  get(sid: string): Promise<SessionData | null> {
-    const self = this;
-
-    const sess = this.sessions[sid];
+  async get(sid: string): Promise<SessionData | null> {
+    const sess = this.store.get(sid);
     if (sess) {
-      const session = JSON.parse(sess);
-      session.cookie.expires = session.cookie.expires
-        ? new Date(session.cookie.expires)
-        : null;
-
+      const session = JSON.parse(sess, (key, value) => {
+        if (key === 'expires') return new Date(value);
+        return value;
+      }) as SessionData;
       if (
-        !session.cookie.expires ||
-        Date.now() < session.cookie.expires.getTime()
+        session.cookie.expires &&
+        session.cookie.expires.getTime() <= Date.now()
       ) {
-        //  check expires before returning
-        return Promise.resolve(session);
+        await this.destroy(sid);
+        return null;
       }
-
-      self.destroy(sid);
-      return Promise.resolve(null);
+      return session;
     }
-    return Promise.resolve(null);
+    return null;
   }
 
-  set(sid: string, sess: SessionData) {
-    this.sessions[sid] = JSON.stringify(sess);
-    return Promise.resolve();
+  async set(sid: string, sess: SessionData) {
+    this.store.set(sid, JSON.stringify(sess));
   }
 
-  touch(sid: string, session: SessionData) {
-    return this.set(sid, session);
+  async destroy(sid: string) {
+    this.store.delete(sid);
   }
 
-  all() {
-    return Promise.resolve(Object.values(this.sessions));
-  }
-
-  destroy(sid: string) {
-    delete this.sessions[sid];
-    return Promise.resolve();
+  async touch(sid: string, sess: SessionData) {
+    this.store.set(sid, JSON.stringify(sess));
   }
 }

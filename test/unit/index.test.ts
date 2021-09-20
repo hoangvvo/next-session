@@ -5,7 +5,6 @@ import { createServer, IncomingMessage, RequestListener } from 'http';
 import { NextApiHandler, NextComponentType, NextPage } from 'next';
 import React from 'react';
 import request from 'supertest';
-import { parse } from 'url';
 import {
   applySession,
   expressSession,
@@ -109,7 +108,6 @@ describe('applySession', () => {
       .expect('1')
       .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
     await agent.delete('/');
-    expect(Object.keys(store.sessions).length).toBe(0);
     await agent
       .get('/')
       .expect('0')
@@ -503,29 +501,6 @@ describe('promisifyStore', () => {
 });
 
 describe('MemoryStore', () => {
-  test('should show every session', async () => {
-    const store = new MemoryStore();
-    store.sessions = {};
-    const server = setUpServer(
-      async (req, res) => {
-        if (req.url === '/all') {
-          const ss = (await (req as any).sessionStore.all()).map(
-            (sess: string) => JSON.parse(sess).user
-          );
-          res.end(ss.toString());
-        } else {
-          req.session.user = parse(req.url as string, true).query.user;
-          res.end();
-        }
-      },
-      { store }
-    );
-    await request(server).get('/').query('user=squidward');
-    await request(server).get('/').query('user=spongebob');
-    await request(server).get('/').query('user=patrick');
-    await request(server).get('/all').expect('squidward,spongebob,patrick');
-  });
-
   test('should expire session', async () => {
     const sessionStore = new MemoryStore();
     let sessionId: string | undefined | null;

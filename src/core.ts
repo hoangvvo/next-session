@@ -134,8 +134,9 @@ export async function applySession<T = {}>(
     req.session.isNew = false;
     req.session.id = sessId!;
     // Some store return cookie.expires as string, convert it to Date
-    if (typeof req.session.cookie.expires === 'string')
+    if (typeof req.session.cookie.expires === 'string') {
       req.session.cookie.expires = new Date(req.session.cookie.expires);
+    }
   } else {
     req.session = {
       cookie: {
@@ -146,7 +147,7 @@ export async function applySession<T = {}>(
         secure: options.cookie?.secure || false,
         ...(options.cookie?.maxAge
           ? { maxAge: options.cookie.maxAge, expires: new Date() }
-          : { maxAge: null }),
+          : { maxAge: undefined }),
       },
       commit,
       destroy,

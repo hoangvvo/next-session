@@ -1,4 +1,4 @@
-import { Store as ExpressStore } from "express-session";
+import { Store as IExpressStore } from 'express-session';
 
 export type SessionData = {
   [key: string]: any;
@@ -13,12 +13,18 @@ export interface Session extends SessionData {
 }
 
 export type SessionCookieData = {
-  path: string;
-  secure: boolean;
   httpOnly: boolean;
+  path: string;
   domain?: string | undefined;
-  sameSite?: boolean | "lax" | "strict" | "none";
-} & ({ maxAge: number; expires: Date } | { maxAge: null; expires?: undefined });
+  secure: boolean;
+  sameSite?: boolean | 'lax' | 'strict' | 'none';
+} & (
+  | { maxAge: undefined; expires?: undefined }
+  | {
+      maxAge: number;
+      expires: Date;
+    }
+);
 
 export abstract class SessionStore {
   abstract get(sid: string): Promise<SessionData | null | undefined>;
@@ -29,19 +35,17 @@ export abstract class SessionStore {
 
 export interface Options {
   name?: string;
-  store?: SessionStore | ExpressStore;
+  store?: SessionStore | IExpressStore;
   genid?: () => string;
   encode?: (rawSid: string) => string;
   decode?: (encryptedSid: string) => string | null;
   touchAfter?: number;
-  cookie?: {
-    secure?: boolean;
-    httpOnly?: boolean;
-    path?: string;
-    domain?: string;
-    sameSite?: boolean | "lax" | "strict" | "none";
-    maxAge?: number | null;
-  };
+  cookie?: Partial<
+    Pick<
+      SessionCookieData,
+      'maxAge' | 'httpOnly' | 'path' | 'domain' | 'secure' | 'sameSite'
+    >
+  >;
   autoCommit?: boolean;
   /**
    * @deprecated
