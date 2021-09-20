@@ -131,6 +131,15 @@ export async function applySession<T = {}>(
     if (typeof session.cookie.expires === 'string') {
       session.cookie.expires = new Date(session.cookie.expires);
     }
+    // Extends the expiry of the session
+    // if touchAfter is applicable
+    if (touchAfter >= 0 && session.cookie.expires) {
+      const lastTouchedTime =
+        session.cookie.expires.getTime() - session.cookie.maxAge * 1000;
+      if (_now - lastTouchedTime >= touchAfter) {
+        resetMaxAge(session);
+      }
+    }
   } else {
     sessId = genId();
     session = {
@@ -183,16 +192,6 @@ export async function applySession<T = {}>(
     prevHash = hash(session);
   }
 
-  // Extends the expiry of the session
-  // if touchAfter is applicable
-  if (touchAfter >= 0 && session.cookie.expires) {
-    const lastTouchedTime =
-      session.cookie.expires.getTime() - session.cookie.maxAge * 1000;
-    if (_now - lastTouchedTime >= touchAfter) {
-      resetMaxAge(session);
-    }
-  }
-
   // autocommit: We commit the header and save the session automatically
   // by "proxying" res.writeHead and res.end methods. After committing, we
   // call the original res.writeHead and res.end.
@@ -200,7 +199,11 @@ export async function applySession<T = {}>(
   if (autoCommit) {
     const oldWritehead = res.writeHead;
     res.writeHead = function resWriteHeadProxy(...args: any) {
-      if (session.isNew || isTouched || isDestroyed) {
+      if (
+        (session.isNew && Object.keys(session).length > 1) ||
+        isTouched ||
+        isDestroyed
+      ) {
         commitHead(res, name, session, encode);
       }
       return oldWritehead.apply(this, args);

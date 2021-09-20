@@ -71,6 +71,13 @@ describe('applySession', () => {
       .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
   });
 
+  test('should not set cookie if session is not populated', async () => {
+    const server = setUpServer((req, res) => res.end(), undefined);
+    await request(server)
+      .get('/')
+      .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
+  });
+
   test('should create and persist session', async () => {
     const server = setUpServer(defaultHandler, { store: new MemoryStore() });
     const agent = request.agent(server);
@@ -83,7 +90,7 @@ describe('applySession', () => {
       .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
   });
 
-  test('should destroy session and refresh sessionId', async () => {
+  test('should destroy session and delete cookie', async () => {
     const store = new MemoryStore();
     const server = setUpServer(defaultHandler, { store });
     const agent = request.agent(server);
@@ -94,11 +101,14 @@ describe('applySession', () => {
       .get('/')
       .expect('1')
       .then(({ header }) => expect(header).not.toHaveProperty('set-cookie'));
-    await agent.delete('/');
     await agent
-      .get('/')
-      .expect('undefined')
-      .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
+      .delete('/')
+      .then(({ header }) =>
+        expect(header['set-cookie'][0]).toContain(
+          'Expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        )
+      );
+    await agent.get('/').expect('undefined');
     //  should set cookie since session was destroyed
   });
 
@@ -326,6 +336,7 @@ describe('applySession', () => {
     // Single set-cookie
     const server = setUpServer(
       (req, res) => {
+        req.session.foo = 'bar';
         res.setHeader('Set-Cookie', 'test=test');
         res.end();
       },
@@ -337,6 +348,7 @@ describe('applySession', () => {
     // Multiple set-cookie
     const server2 = setUpServer(
       (req, res) => {
+        req.session.foo = 'bar';
         res.setHeader('Set-Cookie', ['test=test', 'test2=test2']);
         res.end();
       },
