@@ -53,8 +53,8 @@ export const config = {
 #### `{ session }`
 
 ```javascript
-import { session } from "next-session";
-import nextConnect from "next-connect";
+import { session } from 'next-session';
+import nextConnect from 'next-connect';
 
 const mySession = session(options);
 
@@ -73,7 +73,7 @@ export default handler;
 #### `{ withSession }`
 
 ```javascript
-import { withSession } from "next-session";
+import { withSession } from 'next-session';
 
 function handler(req, res) {
   req.session.views = req.session.views ? req.session.views + 1 : 1;
@@ -87,7 +87,7 @@ export default withSession(handler, options);
 #### `{ applySession }`
 
 ```javascript
-import { applySession } from "next-session";
+import { applySession } from 'next-session';
 
 export default async function handler(req, res) {
   await applySession(req, res, options);
@@ -110,7 +110,7 @@ export default async function handler(req, res) {
 > Also, it is not reliable since `req` or `req.session` is only available on [server only](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#context-object)
 
 ```javascript
-import { withSession } from "next-session";
+import { withSession } from 'next-session';
 
 function Page({ views }) {
   return (
@@ -120,7 +120,7 @@ function Page({ views }) {
 
 Page.getInitialProps = ({ req }) => {
   let views;
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     // req.session is only available on server-side.
     req.session.views = req.session.views ? req.session.views + 1 : 1;
     views = req.session.views;
@@ -135,7 +135,7 @@ export default withSession(Page, options);
 #### `{ applySession }` ([`getServerSideProps`](https://nextjs.org/docs/basic-features/data-fetching#getserversideprops-server-side-rendering))
 
 ```javascript
-import { applySession } from "next-session";
+import { applySession } from 'next-session';
 
 export default function Page({ views }) {
   return (
@@ -165,11 +165,11 @@ export const options = { ...someOptions };
 
 // Always import it at other places
 // pages/index.js
-import { options } from "foo/bar/session";
+import { options } from 'foo/bar/session';
 /* ... */
 export default withSession(Page, options);
 // pages/api/index.js
-import { options } from "foo/bar/session";
+import { options } from 'foo/bar/session';
 /* ... */
 await applySession(req, res, options);
 ```
@@ -204,11 +204,11 @@ You may supply a custom pair of function that _encode/decode_ or _encrypt/decryp
 
 ```javascript
 // `express-session` signing strategy
-const signature = require("cookie-signature");
-const secret = "keyboard cat";
+const signature = require('cookie-signature');
+const secret = 'keyboard cat';
 session({
   decode: (raw) => signature.unsign(raw.slice(2), secret),
-  encode: (sid) => (sid ? "s:" + signature.sign(sid, secret) : null),
+  encode: (sid) => (sid ? 's:' + signature.sign(sid, secret) : null),
 });
 ```
 
@@ -220,7 +220,7 @@ This allows you to **set** or **get** a specific value that associates to the cu
 
 ```javascript
 //  Set a value
-if (loggedIn) req.session.user = "John Doe";
+if (loggedIn) req.session.user = 'John Doe';
 //  Get a value
 const currentUser = req.session.user; // "John Doe"
 ```
@@ -240,7 +240,7 @@ Save the session and set neccessary headers. Return Promise. It must be called b
 You **must** call this if `autoCommit` is set to `false`.
 
 ```javascript
-req.session.hello = "world";
+req.session.hello = 'world';
 await req.session.commit();
 // always calling res.end or res.writeHead after the above
 ```
@@ -262,13 +262,13 @@ The session store to use for session middleware (see `options` above).
 To use [Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores), you may need to use `expressSession` from `next-session` if the store has the following pattern.
 
 ```javascript
-const session = require("express-session");
-const MongoStore = require("connect-mongo")(session);
+const session = require('express-session');
+const MongoStore = require('connect-mongo')(session);
 
 // Use `expressSession` as the replacement
 
-import { expressSession } from "next-session";
-const MongoStore = require("connect-mongo")(expressSession);
+import { expressSession } from 'next-session';
+const MongoStore = require('connect-mongo')(expressSession);
 ```
 
 ### Implementation
