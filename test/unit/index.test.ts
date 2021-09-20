@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { parse as parseCookie } from 'cookie';
+import signature from 'cookie-signature';
 import EventEmitter from 'events';
 import { Store as ExpressStore } from 'express-session';
 import { createServer, IncomingMessage, RequestListener } from 'http';
@@ -15,38 +17,17 @@ import {
 } from '../../src';
 import MemoryStore from '../../src/store/memory';
 import { Options } from '../../src/types';
-const signature = require('cookie-signature');
-const { parse: parseCookie } = require('cookie');
 
-class CbStore {
-  sessions: Record<string, any> = {};
-  constructor() {}
-
-  /* eslint-disable no-unused-expressions */
-  get(sid: string, cb: (err?: any, session?: SessionData | null) => void) {
-    cb && cb(null, this.sessions[sid]);
-  }
-
-  set(sid: string, sess: SessionData, cb: (err?: any) => void) {
-    this.sessions[sid] = sess;
-    cb && cb();
-  }
-
-  destroy(sid: string, cb: (err?: any) => void) {
-    delete this.sessions[sid];
-    cb();
-  }
-
-  touch(sid: string, sess: SessionData, cb: (err: any) => void) {
-    cb && cb(null);
-  }
-}
+const CbStore = expressSession.MemoryStore;
 
 const defaultHandler: RequestListener = async (req, res) => {
-  if (req.method === 'POST')
+  if (req.method === 'POST') {
     req.session.views = req.session.views ? req.session.views + 1 : 1;
-  if (req.method === 'DELETE') await req.session.destroy();
-  res.end(`${(req.session && req.session.views) || 0}`);
+  }
+  if (req.method === 'DELETE') {
+    await req.session.destroy();
+  }
+  res.end(String(req.session?.views));
 };
 
 function setUpServer(
@@ -110,7 +91,7 @@ describe('applySession', () => {
     await agent.delete('/');
     await agent
       .get('/')
-      .expect('0')
+      .expect('undefined')
       .then(({ header }) => expect(header).toHaveProperty('set-cookie'));
     //  should set cookie since session was destroyed
   });
