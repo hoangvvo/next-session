@@ -12,14 +12,14 @@ function getDisplayName(WrappedComponent: NextComponentType<any>) {
   return WrappedComponent.displayName || WrappedComponent.name || 'Component';
 }
 
-function isNextApiHandler(
-  handler: NextApiHandler | NextPage
-): handler is NextApiHandler {
+function isNextApiHandler<T>(
+  handler: NextApiHandler | NextApiHandlerWithSession<T> | NextPage
+): handler is NextApiHandler | NextApiHandlerWithSession<T> {
   return handler.length > 1;
 }
 
 export default function withSession<T = {}>(
-  handler: NextApiHandler | NextPage,
+  handler: NextApiHandlerWithSession<T> | NextApiHandler | NextPage,
   options?: Options
 ): NextApiHandler | NextPage {
   // API Routes
@@ -44,4 +44,24 @@ export default function withSession<T = {}>(
     };
   }
   return WithSession;
+}
+
+export type NextApiRequestWithSession<Session> = NextApiRequest & {
+  session: Session & {
+    save(): Promise<void>;
+  };
+};
+
+export interface NextApiHandlerWithSession<Session> {
+  (
+    req: NextApiRequestWithSession<Session>,
+    res: NextApiResponse
+  ): void | Promise<void>;
+}
+
+export function nextApiHandlerWithSession<Session>(
+  handler: NextApiHandlerWithSession<Session>,
+  options?: Options
+) {
+  return withSession(handler, options);
 }
