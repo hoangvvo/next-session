@@ -2,7 +2,7 @@ import {
   NextApiHandler,
   NextComponentType,
   NextPage,
-  NextPageContext
+  NextPageContext,
 } from 'next';
 import { createElement } from 'react';
 import { applySession } from './core';

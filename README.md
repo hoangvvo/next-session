@@ -6,8 +6,7 @@
 [![codecov](https://codecov.io/gh/hoangvvo/next-session/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/next-session)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](CONTRIBUTING.md)
 
-Simple *promise-based* session middleware for [Next.js](https://github.com/zeit/next.js). Also works in [micro](https://github.com/zeit/micro) or [Node.js HTTP Server](https://nodejs.org/api/http.html), [Express](https://github.com/expressjs/express), and more.
-
+Simple _promise-based_ session middleware for [Next.js](https://github.com/zeit/next.js). Also works in [micro](https://github.com/zeit/micro) or [Node.js HTTP Server](https://nodejs.org/api/http.html), [Express](https://github.com/expressjs/express), and more.
 
 > Also check out alternatives like [express-session](https://github.com/expressjs/session)+[next-connect](https://github.com/hoangvvo/next-connect) or [next-iron-session](https://github.com/vvo/next-iron-session) instead.
 > Update: It is observed that express-session sometimes does not work properly with Next.js 11.x
@@ -46,20 +45,18 @@ export const config = {
   api: {
     externalResolver: true,
   },
-}
+};
 ```
 
 ...or setting `options.autoCommit` to `false` and do `await session.commit()` (See [this](https://github.com/hoangvvo/next-session#reqsessioncommit)).
 
 #### `{ session }`
 
-**Note:** If you intend to call `session()` in multiple places, consider doing it only once and exporting it for elsewhere to avoid exceeded listeners.
-
 ```javascript
 import { session } from 'next-session';
 import nextConnect from 'next-connect';
 
-const mySession = session({ ...options });
+const mySession = session(options);
 
 const handler = nextConnect()
   .use(mySession)
@@ -68,7 +65,7 @@ const handler = nextConnect()
     res.send(
       `In this session, you have visited this website ${req.session.views} time(s).`
     );
-  })
+  });
 
 export default handler;
 ```
@@ -140,7 +137,7 @@ export default withSession(Page, options);
 ```javascript
 import { applySession } from 'next-session';
 
-export default function Page({views}) {
+export default function Page({ views }) {
   return (
     <div>In this session, you have visited this website {views} time(s).</div>
   );
@@ -151,9 +148,9 @@ export async function getServerSideProps({ req, res }) {
   req.session.views = req.session.views ? req.session.views + 1 : 1;
   return {
     props: {
-      views: req.session.views
-    }
-  }
+      views: req.session.views,
+    },
+  };
 }
 ```
 
@@ -179,21 +176,21 @@ await applySession(req, res, options);
 
 `next-session` accepts the properties below.
 
-| options | description | default |
-|---------|-------------|---------|
-| name | The name of the cookie to be read from the request and set to the response. | `sid` |
-| store | The session store instance to be used. | `MemoryStore` |
-| genid | The function that generates a string for a new session ID. | [`nanoid`](https://github.com/ai/nanoid) |
-| encode | Transforms session ID before setting cookie. It takes the raw session ID and returns the decoded/decrypted session ID. | undefined |
-| decode | Transforms session ID back while getting from cookie. It should return the encoded/encrypted session ID | undefined |
-| touchAfter | Only touch after an amount of time. Disabled by default or if set to `-1`. See [touchAfter](#touchAfter). | `-1` (Disabled) |
-| autoCommit | Automatically commit session. Disable this if you want to manually `session.commit()` | `true` |
-| cookie.secure | Specifies the boolean value for the **Secure** `Set-Cookie` attribute. | `false` |
-| cookie.httpOnly | Specifies the boolean value for the **httpOnly** `Set-Cookie` attribute. | `true` |
-| cookie.path | Specifies the value for the **Path** `Set-Cookie` attribute. | `/` |
-| cookie.domain | Specifies the value for the **Domain** `Set-Cookie` attribute. | unset |
-| cookie.sameSite | Specifies the value for the **SameSite** `Set-Cookie` attribute. | unset |
-| cookie.maxAge | **(in seconds)** Specifies the value for the **Max-Age** `Set-Cookie` attribute. | unset (Browser session) |
+| options         | description                                                                                                            | default                                  |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| name            | The name of the cookie to be read from the request and set to the response.                                            | `sid`                                    |
+| store           | The session store instance to be used.                                                                                 | `MemoryStore`                            |
+| genid           | The function that generates a string for a new session ID.                                                             | [`nanoid`](https://github.com/ai/nanoid) |
+| encode          | Transforms session ID before setting cookie. It takes the raw session ID and returns the decoded/decrypted session ID. | undefined                                |
+| decode          | Transforms session ID back while getting from cookie. It should return the encoded/encrypted session ID                | undefined                                |
+| touchAfter      | Only touch after an amount of time. Disabled by default or if set to `-1`. See [touchAfter](#touchAfter).              | `-1` (Disabled)                          |
+| autoCommit      | Automatically commit session. Disable this if you want to manually `session.commit()`                                  | `true`                                   |
+| cookie.secure   | Specifies the boolean value for the **Secure** `Set-Cookie` attribute.                                                 | `false`                                  |
+| cookie.httpOnly | Specifies the boolean value for the **httpOnly** `Set-Cookie` attribute.                                               | `true`                                   |
+| cookie.path     | Specifies the value for the **Path** `Set-Cookie` attribute.                                                           | `/`                                      |
+| cookie.domain   | Specifies the value for the **Domain** `Set-Cookie` attribute.                                                         | unset                                    |
+| cookie.sameSite | Specifies the value for the **SameSite** `Set-Cookie` attribute.                                                       | unset                                    |
+| cookie.maxAge   | **(in seconds)** Specifies the value for the **Max-Age** `Set-Cookie` attribute.                                       | unset (Browser session)                  |
 
 ### touchAfter
 
@@ -203,7 +200,7 @@ In `autoCommit` mode (which is enabled by default), for optimization, a session 
 
 ### encode/decode
 
-You may supply a custom pair of function that *encode/decode* or *encrypt/decrypt* the cookie on every request.
+You may supply a custom pair of function that _encode/decode_ or _encrypt/decrypt_ the cookie on every request.
 
 ```javascript
 // `express-session` signing strategy
@@ -238,7 +235,7 @@ if (loggedOut) await req.session.destroy();
 
 ### req.session.commit()
 
-Save the session and set neccessary headers. Return Promise. It must be called before *sending the headers (`res.writeHead`) or response (`res.send`, `res.end`, etc.)*.
+Save the session and set neccessary headers. Return Promise. It must be called before _sending the headers (`res.writeHead`) or response (`res.send`, `res.end`, etc.)_.
 
 You **must** call this if `autoCommit` is set to `false`.
 
@@ -254,7 +251,7 @@ The unique id that associates to the current session.
 
 ### req.session.isNew
 
-Return *true* if the session is new.
+Return _true_ if the session is new.
 
 ## Session Store
 
@@ -282,7 +279,7 @@ A compatible session store must include three functions: `set(sid, session)`, `g
 // Both of the below work!
 
 function get(sid) {
-  return promiseGetFn(sid)
+  return promiseGetFn(sid);
 }
 
 function get(sid, done) {
