@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "next-session",
   "version": "3.4.3",
   "description": "Simple promise-based session middleware for Next.js",
@@ -9,17 +10,31 @@
     "middleware",
     "promise"
   ],
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./lib/session.cjs",
+  "exports": {
+    ".": {
+      "import": "./lib/session.js",
+      "require": "./lib/session.cjs"
+    },
+    "./lib/compat": {
+      "import": "./lib/compat.js",
+      "require": "./lib/compat.cjs"
+    }
+  },
+  "types": "lib/session.d.ts",
   "files": [
-    "dist/"
+    "lib/"
   ],
   "sideEffects": false,
   "scripts": {
-    "prepublish": "yarn build",
-    "build": "tsc --outDir dist",
+    "build:commonjs": "BUILD_MODULE=commonjs babel src -d lib --extensions .ts --out-file-extension .cjs",
+    "build:module": "babel src -d lib --extensions .ts",
+    "build:typescript": "tsc --outDir lib --emitDeclarationOnly",
+    "build": "rm -rf lib && yarn build:typescript && yarn build:commonjs && yarn build:module",
     "lint": "eslint src --ext ts --ignore-path .gitignore",
-    "test": "yarn build && jest --coverageReporters=text-lcov > coverage.lcov"
+    "test:import": "cd test/import-test && rm -rf node_modules && yarn && node index.js && node index.cjs && cd ../../",
+    "test:unit": "jest --coverageReporters=text-lcov > coverage.lcov",
+    "test": "yarn test:unit && yarn test:import"
   },
   "repository": {
     "type": "git",
@@ -32,23 +47,19 @@
   },
   "homepage": "https://github.com/hoangvvo/next-session#readme",
   "devDependencies": {
+    "@babel/cli": "^7.15.7",
+    "@babel/core": "^7.15.5",
+    "@babel/plugin-transform-modules-commonjs": "^7.15.4",
+    "@babel/preset-typescript": "^7.15.0",
     "@types/cookie": "^0.4.1",
-    "@types/cookie-signature": "^1.0.3",
-    "@types/express-session": "^1.17.4",
     "@types/jest": "^27.0.1",
     "@types/node": "^16.9.4",
-    "@types/react": "^17.0.22",
-    "@types/supertest": "^2.0.11",
     "@typescript-eslint/eslint-plugin": "^4.31.1",
     "@typescript-eslint/parser": "^4.31.1",
-    "cookie-signature": "^1.1.0",
+    "babel-plugin-add-import-extension": "^1.6.0",
     "eslint": "^7.32.0",
     "jest": "^27.2.0",
-    "next": "11.1.2",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "supertest": "^6.1.6",
-    "tree-kill": "^1.2.2",
+    "light-my-request": "^4.4.4",
     "ts-jest": "^27.0.5",
     "typescript": "^4.4.3"
   },
@@ -57,6 +68,6 @@
     "nanoid": "^3.1.25"
   },
   "engines": {
-    "node": ">=10.0.0"
+    "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
   }
 }

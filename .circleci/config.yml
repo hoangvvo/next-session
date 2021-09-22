@@ -22,7 +22,8 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
 
       - run: yarn lint
+      - run: yarn build
       - run: yarn test
 
       - codecov/upload:
-          file: 'coverage.lcov'
+          file: "coverage.lcov"

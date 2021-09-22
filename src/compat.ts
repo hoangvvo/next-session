@@ -1,12 +1,12 @@
-import { EventEmitter } from 'events';
-import { Store as IExpressStore } from 'express-session';
-import { callbackify, inherits } from 'util';
-import MemoryStore from './store/memory';
+import { EventEmitter } from "events";
+import { callbackify, inherits, promisify } from "util";
+import MemoryStore from "./memory-store";
+import { SessionStore } from "./types";
 
 // no-op for compat
 function expressSession(options?: any): any {}
 
-function ExpressStore(this: IExpressStore) {
+function ExpressStore(this: any) {
   EventEmitter.call(this);
 }
 inherits(ExpressStore, EventEmitter);
@@ -26,9 +26,13 @@ expressSession.MemoryStore = CallbackMemoryStore;
 
 export { expressSession };
 
-export function promisifyStore(store: any) {
-  console.warn(
-    'promisifyStore has been deprecated: express-session store still works without using this.'
-  );
-  return store;
+export function promisifyStore(connectStore: any): SessionStore {
+  return {
+    get: promisify(connectStore.get).bind(connectStore),
+    set: promisify(connectStore.set).bind(connectStore),
+    destroy: promisify(connectStore.destroy).bind(connectStore),
+    ...(connectStore.touch && {
+      touch: promisify(connectStore.touch).bind(connectStore),
+    }),
+  };
 }

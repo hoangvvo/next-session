@@ -1,4 +1,4 @@
-import { SessionData, SessionStore } from '../types';
+import { SessionData, SessionStore } from "./types";
 
 export default class MemoryStore implements SessionStore {
   store = new Map<string, string>();
@@ -7,7 +7,7 @@ export default class MemoryStore implements SessionStore {
     const sess = this.store.get(sid);
     if (sess) {
       const session = JSON.parse(sess, (key, value) => {
-        if (key === 'expires') return new Date(value);
+        if (key === "expires") return new Date(value);
         return value;
       }) as SessionData;
       if (
