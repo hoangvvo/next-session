@@ -26,7 +26,7 @@ If you are submitting a :bug: bug report, please:
 
 ### Process on submitting a PR
 
-*Generally, all pull requests should have references to an issue.*
+_Generally, all pull requests should have references to an issue._
 
 If you are :sparkles: **adding a new feature** or :zap: **improving an algorithm**, please first [create an issue](../../issues/new) for discussion.
 
@@ -41,17 +41,6 @@ The steps to submit a PR are:
 4. Make sure your code is linted by running `npm run lint`.
 
 5. [Create a pull request](https://help.github.com/en/articles/creating-a-pull-request-from-a-fork)
-
-## Styleguides
-
-### Javascript style
-
-`next-session` follows [Airbnb JavaScript Style Guide](https://github.com/airbnb/javascript). Please run `npm run lint` and fix any linting warnings.
-
-### Commit message
-
-- Use the present tense and imperative mood ("Add feature" instead of "Adds feature" or "Added feature")
-- Consider starting the commit message with an applicable emoji (ex. [gitmoji](https://gitmoji.carloscuesta.me)) for a more beautiful world :rainbow:.
 
 :heart: Thank you,
 Hoang Vo

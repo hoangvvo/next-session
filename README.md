@@ -26,21 +26,40 @@ yarn add next-session
 
 :point_right: **Upgrading from v2.x to v3.x?** Please read the release notes [here](https://github.com/hoangvvo/next-session/releases/tag/v3.0.0)!
 
-`next-session` has several named exports:
+:point_right: **Upgrading from v3.x to v4.x?** Please read the release notes [here](https://github.com/hoangvvo/next-session/releases/tag/v4.0.0)!
 
-- `session` to be used as a Connect/Express middleware. (Use [next-connect](https://github.com/hoangvvo/next-connect) if used in Next.js)
-- `withSession` to be used as HOC in Page Components or API Routes wrapper (and several others).
-- `applySession`, to manually initialize `next-session` by providing `req` and `res`.
+**Warning** The default session store (if `options?.store` is `undefined`), `MemoryStore`, **DOES NOT** work in production or serverless environment. You must use a [Session Store](#session-store).
 
-Use **one of them** to work with `next-session`. Can also be used in other frameworks in the same manner as long as they have `(req, res)` handler signature.
-
-**Warning** The default session store, `MemoryStore`, should not be used in production since it does not persist nor work in Serverless.
+```js
+import nextSession from "next-session";
+const getSession = nextSession(options);
+```
 
 ### API Routes
+
+```js
+export default function handler(req, res) {
+  const session = await getSession(req, res);
+  session.views = session.views ? session.views + 1 : 1;
+  // Also available under req.session:
+  // req.session.views = req.session.views ? req.session.views + 1 : 1;
+  res.send(
+    `In this session, you have visited this website ${session.views} time(s).`
+  );
+}
+```
 
 Usage in API Routes may result in `API resolved without sending a response`. This can be solved by either adding:
 
 ```js
+import nextSession from "next-session";
+const getSession = nextSession();
+
+export default function handler(req, res) {
+  const session = await getSession(req, res);
+  /* ... */
+}
+
 export const config = {
   api: {
     externalResolver: true,
@@ -48,95 +67,22 @@ export const config = {
 };
 ```
 
-...or setting `options.autoCommit` to `false` and do `await session.commit()` (See [this](https://github.com/hoangvvo/next-session#reqsessioncommit)).
+...or setting `options.autoCommit` to `false` and do `await session.commit()`.
 
-#### `{ session }`
+```js
+import nextSession from "next-session";
+const getSession = nextSession({ autoCommit: false });
 
-```javascript
-import { session } from 'next-session';
-import nextConnect from 'next-connect';
-
-const mySession = session(options);
-
-const handler = nextConnect()
-  .use(mySession)
-  .all(() => {
-    req.session.views = req.session.views ? req.session.views + 1 : 1;
-    res.send(
-      `In this session, you have visited this website ${req.session.views} time(s).`
-    );
-  });
-
-export default handler;
-```
-
-#### `{ withSession }`
-
-```javascript
-import { withSession } from 'next-session';
-
-function handler(req, res) {
-  req.session.views = req.session.views ? req.session.views + 1 : 1;
-  res.send(
-    `In this session, you have visited this website ${req.session.views} time(s).`
-  );
-}
-export default withSession(handler, options);
-```
-
-#### `{ applySession }`
-
-```javascript
-import { applySession } from 'next-session';
-
-export default async function handler(req, res) {
-  await applySession(req, res, options);
-  req.session.views = req.session.views ? req.session.views + 1 : 1;
-  res.send(
-    `In this session, you have visited this website ${req.session.views} time(s).`
-  );
+export default function handler(req, res) {
+  const session = await getSession(req, res);
+  /* ... */
+  await session.commit();
 }
 ```
 
-### Pages
+### getServerSideProps
 
-`next-session` does not work in [Custom App](https://nextjs.org/docs/advanced-features/custom-app) since it leads to deoptimization.
-
-#### ~~`{ withSession }` ([`getInitialProps`](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps))~~
-
-**This will be deprecated in the next major release!**
-
-> `next@>9.3.0` recommends using `getServerSideProps` instead of `getInitialProps`.
-> Also, it is not reliable since `req` or `req.session` is only available on [server only](https://nextjs.org/docs/api-reference/data-fetching/getInitialProps#context-object)
-
-```javascript
-import { withSession } from 'next-session';
-
-function Page({ views }) {
-  return (
-    <div>In this session, you have visited this website {views} time(s).</div>
-  );
-}
-
-Page.getInitialProps = ({ req }) => {
-  let views;
-  if (typeof window === 'undefined') {
-    // req.session is only available on server-side.
-    req.session.views = req.session.views ? req.session.views + 1 : 1;
-    views = req.session.views;
-  }
-  // WARNING: On client-side routing, neither req nor req.session is available.
-  return { views };
-};
-
-export default withSession(Page, options);
-```
-
-#### `{ applySession }` ([`getServerSideProps`](https://nextjs.org/docs/basic-features/data-fetching#getserversideprops-server-side-rendering))
-
-```javascript
-import { applySession } from 'next-session';
-
+```js
 export default function Page({ views }) {
   return (
     <div>In this session, you have visited this website {views} time(s).</div>
@@ -144,53 +90,79 @@ export default function Page({ views }) {
 }
 
 export async function getServerSideProps({ req, res }) {
-  await applySession(req, res, options);
-  req.session.views = req.session.views ? req.session.views + 1 : 1;
+  const session = await getSession(req, res);
+  session.views = session.views ? session.views + 1 : 1;
+  // Also available under req.session:
+  // req.session.views = req.session.views ? req.session.views + 1 : 1;
   return {
     props: {
-      views: req.session.views,
+      views: session.views,
     },
   };
 }
 ```
 
-## Options
+### Others
 
-Regardless of the above approaches, to avoid bugs, you want to reuse the same `options` to in every route. For example:
+[express](https://github.com/expressjs/express), [next-connect](https://github.com/hoangvvo/next-connect)
 
-```javascript
-// Define the option only once
-// foo/bar/session.js
-export const options = { ...someOptions };
-
-// Always import it at other places
-// pages/index.js
-import { options } from 'foo/bar/session';
-/* ... */
-export default withSession(Page, options);
-// pages/api/index.js
-import { options } from 'foo/bar/session';
-/* ... */
-await applySession(req, res, options);
+```js
+const express = require("express");
+const app = express();
+app.use(async (req, res, next) => {
+  await getSession(req, res); // session is set to req.session
+  next();
+});
+app.get("/", (req, res) => {
+  req.session.views = req.session.views ? req.session.views + 1 : 1;
+  res.send(
+    `In this session, you have visited this website ${req.session.views} time(s).`
+  );
+});
 ```
+
+[micro](https://github.com/vercel/micro), [Vercel Serverless Functions](https://vercel.com/docs/functions/introduction)
+
+```js
+module.exports = (req, res) => {
+  const session = await getSession(req, res);
+  res.end(
+    `In this session, you have visited this website ${session.views} time(s).`
+  );
+};
+```
+
+[Node.js HTTP Server](https://nodejs.org/api/http.html)
+
+```js
+const http = require("http");
+
+const server = http.createServer(async (req, res) => {
+  const session = await getSession(req, res);
+  res.end(`In this session, you have visited this website ${session.views} time(s).`;
+});
+server.listen(8080);
+```
+
+## Options
 
 `next-session` accepts the properties below.
 
-| options         | description                                                                                                                                      | default                                  |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
-| name            | The name of the cookie to be read from the request and set to the response.                                                                      | `sid`                                    |
-| store           | The session store instance to be used.                                                                                                           | `MemoryStore`                            |
-| genid           | The function that generates a string for a new session ID.                                                                                       | [`nanoid`](https://github.com/ai/nanoid) |
-| encode          | Transforms session ID before setting cookie. It takes the raw session ID and returns the decoded/decrypted session ID.                           | undefined                                |
-| decode          | Transforms session ID back while getting from cookie. It should return the encoded/encrypted session ID                                          | undefined                                |
-| touchAfter      | Only touch after an amount of time **(in miliseconds)** since last access. Disabled by default or if set to `-1`. See [touchAfter](#touchAfter). | `-1` (Disabled)                          |
-| autoCommit      | Automatically commit session. Disable this if you want to manually `session.commit()`                                                            | `true`                                   |
-| cookie.secure   | Specifies the boolean value for the **Secure** `Set-Cookie` attribute.                                                                           | `false`                                  |
-| cookie.httpOnly | Specifies the boolean value for the **httpOnly** `Set-Cookie` attribute.                                                                         | `true`                                   |
-| cookie.path     | Specifies the value for the **Path** `Set-Cookie` attribute.                                                                                     | `/`                                      |
-| cookie.domain   | Specifies the value for the **Domain** `Set-Cookie` attribute.                                                                                   | unset                                    |
-| cookie.sameSite | Specifies the value for the **SameSite** `Set-Cookie` attribute.                                                                                 | unset                                    |
-| cookie.maxAge   | **(in seconds)** Specifies the value for the **Max-Age** `Set-Cookie` attribute.                                                                 | unset (Browser session)                  |
+| options         | description                                                                                                                                  | default                                  |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| name            | The name of the cookie to be read from the request and set to the response.                                                                  | `sid`                                    |
+| store           | The session store instance to be used. **Required** to work in production!                                                                   | `MemoryStore`                            |
+| genid           | The function that generates a string for a new session ID.                                                                                   | [`nanoid`](https://github.com/ai/nanoid) |
+| encode          | Transforms session ID before setting cookie. It takes the raw session ID and returns the decoded/decrypted session ID.                       | undefined                                |
+| decode          | Transforms session ID back while getting from cookie. It should return the encoded/encrypted session ID                                      | undefined                                |
+| touchAfter      | Only touch after an amount of time **(in seconds)** since last access. Disabled by default or if set to `-1`. See [touchAfter](#touchAfter). | `-1` (Disabled)                          |
+| autoCommit      | Automatically commit session. Disable this if you want to manually `session.commit()`                                                        | `true`                                   |
+| cookie.secure   | Specifies the boolean value for the **Secure** `Set-Cookie` attribute.                                                                       | `false`                                  |
+| cookie.httpOnly | Specifies the boolean value for the **httpOnly** `Set-Cookie` attribute.                                                                     | `true`                                   |
+| cookie.path     | Specifies the value for the **Path** `Set-Cookie` attribute.                                                                                 | `/`                                      |
+| cookie.domain   | Specifies the value for the **Domain** `Set-Cookie` attribute.                                                                               | unset                                    |
+| cookie.sameSite | Specifies the value for the **SameSite** `Set-Cookie` attribute.                                                                             | unset                                    |
+| cookie.maxAge   | **(in seconds)** Specifies the value for the **Max-Age** `Set-Cookie` attribute.                                                             | unset (Browser session)                  |
 
 ### touchAfter
 
@@ -204,54 +176,60 @@ You may supply a custom pair of function that _encode/decode_ or _encrypt/decryp
 
 ```javascript
 // `express-session` signing strategy
-const signature = require('cookie-signature');
-const secret = 'keyboard cat';
+const signature = require("cookie-signature");
+const secret = "keyboard cat";
 session({
   decode: (raw) => signature.unsign(raw.slice(2), secret),
-  encode: (sid) => (sid ? 's:' + signature.sign(sid, secret) : null),
+  encode: (sid) => (sid ? "s:" + signature.sign(sid, secret) : null),
 });
 ```
 
 ## API
 
-### req.session
+### session object
 
 This allows you to **set** or **get** a specific value that associates to the current session.
 
 ```javascript
 //  Set a value
-if (loggedIn) req.session.user = 'John Doe';
+if (loggedIn) session.user = "John Doe";
 //  Get a value
-const currentUser = req.session.user; // "John Doe"
+const currentUser = session.user; // "John Doe"
 ```
 
-### req.session.destroy()
+### session.touch()
+
+Manually extends the session expiry by maxAge. **Note:** You must still call session.commit() if `autoCommit = false`.
+
+```js
+session.touch();
+```
+
+If `touchAfter` is set with a non-negative value, this will be automatically called accordingly.
+
+### session.destroy()
 
 Destroy to current session and remove it from session store.
 
 ```javascript
-if (loggedOut) await req.session.destroy();
+if (loggedOut) await session.destroy();
 ```
 
-### req.session.commit()
+### session.commit()
 
 Save the session and set neccessary headers. Return Promise. It must be called before _sending the headers (`res.writeHead`) or response (`res.send`, `res.end`, etc.)_.
 
 You **must** call this if `autoCommit` is set to `false`.
 
 ```javascript
-req.session.hello = 'world';
-await req.session.commit();
+session.hello = "world";
+await session.commit();
 // always calling res.end or res.writeHead after the above
 ```
 
-### req.session.id
+### session.id
 
 The unique id that associates to the current session.
-
-### req.session.isNew
-
-Return _true_ if the session is new.
 
 ## Session Store
 
@@ -262,33 +240,21 @@ The session store to use for session middleware (see `options` above).
 To use [Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores), you may need to use `expressSession` from `next-session` if the store has the following pattern.
 
 ```javascript
-const session = require('express-session');
-const MongoStore = require('connect-mongo')(session);
+const session = require("express-session");
+const MongoStore = require("connect-mongo")(session);
 
 // Use `expressSession` as the replacement
 
-import { expressSession } from 'next-session';
-const MongoStore = require('connect-mongo')(expressSession);
+import { expressSession } from "next-session";
+const MongoStore = require("connect-mongo")(expressSession);
 ```
 
 ### Implementation
 
-A compatible session store must include three functions: `set(sid, session)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions can either return **Promises** or allowing **callback** in the last argument.
+A compatible session store must include three functions: `set(sid, session)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions must return **Promises**.
 
-```js
-// Both of the below work!
-
-function get(sid) {
-  return promiseGetFn(sid);
-}
-
-function get(sid, done) {
-  cbGetFn(sid, done);
-}
-```
-
-Refer to [MemoryStore](https://github.com/hoangvvo/next-session/blob/master/src/store/memory.ts)
-or the type of [SessionStore](https://github.com/hoangvvo/next-session/blob/master/src/types.ts#L23-L29).
+Refer to [MemoryStore](https://github.com/hoangvvo/next-session/blob/master/src/memory-store.ts)
+or the type of [SessionStore](https://github.com/hoangvvo/next-session/blob/master/src/types.ts#L32-L37).
 
 ## Contributing
 
