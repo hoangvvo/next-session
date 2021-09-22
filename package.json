@@ -9,16 +9,18 @@
     "middleware",
     "promise"
   ],
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "files": [
-    "dist/"
+    "lib/"
   ],
   "sideEffects": false,
   "scripts": {
-    "build": "tsc --outDir dist",
+    "build": "tsc --outDir lib",
     "lint": "eslint src --ext ts --ignore-path .gitignore",
-    "test": "jest --coverageReporters=text-lcov > coverage.lcov"
+    "test:import": "cd test/import-test && yarn && node index.js && cd ../../",
+    "test:unit": "jest --coverageReporters=text-lcov > coverage.lcov",
+    "test": "yarn test:unit && yarn test:import"
   },
   "repository": {
     "type": "git",
@@ -47,6 +49,6 @@
     "nanoid": "^3.1.25"
   },
   "engines": {
-    "node": ">=10.0.0"
+    "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
   }
 }
