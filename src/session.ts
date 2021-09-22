@@ -154,3 +154,5 @@ export default function session(options: Options = {}) {
     return session;
   };
 }
+
+export type { Options, SessionStore } from "./types";

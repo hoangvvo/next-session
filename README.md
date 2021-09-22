@@ -235,26 +235,53 @@ The unique id that associates to the current session.
 
 The session store to use for session middleware (see `options` above).
 
-### Compatibility with Express/Connect stores
-
-To use [Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores), you may need to use `expressSession` from `next-session` if the store has the following pattern.
-
-```javascript
-const session = require("express-session");
-const MongoStore = require("connect-mongo")(session);
-
-// Use `expressSession` as the replacement
-
-import { expressSession } from "next-session";
-const MongoStore = require("connect-mongo")(expressSession);
-```
-
 ### Implementation
 
 A compatible session store must include three functions: `set(sid, session)`, `get(sid)`, and `destroy(sid)`. The function `touch(sid, session)` is recommended. All functions must return **Promises**.
 
-Refer to [MemoryStore](https://github.com/hoangvvo/next-session/blob/master/src/memory-store.ts)
-or the type of [SessionStore](https://github.com/hoangvvo/next-session/blob/master/src/types.ts#L32-L37).
+Refer to [MemoryStore](https://github.com/hoangvvo/next-session/blob/master/src/memory-store.ts).
+
+_TypeScript:_ the `SessionStore` type can be used to aid implementation:
+
+```ts
+import type { SessionStore } from "next-session";
+
+class CustomStore implements SessionStore {}
+```
+
+### Compatibility with Express/Connect stores
+
+#### Promisify functions
+
+To use [Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores), you must promisify `get`, `set`, `destroy`, and (if exists) `touch` methods, possibly using [`util.promisify`](https://nodejs.org/dist/latest/docs/api/util.html#util_util_promisify_original).
+
+We include the util [`promisifyStore`](./src/compat.ts#L29) in `next-session/lib/compat` to do just that:
+
+```js
+import nextSession from "next-session";
+import { promisifyStore } from "next-session/lib/compat";
+import SomeConnectStore from "connect-xyz";
+
+const connectStore = new SomeConnectStore();
+
+const getSession = nextSession({
+  store: promisifyStore(connectStore),
+});
+```
+
+To use [Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores), you can use `expressSession` from `next-session/lib/compat` if the store has the following pattern.
+
+```javascript
+const session = require("express-session");
+const RedisStore = require("connect-redis")(session);
+
+// Use `expressSession` from `next-session/lib/compat` as the replacement
+
+import { expressSession } from "next-session/lib/compat";
+import RedisStoreFactory from "connect-redis";
+
+const RedisStore = RedisStoreFactory(expressSession);
+```
 
 ## Contributing
 
