@@ -150,5 +150,7 @@ export default function session(options: Options = {}) {
         }
       };
     }
+
+    return session;
   };
 }

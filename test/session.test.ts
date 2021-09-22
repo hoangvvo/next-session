@@ -19,6 +19,20 @@ describe("session()", () => {
   test("return a function", () => {
     expect(typeof session()).toBe("function");
   });
+  test("returns the session after resolve", async () => {
+    await inject(
+      async (req, res) => {
+        const sess = await session()(req, res);
+        expect(sess).toEqual({
+          cookie: defaultCookie,
+          [isNew]: true,
+        });
+        expect(req.session).toBe(sess);
+        res.end();
+      },
+      { path: "/" }
+    );
+  });
   test("return if req.session is defined", async () => {
     const store = {
       get: jest.fn(),
