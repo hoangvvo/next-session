@@ -269,7 +269,7 @@ const getSession = nextSession({
 });
 ```
 
-To use [Express/Connect stores](https://github.com/expressjs/session#compatible-session-stores), you can use `expressSession` from `next-session/lib/compat` if the store has the following pattern.
+You can use `expressSession` from `next-session/lib/compat` if the connect store has the following pattern.
 
 ```javascript
 const session = require("express-session");
