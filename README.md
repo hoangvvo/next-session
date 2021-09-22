@@ -6,10 +6,9 @@
 [![codecov](https://codecov.io/gh/hoangvvo/next-session/branch/master/graph/badge.svg)](https://codecov.io/gh/hoangvvo/next-session)
 [![PRs Welcome](https://badgen.net/badge/PRs/welcome/ff5252)](CONTRIBUTING.md)
 
-Simple _promise-based_ session middleware for [Next.js](https://github.com/zeit/next.js). Also works in [micro](https://github.com/zeit/micro) or [Node.js HTTP Server](https://nodejs.org/api/http.html), [Express](https://github.com/expressjs/express), and more.
+Lightweight _promise-based_ session middleware for [Next.js](https://github.com/zeit/next.js). Also works in [micro](https://github.com/zeit/micro) or [Node.js HTTP Server](https://nodejs.org/api/http.html), [Express](https://github.com/expressjs/express), and more.
 
-> Also check out alternatives like [express-session](https://github.com/expressjs/session)+[next-connect](https://github.com/hoangvvo/next-connect) or [next-iron-session](https://github.com/vvo/next-iron-session) instead.
-> Update: It is observed that express-session sometimes does not work properly with Next.js 11.x
+> Also check out alternatives like [next-iron-session](https://github.com/vvo/next-iron-session) instead.
 
 ## Installation
 
