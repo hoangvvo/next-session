@@ -1,4 +1,5 @@
 // @ts-nocheck
+import { jest } from "@jest/globals";
 import { createServer, IncomingMessage, request, ServerResponse } from "http";
 import { inject } from "light-my-request";
 import MemoryStore from "../src/memory-store";
