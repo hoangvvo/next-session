@@ -1,14 +1,13 @@
 {
   "type": "module",
   "name": "next-session",
-  "version": "3.4.3",
-  "description": "Simple promise-based session middleware for Next.js",
+  "version": "4.0.0",
+  "description": "Simple promise-based session for Next.js",
   "keywords": [
-    "javascript",
     "nextjs",
     "session",
-    "middleware",
-    "promise"
+    "promise",
+    "express-session"
   ],
   "main": "./lib/session.cjs",
   "exports": {
