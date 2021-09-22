@@ -27,9 +27,7 @@ export default function session(options: Options = {}) {
       commit: {
         value: async function commit(this: Session) {
           commitHeader(res, name, this, encode);
-          if (!session[isDestroyed]) {
-            await store.set(this.id, this);
-          }
+          await store.set(this.id, this);
         },
       },
       touch: {

@@ -123,6 +123,43 @@ describe("session()", () => {
     );
     expect(store.get).toHaveBeenCalledWith(id);
   });
+  test("set session expiry if maxAge is set", async () => {
+    const store = {
+      get: jest.fn(),
+      set: jest.fn(() => Promise.resolve()),
+    };
+    let id: string;
+    let expires: Date;
+    const res = await inject(
+      async (req, res) => {
+        await session({ store, cookie: { maxAge: 10 } })(req, res);
+        req.session.foo = "bar";
+        id = req.session.id;
+        expect(req.session.cookie.expires).toBeInstanceOf(Date);
+        expires = req.session.cookie.expires;
+        res.end();
+      },
+      { path: "/" }
+    );
+    expect(res.headers).toHaveProperty("set-cookie");
+    expect(res.headers["set-cookie"]).toBe(
+      `sid=${id}; Path=/; Expires=${expires.toUTCString()}; HttpOnly`
+    );
+    expect(store.set).toHaveBeenCalledWith(id, {
+      foo: "bar",
+      cookie: { ...defaultCookie, expires, maxAge: 10 },
+      [isNew]: true,
+    });
+    await inject(
+      async (req, res) => {
+        await session({ store })(req, res);
+        req.session.foo = "bar";
+        res.end();
+      },
+      { path: "/", headers: { cookie: `sid=${id}` } }
+    );
+    expect(store.get).toHaveBeenCalledWith(id);
+  });
   test("should destroy session and unset cookie", async () => {
     const store = new MemoryStore();
     store.destroy = jest.fn();
