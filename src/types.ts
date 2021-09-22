@@ -7,7 +7,7 @@ export type SessionData = {
 
 export interface Session extends SessionData {
   id: string;
-  touch(): Promise<void>;
+  touch(): void;
   commit(): Promise<void>;
   destroy(): Promise<void>;
   [isNew]?: boolean;
@@ -38,7 +38,7 @@ export interface SessionStore {
 
 export interface Options {
   name?: string;
-  store: SessionStore;
+  store?: SessionStore;
   genid?: () => string;
   encode?: (rawSid: string) => string;
   decode?: (encryptedSid: string) => string | null;

@@ -1,20 +1,20 @@
 import { parse } from "cookie";
 import { IncomingMessage, ServerResponse } from "http";
 import { nanoid } from "nanoid";
+import MemoryStore from "./memory-store";
 import { isDestroyed, isNew, isTouched } from "./symbol";
 import { Options, Session } from "./types";
 import { commitHeader, hash } from "./utils";
 
-export default function session(options: Options) {
+export default function session(options: Options = {}) {
   const name = options.name || "sid";
-  if (!options.store) throw new Error("options.store is required");
-  const store = options.store;
+  const store = options.store || new MemoryStore();
   const genId = options.genid || nanoid;
   const encode = options.encode;
   const decode = options.decode;
   const touchAfter = options.touchAfter ?? -1;
   const autoCommit = options.autoCommit ?? true;
-  const cookieOpts = options?.cookie || {};
+  const cookieOpts = options.cookie || {};
 
   function decorateSession(
     req: IncomingMessage & { session?: Session },
@@ -27,14 +27,15 @@ export default function session(options: Options) {
       commit: {
         value: async function commit(this: Session) {
           commitHeader(res, name, this, encode);
-          await store.set(this.id, this);
+          if (!session[isDestroyed]) {
+            await store.set(this.id, this);
+          }
         },
       },
       touch: {
         value: async function commit(this: Session) {
-          commitHeader(res, name, this, encode);
           this.cookie.expires = new Date(_now + this.cookie.maxAge! * 1000);
-          await store.touch?.(this.id, this);
+          this[isTouched] = true;
         },
       },
       destroy: {
@@ -42,6 +43,7 @@ export default function session(options: Options) {
           this[isDestroyed] = true;
           this.cookie.expires = new Date(1);
           await store.destroy(this.id);
+          if (!autoCommit) commitHeader(res, name, this, encode);
           delete req.session;
         },
       },
@@ -88,6 +90,7 @@ export default function session(options: Options) {
     } else {
       sessionId = genId();
       session = {
+        [isNew]: true,
         cookie: {
           path: cookieOpts.path || "/",
           httpOnly: cookieOpts.httpOnly || true,
@@ -136,10 +139,11 @@ export default function session(options: Options) {
       const _end = res.end;
       res.end = function resEndProxy(...args: any) {
         const done = () => _end.apply(this, args);
-        if (isDestroyed) return done();
-        if (hash(session) !== prevHash) {
+        if (session[isDestroyed]) {
+          done();
+        } else if (hash(session) !== prevHash) {
           store.set(session.id, session).finally(done);
-        } else if (isTouched && store.touch) {
+        } else if (session[isTouched] && store.touch) {
           store.touch(session.id, session).finally(done);
         } else {
           done();
