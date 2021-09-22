@@ -8,7 +8,7 @@
 
 Lightweight _promise-based_ session middleware for [Next.js](https://github.com/zeit/next.js). Also works in [micro](https://github.com/zeit/micro) or [Node.js HTTP Server](https://nodejs.org/api/http.html), [Express](https://github.com/expressjs/express), and more.
 
-> Also check out alternatives like [next-iron-session](https://github.com/vvo/next-iron-session) instead.
+> Check out alternatives like [next-iron-session](https://github.com/vvo/next-iron-session) instead. Also check out [nextjs-mongodb-app](https://github.com/hoangvvo/nextjs-mongodb-app) to see this module in use.
 
 ## Installation
 
@@ -30,13 +30,16 @@ yarn add next-session
 **Warning** The default session store (if `options?.store` is `undefined`), `MemoryStore`, **DOES NOT** work in production or serverless environment. You must use a [Session Store](#session-store).
 
 ```js
+// ./lib/get-session.js
 import nextSession from "next-session";
-const getSession = nextSession(options);
+export const getSession = nextSession(options);
 ```
 
 ### API Routes
 
 ```js
+import { getSession } from "./lib/get-session.js";
+
 export default function handler(req, res) {
   const session = await getSession(req, res);
   session.views = session.views ? session.views + 1 : 1;
@@ -82,6 +85,8 @@ export default function handler(req, res) {
 ### getServerSideProps
 
 ```js
+import { getSession } from "./lib/get-session.js";
+
 export default function Page({ views }) {
   return (
     <div>In this session, you have visited this website {views} time(s).</div>
