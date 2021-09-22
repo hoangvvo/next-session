@@ -40,7 +40,8 @@ describe("session()", () => {
     await inject(
       async (req, res) => {
         req.session = {};
-        await session({ store })(req, res);
+        const sess = await session({ store })(req, res);
+        expect(sess).toBe(req.session);
         res.end();
       },
       { path: "/", headers: { cookie: "sid=foo" } }

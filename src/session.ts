@@ -54,8 +54,8 @@ export default function session(options: Options = {}) {
   return async function sessionHandle(
     req: IncomingMessage & { session?: Session },
     res: ServerResponse
-  ) {
-    if (req.session) return;
+  ): Promise<Session> {
+    if (req.session) return req.session;
 
     const _now = Date.now();
 
