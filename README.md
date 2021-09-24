@@ -8,7 +8,7 @@
 
 Lightweight _promise-based_ session middleware for [Next.js](https://github.com/zeit/next.js). Also works in [micro](https://github.com/zeit/micro) or [Node.js HTTP Server](https://nodejs.org/api/http.html), [Express](https://github.com/expressjs/express), and more.
 
-> Check out alternatives like [next-iron-session](https://github.com/vvo/next-iron-session) instead. Also check out [nextjs-mongodb-app](https://github.com/hoangvvo/nextjs-mongodb-app) to see this module in use.
+> Also check out alternatives like [next-iron-session](https://github.com/vvo/next-iron-session). Take a look at [nextjs-mongodb-app](https://github.com/hoangvvo/nextjs-mongodb-app) to see this module in use.
 
 ## Installation
 
