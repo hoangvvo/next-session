@@ -91,7 +91,7 @@ export default function session(options: Options = {}) {
         [isNew]: true,
         cookie: {
           path: cookieOpts.path || "/",
-          httpOnly: cookieOpts.httpOnly || true,
+          httpOnly: cookieOpts.httpOnly ?? true,
           domain: cookieOpts.domain || undefined,
           sameSite: cookieOpts.sameSite,
           secure: cookieOpts.secure || false,
