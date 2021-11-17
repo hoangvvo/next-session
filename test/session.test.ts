@@ -48,6 +48,14 @@ describe("session()", () => {
     );
     expect(store.get).not.toHaveBeenCalled();
   });
+  test("return httpOnly false cookie", async () => {
+    const cookie = {
+      httpOnly: false,
+    };
+    const sess = await session({ cookie })({}, {});
+
+    expect(sess.cookie.httpOnly).toBeFalsy();
+  });
   test("not set cookie header if session is not populated", async () => {
     const res = await inject(
       async (req, res) => {
