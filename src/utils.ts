@@ -1,4 +1,4 @@
-import { serialize } from "cookie";
+import c from "cookie";
 import { ServerResponse } from "http";
 import { Options, SessionData } from "./types";
 
@@ -15,7 +15,7 @@ export function commitHeader(
   encodeFn?: Options["encode"]
 ) {
   if (res.headersSent) return;
-  const cookieStr = serialize(name, encodeFn ? encodeFn(id) : id, {
+  const cookieStr = c.serialize(name, encodeFn ? encodeFn(id) : id, {
     path: cookie.path,
     httpOnly: cookie.httpOnly,
     expires: cookie.expires,

@@ -1,4 +1,4 @@
-import { parse } from "cookie";
+import c from "cookie";
 import { IncomingMessage, ServerResponse } from "http";
 import { nanoid } from "nanoid";
 import MemoryStore from "./memory-store";
@@ -58,7 +58,7 @@ export default function session(options: Options = {}) {
     const _now = Date.now();
 
     let sessionId = req.headers?.cookie
-      ? parse(req.headers.cookie)[name]
+      ? c.parse(req.headers.cookie)[name]
       : null;
     if (sessionId && decode) {
       sessionId = decode(sessionId);
