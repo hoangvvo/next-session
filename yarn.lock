@@ -3545,9 +3545,9 @@ nanocolors@^0.1.5:
   integrity sha512-2pvTw6vYRaBLGir2xR7MxaJtyWkrn+C53EpW8yPotG+pdAwBvt0Xwk4VJ6VHLY0aLthVZPvDfm9TdZvrvAm5UQ==
 
 nanoid@^3.1.25:
-  version "3.1.25"
-  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.1.25.tgz#09ca32747c0e543f0e1814b7d3793477f9c8e152"
-  integrity sha512-rdwtIXaXCLFAQbnfqDRnI6jaRHp9fTcYBjtFKE8eezcZ7LuLjhUaQGNeMXf1HmRoCH32CLz6XwX0TtxEOS/A3Q==
+  version "3.1.31"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.1.31.tgz#f5b58a1ce1b7604da5f0605757840598d8974dc6"
+  integrity sha512-ZivnJm0o9bb13p2Ot5CpgC2rQdzB9Uxm/mFZweqm5eMViqOJe3PV6LU2E30SiLgheesmcPrjquqraoolONSA0A==
 
 natural-compare@^1.4.0:
   version "1.4.0"
