@@ -18,6 +18,10 @@
     "./lib/compat": {
       "import": "./lib/compat.js",
       "require": "./lib/compat.cjs"
+    },
+    "./lib/symbol": {
+      "import": "./lib/symbol.js",
+      "require": "./lib/symbol.cjs"
     }
   },
   "types": "lib/session.d.ts",
