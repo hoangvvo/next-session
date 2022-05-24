@@ -19,9 +19,9 @@
       "import": "./lib/compat.js",
       "require": "./lib/compat.cjs"
     },
-    "./lib/symbol": {
-      "import": "./lib/symbol.js",
-      "require": "./lib/symbol.cjs"
+    "./lib/helpers": {
+      "import": "./lib/helpers.js",
+      "require": "./lib/helpers.cjs"
     }
   },
   "types": "lib/session.d.ts",
