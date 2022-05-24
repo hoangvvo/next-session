@@ -1,4 +1,3 @@
-import session from "./session";
 import {
   isNew as isNewSymbol,
   isTouched as isTouchedSymbol,
