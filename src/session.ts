@@ -135,7 +135,7 @@ export default function session(options: Options = {}) {
         return _writeHead.apply(this, args);
       };
       const _end = res.end;
-      res.end = function resEndProxy(...args: any) {
+      res.end = function resEndProxy(...args: any): any {
         const done = () => _end.apply(this, args);
         if (session[isDestroyed]) {
           done();
