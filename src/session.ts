@@ -3,10 +3,12 @@ import { IncomingMessage, ServerResponse } from "http";
 import { nanoid } from "nanoid";
 import MemoryStore from "./memory-store";
 import { isDestroyed, isNew, isTouched } from "./symbol";
-import { Options, Session } from "./types";
+import { Options, Session, SessionRecord } from "./types";
 import { commitHeader, hash } from "./utils";
 
-export default function session(options: Options = {}) {
+export default function session<T extends SessionRecord = SessionRecord>(options: Options = {}) {
+  type TypedSession = Session<T>;
+
   const name = options.name || "sid";
   const store = options.store || new MemoryStore();
   const genId = options.genid || nanoid;
@@ -17,27 +19,27 @@ export default function session(options: Options = {}) {
   const cookieOpts = options.cookie || {};
 
   function decorateSession(
-    req: IncomingMessage & { session?: Session },
+    req: IncomingMessage & { session?: TypedSession },
     res: ServerResponse,
-    session: Session,
+    session: TypedSession,
     id: string,
     _now: number
   ) {
     Object.defineProperties(session, {
       commit: {
-        value: async function commit(this: Session) {
+        value: async function commit(this: TypedSession) {
           commitHeader(res, name, this, encode);
           await store.set(this.id, this);
         },
       },
       touch: {
-        value: async function commit(this: Session) {
+        value: async function commit(this: TypedSession) {
           this.cookie.expires = new Date(_now + this.cookie.maxAge! * 1000);
           this[isTouched] = true;
         },
       },
       destroy: {
-        value: async function destroy(this: Session) {
+        value: async function destroy(this: TypedSession) {
           this[isDestroyed] = true;
           this.cookie.expires = new Date(1);
           await store.destroy(this.id);
@@ -50,9 +52,9 @@ export default function session(options: Options = {}) {
   }
 
   return async function sessionHandle(
-    req: IncomingMessage & { session?: Session },
+    req: IncomingMessage & { session?: TypedSession },
     res: ServerResponse
-  ): Promise<Session> {
+  ): Promise<TypedSession> {
     if (req.session) return req.session;
 
     const _now = Date.now();
@@ -66,9 +68,9 @@ export default function session(options: Options = {}) {
 
     const _session = sessionId ? await store.get(sessionId) : null;
 
-    let session: Session;
+    let session: TypedSession;
     if (_session) {
-      session = _session as Session;
+      session = _session as TypedSession;
       // Some store return cookie.expires as string, convert it to Date
       if (typeof session.cookie.expires === "string") {
         session.cookie.expires = new Date(session.cookie.expires);
@@ -96,7 +98,7 @@ export default function session(options: Options = {}) {
           sameSite: cookieOpts.sameSite,
           secure: cookieOpts.secure || false,
         },
-      } as Session;
+      } as TypedSession;
       if (cookieOpts.maxAge) {
         session.cookie.maxAge = cookieOpts.maxAge;
         session.cookie.expires = new Date(_now + cookieOpts.maxAge * 1000);
