@@ -281,10 +281,19 @@ const RedisStore = require("connect-redis")(session);
 
 // Use `expressSession` from `next-session/lib/compat` as the replacement
 
-import { expressSession } from "next-session/lib/compat";
+import nextSession from "next-session";
+import { expressSession, promisifyStore } from "next-session/lib/compat";
 import RedisStoreFactory from "connect-redis";
+import Redis from "ioredis";
 
 const RedisStore = RedisStoreFactory(expressSession);
+export const getSession = nextSession({
+  store: promisifyStore(
+    new RedisStore({
+      client: new Redis(),
+    })
+  ),
+});
 ```
 
 ## Contributing
