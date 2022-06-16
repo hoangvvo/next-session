@@ -1,6 +1,6 @@
 import c from "cookie";
 import { ServerResponse } from "http";
-import { Options, SessionData } from "./types";
+import { Options, Session, SessionData } from "./types";
 
 export function hash(sess: SessionData) {
   return JSON.stringify(sess, (key, val) =>
@@ -11,7 +11,7 @@ export function hash(sess: SessionData) {
 export function commitHeader(
   res: ServerResponse,
   name: string,
-  { cookie, id }: SessionData,
+  { cookie, id }: Pick<Session, 'cookie' | 'id' >,
   encodeFn?: Options["encode"]
 ) {
   if (res.headersSent) return;
