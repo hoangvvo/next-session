@@ -18,6 +18,10 @@
     "./lib/compat": {
       "import": "./lib/compat.js",
       "require": "./lib/compat.cjs"
+    },
+    "./lib/helpers": {
+      "import": "./lib/helpers.js",
+      "require": "./lib/helpers.cjs"
     }
   },
   "types": "lib/session.d.ts",
