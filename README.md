@@ -156,7 +156,7 @@ server.listen(8080);
 | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
 | name            | The name of the cookie to be read from the request and set to the response.                                                                  | `sid`                                    |
 | store           | The session store instance to be used. **Required** to work in production!                                                                   | `MemoryStore`                            |
-| genid           | The function that generates a string for a new session ID.                                                                                   | [`nanoid`](https://github.com/ai/nanoid) |
+| genid           | The function that exposes the `req` object as a parameter and generates a string for a new session ID.                                                                                   | [`(() => nanoid())`](https://github.com/ai/nanoid) |
 | encode          | Transforms session ID before setting cookie. It takes the raw session ID and returns the decoded/decrypted session ID.                       | undefined                                |
 | decode          | Transforms session ID back while getting from cookie. It should return the encoded/encrypted session ID                                      | undefined                                |
 | touchAfter      | Only touch after an amount of time **(in seconds)** since last access. Disabled by default or if set to `-1`. See [touchAfter](#touchAfter). | `-1` (Disabled)                          |
