@@ -1,4 +1,5 @@
 import { isDestroyed, isNew, isTouched } from "./symbol";
+import { IncomingMessage } from "http";
 
 export type SessionRecord = Record<string, any>
 
@@ -40,7 +41,7 @@ export interface SessionStore {
 export interface Options {
   name?: string;
   store?: SessionStore;
-  genid?: () => string;
+  genid?: (req: IncomingMessage & { session?: Session }) => string;
   encode?: (rawSid: string) => string;
   decode?: (encryptedSid: string) => string | null;
   touchAfter?: number;
