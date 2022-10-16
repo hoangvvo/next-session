@@ -11,7 +11,7 @@ export default function session<T extends SessionRecord = SessionRecord>(options
 
   const name = options.name || "sid";
   const store = options.store || new MemoryStore();
-  const genId = options.genid || nanoid;
+  const genId = options.genid || (() => nanoid());
   const encode = options.encode;
   const decode = options.decode;
   const touchAfter = options.touchAfter ?? -1;
@@ -88,7 +88,7 @@ export default function session<T extends SessionRecord = SessionRecord>(options
         }
       }
     } else {
-      sessionId = genId();
+      sessionId = genId(req);
       session = {
         [isNew]: true,
         cookie: {
