@@ -1,4 +1,5 @@
 import { isDestroyed, isNew, isTouched } from "./symbol";
+import { IncomingMessage } from "http";
 
 export type SessionRecord = Record<string, any>
 
