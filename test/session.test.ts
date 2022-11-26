@@ -425,15 +425,38 @@ describe("session()", () => {
       const store = {
         get: jest.fn(),
       };
+
       const name = "foo";
       const cook = { name, value: "bar" };
+
       const mockCookies = {
         get: jest.fn((key) => cook),
       } as NextCookies;
+
       await session({ store, name }).getSessionFromCookies(mockCookies);
 
       expect(mockCookies.get).toHaveBeenCalledWith(name);
       expect(store.get).toHaveBeenCalledWith(cook.value);
+    });
+
+    test("should call decode when fetching session", async () => {
+      const store = {
+        get: jest.fn(),
+      };
+      const name = "foo";
+      const decodedValue = "rab";
+      const decode = jest.fn(() => decodedValue);
+
+      const cook = { name, value: "bar" };
+      const mockCookies = {
+        get: jest.fn((key) => cook),
+      } as NextCookies;
+
+      await session({ store, name, decode }).getSessionFromCookies(mockCookies);
+
+      expect(mockCookies.get).toHaveBeenCalledWith(name);
+      expect(decode).toHaveBeenCalledWith(cook.value);
+      expect(store.get).toHaveBeenCalledWith(decodedValue);
     });
   });
 });
