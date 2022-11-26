@@ -1,6 +1,6 @@
 import { isDestroyed, isNew, isTouched } from "./symbol";
 
-export type SessionRecord = Record<string, any>
+export type SessionRecord = Record<string, any>;
 
 export type SessionData<T = SessionRecord> = {
   cookie: Cookie;
@@ -14,7 +14,7 @@ export type Session<T extends SessionRecord = SessionRecord> = {
   [isNew]?: boolean;
   [isTouched]?: boolean;
   [isDestroyed]?: boolean;
-} & SessionData<T>
+} & SessionData<T>;
 
 type Cookie = {
   httpOnly: boolean;
@@ -29,6 +29,10 @@ type Cookie = {
       expires: Date;
     }
 );
+
+export type NextCookies = {
+  get: (key: string) => { name: string; value: string } | undefined;
+};
 
 export interface SessionStore {
   get(sid: string): Promise<SessionData | null | undefined>;

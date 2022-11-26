@@ -8,7 +8,7 @@ describe("hash()", () => {
     const res = {} as any;
     await session({
       autoCommit: false,
-    })(req, res);
+    }).getSession(req, res);
     req.session.foo = "bar";
     expect(hash(req.session)).toEqual(`{"foo":"bar"}`);
   });

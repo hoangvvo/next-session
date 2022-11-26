@@ -3,10 +3,12 @@ import { IncomingMessage, ServerResponse } from "http";
 import { nanoid } from "nanoid";
 import MemoryStore from "./memory-store";
 import { isDestroyed, isNew, isTouched } from "./symbol";
-import { Options, Session, SessionRecord } from "./types";
+import { NextCookies, Options, Session, SessionRecord } from "./types";
 import { commitHeader, hash } from "./utils";
 
-export default function session<T extends SessionRecord = SessionRecord>(options: Options = {}) {
+export default function session<T extends SessionRecord = SessionRecord>(
+  options: Options = {}
+) {
   type TypedSession = Session<T>;
 
   const name = options.name || "sid";
@@ -51,107 +53,118 @@ export default function session<T extends SessionRecord = SessionRecord>(options
     });
   }
 
-  return async function sessionHandle(
-    req: IncomingMessage & { session?: TypedSession },
-    res: ServerResponse
-  ): Promise<TypedSession> {
-    if (req.session) return req.session;
+  return {
+    async getSession(
+      req: IncomingMessage & { session?: TypedSession },
+      res: ServerResponse
+    ): Promise<TypedSession> {
+      if (req.session) return req.session;
 
-    const _now = Date.now();
+      const _now = Date.now();
 
-    let sessionId = req.headers?.cookie
-      ? c.parse(req.headers.cookie)[name]
-      : null;
-    if (sessionId && decode) {
-      sessionId = decode(sessionId);
-    }
-
-    const _session = sessionId ? await store.get(sessionId) : null;
-
-    let session: TypedSession;
-    if (_session) {
-      session = _session as TypedSession;
-      // Some store return cookie.expires as string, convert it to Date
-      if (typeof session.cookie.expires === "string") {
-        session.cookie.expires = new Date(session.cookie.expires);
+      let sessionId = req.headers?.cookie
+        ? c.parse(req.headers.cookie)[name]
+        : null;
+      if (sessionId && decode) {
+        sessionId = decode(sessionId);
       }
 
-      // Add session methods
-      decorateSession(req, res, session, sessionId as string, _now);
+      const _session = sessionId ? await store.get(sessionId) : null;
 
-      // Extends the expiry of the session if options.touchAfter is sastified
-      if (touchAfter >= 0 && session.cookie.expires) {
-        const lastTouchedTime =
-          session.cookie.expires.getTime() - session.cookie.maxAge * 1000;
-        if (_now - lastTouchedTime >= touchAfter * 1000) {
-          session.touch();
+      let session: TypedSession;
+      if (_session) {
+        session = _session as TypedSession;
+        // Some store return cookie.expires as string, convert it to Date
+        if (typeof session.cookie.expires === "string") {
+          session.cookie.expires = new Date(session.cookie.expires);
         }
+
+        // Add session methods
+        decorateSession(req, res, session, sessionId as string, _now);
+
+        // Extends the expiry of the session if options.touchAfter is sastified
+        if (touchAfter >= 0 && session.cookie.expires) {
+          const lastTouchedTime =
+            session.cookie.expires.getTime() - session.cookie.maxAge * 1000;
+          if (_now - lastTouchedTime >= touchAfter * 1000) {
+            session.touch();
+          }
+        }
+      } else {
+        sessionId = genId();
+        session = {
+          [isNew]: true,
+          cookie: {
+            path: cookieOpts.path || "/",
+            httpOnly: cookieOpts.httpOnly ?? true,
+            domain: cookieOpts.domain || undefined,
+            sameSite: cookieOpts.sameSite,
+            secure: cookieOpts.secure || false,
+          },
+        } as TypedSession;
+        if (cookieOpts.maxAge) {
+          session.cookie.maxAge = cookieOpts.maxAge;
+          session.cookie.expires = new Date(_now + cookieOpts.maxAge * 1000);
+        }
+
+        // Add session methods
+        decorateSession(req, res, session, sessionId, _now);
       }
-    } else {
-      sessionId = genId();
-      session = {
-        [isNew]: true,
-        cookie: {
-          path: cookieOpts.path || "/",
-          httpOnly: cookieOpts.httpOnly ?? true,
-          domain: cookieOpts.domain || undefined,
-          sameSite: cookieOpts.sameSite,
-          secure: cookieOpts.secure || false,
-        },
-      } as TypedSession;
-      if (cookieOpts.maxAge) {
-        session.cookie.maxAge = cookieOpts.maxAge;
-        session.cookie.expires = new Date(_now + cookieOpts.maxAge * 1000);
+
+      req.session = session;
+
+      // prevSessStr is used to compare the session later
+      // in autoCommit -- that is, we only save the
+      // session if it has changed.
+      let prevHash: string | undefined;
+      if (autoCommit) {
+        prevHash = hash(session);
       }
 
-      // Add session methods
-      decorateSession(req, res, session, sessionId, _now);
-    }
+      // autocommit: We commit the header and save the session automatically
+      // by "proxying" res.writeHead and res.end methods. After committing, we
+      // call the original res.writeHead and res.end.
+      if (autoCommit) {
+        const _writeHead = res.writeHead;
+        res.writeHead = function resWriteHeadProxy(...args: any) {
+          // Commit the header if either:
+          // - session is new and has been populated
+          // - session is flagged to commit header (touched or destroyed)
+          if (
+            (session[isNew] && Object.keys(session).length > 1) ||
+            session[isTouched] ||
+            session[isDestroyed]
+          ) {
+            commitHeader(res, name, session, encode);
+          }
+          return _writeHead.apply(this, args);
+        };
+        const _end = res.end;
+        res.end = function resEndProxy(...args: any) {
+          const done = () => _end.apply(this, args);
+          if (session[isDestroyed]) {
+            done();
+          } else if (hash(session) !== prevHash) {
+            store.set(session.id, session).finally(done);
+          } else if (session[isTouched] && store.touch) {
+            store.touch(session.id, session).finally(done);
+          } else {
+            done();
+          }
+        };
+      }
 
-    req.session = session;
+      return session;
+    },
+    async getSessionFromCookies(cookies: NextCookies) {
+      let sessionId = cookies.get(name)?.value ?? null;
 
-    // prevSessStr is used to compare the session later
-    // in autoCommit -- that is, we only save the
-    // session if it has changed.
-    let prevHash: string | undefined;
-    if (autoCommit) {
-      prevHash = hash(session);
-    }
+      if (sessionId && decode) {
+        sessionId = decode(sessionId);
+      }
 
-    // autocommit: We commit the header and save the session automatically
-    // by "proxying" res.writeHead and res.end methods. After committing, we
-    // call the original res.writeHead and res.end.
-    if (autoCommit) {
-      const _writeHead = res.writeHead;
-      res.writeHead = function resWriteHeadProxy(...args: any) {
-        // Commit the header if either:
-        // - session is new and has been populated
-        // - session is flagged to commit header (touched or destroyed)
-        if (
-          (session[isNew] && Object.keys(session).length > 1) ||
-          session[isTouched] ||
-          session[isDestroyed]
-        ) {
-          commitHeader(res, name, session, encode);
-        }
-        return _writeHead.apply(this, args);
-      };
-      const _end = res.end;
-      res.end = function resEndProxy(...args: any) {
-        const done = () => _end.apply(this, args);
-        if (session[isDestroyed]) {
-          done();
-        } else if (hash(session) !== prevHash) {
-          store.set(session.id, session).finally(done);
-        } else if (session[isTouched] && store.touch) {
-          store.touch(session.id, session).finally(done);
-        } else {
-          done();
-        }
-      };
-    }
-
-    return session;
+      return sessionId ? await store.get(sessionId) : null;
+    },
   };
 }
 
