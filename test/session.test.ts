@@ -438,7 +438,6 @@ describe("session()", () => {
       expect(mockCookies.get).toHaveBeenCalledWith(name);
       expect(store.get).toHaveBeenCalledWith(cook.value);
     });
-
     test("should call decode when fetching session", async () => {
       const store = {
         get: jest.fn(),
@@ -457,6 +456,24 @@ describe("session()", () => {
       expect(mockCookies.get).toHaveBeenCalledWith(name);
       expect(decode).toHaveBeenCalledWith(cook.value);
       expect(store.get).toHaveBeenCalledWith(decodedValue);
+    });
+    test("should return null if cookie is undefined", async () => {
+      const store = {
+        get: jest.fn(),
+      };
+      const name = "foo";
+
+      const mockCookies = {
+        get: jest.fn((key) => undefined),
+      } as NextCookies;
+
+      const result = await session({ store, name }).getSessionFromCookies(
+        mockCookies
+      );
+
+      expect(result).toBe(null);
+      expect(mockCookies.get).toHaveBeenCalledWith(name);
+      expect(store.get).not.toHaveBeenCalled();
     });
   });
 });
